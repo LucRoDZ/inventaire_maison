@@ -1,0 +1,14 @@
+{
+  "name": "inventaire-maison",
+  "private": true,
+  "version": "0.0.0",
+  "engines": { "node": ">=24" },
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -n web,api -c auto \"npm run dev -w @inventaire/web\" \"npm run dev -w @inventaire/api\"",
+    "build": "npm run build -w @inventaire/shared && npm run build -w @inventaire/api && npm run build -w @inventaire/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

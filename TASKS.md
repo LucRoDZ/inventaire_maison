@@ -10,7 +10,7 @@
 
 ## Phase 0 : Socle (branche `phase-0-socle`) : 22 tâches
 
-- [ ] **0.1 Monorepo et squelettes**
+- [x] **0.1 Monorepo et squelettes**
   - Résultat : workspaces npm avec un web Next.js (App Router) qui affiche une page provisoire et une API NestJS qui répond sur `/api/health`.
   - Fichiers : `package.json`, `.nvmrc`, `.gitignore`, `.editorconfig`, `apps/web/`, `apps/api/src/{main,app.module}.ts`, `apps/api/src/health/`, `packages/shared/`.
   - Comportement : `npm run dev` lance web (3000) et api (3001) ; Next réécrit `/api/*` vers `API_INTERNAL_URL` ; `GET /api/health` renvoie 200 `{"status":"ok"}` sans session ; `.env` ignoré par git.
