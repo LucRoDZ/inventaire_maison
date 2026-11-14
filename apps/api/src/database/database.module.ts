@@ -57,6 +57,6 @@ export class MigrationRunner implements OnModuleInit, OnApplicationShutdown {
     { provide: DB, inject: [PG_POOL], useFactory: (pool: Pool) => drizzle(pool) },
     MigrationRunner,
   ],
-  exports: [PG_POOL, DB],
+  exports: [PG_POOL, DB, MigrationRunner],
 })
 export class DatabaseModule {}

@@ -22,7 +22,8 @@
     "start": "concurrently -n web,api -c auto \"PORT=3001 npm run start -w @inventaire/api\" \"npm run start -w @inventaire/web\"",
     "test:web": "npm test -w @inventaire/web",
     "test:e2e": "npm test -w @inventaire/e2e",
-    "db:migrate": "npm run db:migrate -w @inventaire/api"
+    "db:migrate": "npm run db:migrate -w @inventaire/api",
+    "db:seed": "npm run db:seed -w @inventaire/api"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

@@ -80,7 +80,7 @@
   - Tests : intégration : migration depuis une base vide ; deux lignes identiques avec `shelf_id` et `expiry_date` nuls sont refusées ; quantité 0 refusée ; deux produits sans code-barres acceptés ; pseudo en double refusé.
   - Fin : `npm run db:migrate` réussit sur une base vide et `npm run test:api` passe.
 
-- [ ] **0.11 Seed des référentiels**
+- [x] **0.11 Seed des référentiels**
   - Résultat : catégories, correspondances, lieux et étagères par défaut créés au premier démarrage.
   - Fichiers : `apps/api/src/database/seed/{categories,off-category-map,locations}.ts`, `seed.service.ts`.
   - Comportement : 15 catégories avec icône Lucide et ordre, « Autre » en `is_fallback` ; environ 80 tags Open Food Facts (au moins 3 par catégorie hors Autre et Hygiène) ; lieux Garde-manger (4 étagères), Frigo (4 étagères, 2 bacs à légumes, 1 balconnet), Congélateur (3 tiroirs), Cave (3 rangées `rack`, 1 étagère « Caisses et packs ») ; chaque référentiel n'est rempli que s'il est vide.
