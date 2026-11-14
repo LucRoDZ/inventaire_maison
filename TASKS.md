@@ -38,7 +38,7 @@
   - Tests : un test de rendu de la page provisoire ; un e2e qui charge `/` et lit le titre.
   - Fin : `npm run test:web` et `npm run test:e2e` passent sur les deux projets.
 
-- [ ] **0.5 Dockerfiles**
+- [x] **0.5 Dockerfiles**
   - Résultat : images web et api multi-étapes, utilisateur non root.
   - Fichiers : `apps/web/Dockerfile`, `apps/api/Dockerfile`, `.dockerignore`, `next.config.ts` (`output: "standalone"`).
   - Comportement : contexte de build à la racine ; base `node:24-slim` ; web écoute 3000, api 3001 ; aucun fichier `.env` copié.
