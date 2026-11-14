@@ -13,7 +13,7 @@ FROM deps AS build
 # Rewrites are resolved at build time by Next.js.
 ARG API_INTERNAL_URL=http://api:3001
 ENV NEXT_TELEMETRY_DISABLED=1 API_INTERNAL_URL=$API_INTERNAL_URL
-COPY tsconfig.base.json ./
+COPY tsconfig.base.json tokens.css ./
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build -w @inventaire/shared && npm run build -w @inventaire/web

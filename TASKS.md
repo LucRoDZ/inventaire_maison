@@ -108,7 +108,7 @@
   - Tests : intégration : origine absente, étrangère, correcte ; route d'essai réservée à l'admin ; changement réussi puis ancienne session d'un autre appareil refusée ; ancien mot de passe refusé à la connexion.
   - Fin : `curl -X POST` sur `/api/auth/logout` avec `Origin: https://exemple.test` renvoie 403.
 
-- [ ] **0.15 Socle visuel Indigo Ambre**
+- [x] **0.15 Socle visuel Indigo Ambre**
   - Résultat : Tailwind branché sur `tokens.css`, police Carlito, composants de base.
   - Fichiers : `tokens.css` (alignement typographique sur le cahier), `apps/web/app/globals.css`, `apps/web/components/ui/{Card,StatCard,Callout,Button,IconBadge}.tsx`, `scripts/check-colors.mjs`.
   - Comportement : couleurs, rayons, ombre et espacements uniquement par variables ; boutons principal (indigo, texte blanc), d'ajout (ambre, texte indigo), secondaire (texte `indigo-mid`) ; zones tactiles de 44 px ; `check-colors` (appelé par `npm run lint`) échoue sur une couleur hexadécimale, `rgb()` ou une classe de palette Tailwind hors tokens dans `apps/web`.
