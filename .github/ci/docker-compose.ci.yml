@@ -3,12 +3,12 @@ services:
   web:
     build:
       cache_from:
-        - type=local,src=/tmp/.buildx-cache/web
+        - type=local,src=${GITHUB_WORKSPACE}/.buildx-cache/web
       cache_to:
-        - type=local,dest=/tmp/.buildx-cache-new/web,mode=max
+        - type=local,dest=${GITHUB_WORKSPACE}/.buildx-cache-new/web,mode=max
   api:
     build:
       cache_from:
-        - type=local,src=/tmp/.buildx-cache/api
+        - type=local,src=${GITHUB_WORKSPACE}/.buildx-cache/api
       cache_to:
-        - type=local,dest=/tmp/.buildx-cache-new/api,mode=max
+        - type=local,dest=${GITHUB_WORKSPACE}/.buildx-cache-new/api,mode=max

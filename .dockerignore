@@ -19,3 +19,4 @@ playwright-report
 *.log
 .vitest
 **/.vitest
+.buildx-cache*
