@@ -17,7 +17,7 @@
   - Tests : aucun lanceur à ce stade (tâches 0.3 et 0.4).
   - Fin : `npm install && npm run build` passe ; `curl -s localhost:3000/api/health` renvoie `{"status":"ok"}`.
 
-- [ ] **0.2 TypeScript strict, ESLint, Prettier**
+- [x] **0.2 TypeScript strict, ESLint, Prettier**
   - Résultat : une seule configuration de qualité pour web, api et shared.
   - Fichiers : `tsconfig.base.json`, `eslint.config.mjs`, `.prettierrc`, scripts racine `lint`, `format:check`, `typecheck`.
   - Comportement : `strict`, `noUncheckedIndexedAccess`, `any` implicite interdit ; ESLint échoue sur un import inutilisé.

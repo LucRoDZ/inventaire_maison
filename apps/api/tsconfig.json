@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": false,
@@ -8,13 +7,11 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strict": true
+    "incremental": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "extends": "../../tsconfig.base.json"
 }

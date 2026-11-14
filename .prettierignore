@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+package-lock.json
+docs
+tokens.css
+TASKS.md
+CLAUDE.md
+README.md
