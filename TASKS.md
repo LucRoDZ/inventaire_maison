@@ -150,7 +150,7 @@
   - Tests : sans objet.
   - Fin : chaque commande du README, exécutée sur un clone neuf, réussit.
 
-- [ ] **0.21 Vérification de la phase**
+- [x] **0.21 Vérification de la phase**
   - Résultat : preuve que le socle tient depuis zéro.
   - Fichiers : aucun, sauf corrections.
   - Comportement : suite complète ; volumes supprimés puis `docker compose up` ; connexion avec l'admin du `.env` ; chaque critère de fin de Phase 0 noté validé, non validé ou à valider par Lucas.
@@ -522,6 +522,7 @@
 ## Décisions prises
 
 - 14/11/2026 : T1. Reverse proxy (corrigé le même jour) : le proxy du VPS est un nginx en conteneur (`easyq-nginx-1`, image `nginx:alpine`, réseau Docker `easyq_default`), pas un nginx sur l'hôte : il ne peut pas joindre un port publié sur `127.0.0.1`. En production, web et api rejoignent le réseau externe `easyq_default` (`SHARED_PROXY_NETWORK`, fichier `docker-compose.shared-proxy.yml`) sous les noms `inventaire-web` (3000) et `inventaire-api` (3001), sans publier de port sur l'hôte. Les certificats viennent de certbot (webroot). Le Caddy du compose reste disponible par profil (`COMPOSE_PROFILES=proxy`) pour le test local, la CI et un VPS vierge. Claude ne touche jamais au VPS : la configuration nginx est un fichier d'exemple que Lucas installe.
+- 14/11/2026 : D1. Le job CI `audit` échoue sur des vulnérabilités de dépendances (non bloquant, `continue-on-error`) : à traiter via Dependabot, hors périmètre de la Phase 0.
 - 14/11/2026 : T2. Phase 2 : Péremption, Liste de courses, Confort de saisie. Pas de journal global ni d'export.
 - 14/11/2026 : T3. Nom : `name` « Inventaire maison », `short_name` « Inventaire ».
 - 14/11/2026 : T4. Produit trouvé sur Open Food Facts : Enregistré au catalogue dès le scan (`source=off`, `category_guessed=true`), fiche d'ajout ouverte aussitôt.
@@ -579,3 +580,4 @@
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
 
 - (résolu 2026-11-14) 0.4 : WebKit installé par Lucas, e2e verts sur `chromium-mobile` et `webkit-mobile`.
+- (note 2026-11-14) 0.19 : le shell local utilisait Node 20 et `argon2` y faisait un SIGSEGV dans les tests API ; sous Node 24 (`.nvmrc`, `nvm use`) tout passe. Un conteneur local `inv-test-pg` occupe `127.0.0.1:5432` (base de test), ce qui peut gêner `docker-compose.dev.yml`.
