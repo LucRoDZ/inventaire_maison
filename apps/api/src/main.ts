@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { configureApp } from './app.setup';
 import { APP_CONFIG } from './config/config.module';
 import { EnvError } from './config/env.schema';
 import type { AppConfig } from './config/env.schema';
@@ -8,7 +9,7 @@ import type { AppConfig } from './config/env.schema';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
-  app.setGlobalPrefix('api');
+  configureApp(app);
   const config = app.get<AppConfig>(APP_CONFIG);
   await app.listen(config.PORT);
 }

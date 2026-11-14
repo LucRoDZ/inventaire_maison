@@ -87,7 +87,7 @@
   - Tests : intégration : seed sur base vide (15 catégories, 4 lieux, 18 étagères) ; second passage sans doublon ; un lieu renommé n'est pas recréé.
   - Fin : `npm run db:seed` deux fois de suite laisse les mêmes comptes de lignes ; tests verts.
 
-- [ ] **0.12 Authentification : sessions, connexion, garde globale, premier admin**
+- [x] **0.12 Authentification : sessions, connexion, garde globale, premier admin**
   - Résultat : connexion par pseudo et mot de passe, session en base, toute l'API fermée par défaut.
   - Fichiers : `apps/api/src/auth/{auth.controller,auth.service,session.service,session.guard,public.decorator,password.service}.ts`, `apps/api/src/users/bootstrap-admin.service.ts`, `packages/shared/src/auth.ts`.
   - Comportement : `POST /api/auth/login` `{username, password}` : 200 `{id, username, role}` et cookie `inv_session` ; 401 « Pseudo ou mot de passe incorrect » (même réponse et hachage factice si le pseudo n'existe pas ou si le compte est désactivé) ; 400 si le corps est invalide. Pseudo comparé en minuscules. `POST /api/auth/logout` : 204, session supprimée, cookie effacé. `GET /api/auth/me` : 200 ou 401. Garde globale : 401 partout sauf `login` et `health`. Session expirée : 401 et ligne supprimée ; prolongation glissante au-delà de 24 h. argon2id ; le mot de passe n'apparaît dans aucun journal. Admin créé au démarrage si la table `users` est vide.
