@@ -1,0 +1,20 @@
+# Production behind the shared nginx container of the VPS.
+# Usage: COMPOSE_FILE=docker-compose.yml:docker-compose.shared-proxy.yml
+# Requires SHARED_PROXY_NETWORK (external Docker network of the nginx). No port is published.
+services:
+  web:
+    networks:
+      edge:
+      shared_proxy:
+        aliases: [inventaire-web]
+  api:
+    networks:
+      edge:
+      backend:
+      shared_proxy:
+        aliases: [inventaire-api]
+
+networks:
+  shared_proxy:
+    name: '${SHARED_PROXY_NETWORK:?SHARED_PROXY_NETWORK manquante, indiquez le réseau Docker du nginx partagé}'
+    external: true

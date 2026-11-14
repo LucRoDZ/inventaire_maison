@@ -33,6 +33,7 @@ COPY --from=build /app/packages/shared/package.json packages/shared/package.json
 COPY --from=build /app/packages/shared/dist packages/shared/dist
 COPY --from=build /app/apps/api/package.json apps/api/package.json
 COPY --from=build /app/apps/api/dist apps/api/dist
+RUN mkdir -p /data/images && chown node:node /data/images
 USER node
 WORKDIR /app/apps/api
 EXPOSE 3001

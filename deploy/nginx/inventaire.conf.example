@@ -1,0 +1,47 @@
+# Block to add (by Lucas) to the existing nginx container (easyq-nginx-1).
+# Web and api join the Docker network of that nginx with the aliases inventaire-web and inventaire-api.
+
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+server {
+    listen 80;
+    server_name inventaire.lucaszivan.app;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name inventaire.lucaszivan.app;
+
+    ssl_certificate     /etc/letsencrypt/live/inventaire.lucaszivan.app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/inventaire.lucaszivan.app/privkey.pem;
+
+    client_max_body_size 10m;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    set $inv_web http://inventaire-web:3000;
+    set $inv_api http://inventaire-api:3001;
+
+    location /api/ {
+        proxy_pass $inv_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass $inv_web;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

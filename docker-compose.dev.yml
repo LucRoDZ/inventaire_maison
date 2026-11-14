@@ -1,0 +1,6 @@
+# Local development: expose the database on the loopback interface only.
+# Usage: COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml
+services:
+  db:
+    ports:
+      - '127.0.0.1:5432:5432'
