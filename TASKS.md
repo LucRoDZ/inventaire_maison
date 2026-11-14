@@ -46,11 +46,11 @@
   - Fin : les deux `docker build` passent et `docker run --rm <image> id -u` ne renvoie pas `0`.
 
 - [ ] **0.6 Compose, Caddyfile, variantes de proxy, `.env.example`**
-  - Résultat : la pile complète démarre avec `docker compose up -d`.
-  - Fichiers : `docker-compose.yml`, `docker-compose.dev.yml` (publie la base sur `127.0.0.1:5432`), `docker-compose.host-proxy.yml` (publie web et api sur `127.0.0.1:3100` et `3101`), `Caddyfile`, `deploy/nginx/inventaire.conf.example`, `.env.example`.
-  - Comportement : services `proxy` (profil `proxy`), `web`, `api`, `db` ; réseaux `edge` et `backend` ; volumes `pgdata`, `images`, `caddy_data`, `caddy_config` ; `restart: unless-stopped`, healthcheck et rotation des logs (10 Mo, 3 fichiers) sur chaque service ; la base ne publie aucun port dans le fichier principal. Caddy : `/api/*` vers `api:3001`, le reste vers `web:3000`, HSTS, `X-Robots-Tag: noindex`, `Permissions-Policy: camera=(self)`. `.env.example` : `APP_DOMAIN`, `POSTGRES_PASSWORD`, `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `OFF_USER_AGENT`, `COMPOSE_FILE`, `COMPOSE_PROFILES`, sans aucune valeur réelle.
+  - Résultat : la pile complète démarre avec `docker compose up -d`, seule (Caddy embarqué) ou derrière le nginx partagé du VPS.
+  - Fichiers : `docker-compose.yml`, `docker-compose.dev.yml` (publie la base sur `127.0.0.1:5432`), `docker-compose.shared-proxy.yml`, `Caddyfile`, `deploy/nginx/inventaire.conf.example`, `.env.example`.
+  - Comportement : services `proxy` (profil `proxy`), `web`, `api`, `db` ; réseaux `edge` et `backend` ; volumes `pgdata`, `images`, `caddy_data`, `caddy_config` ; `restart: unless-stopped`, healthcheck et rotation des logs (10 Mo, 3 fichiers) sur chaque service ; la base ne publie aucun port dans le fichier principal. Caddy (local, CI, VPS vierge) : `/api/*` vers `api:3001`, le reste vers `web:3000`, HSTS, `X-Robots-Tag: noindex`, `Permissions-Policy: camera=(self)`. Production (`docker-compose.shared-proxy.yml`) : web et api rejoignent le réseau Docker externe `${SHARED_PROXY_NETWORK}` (`external: true`, valeur `easyq_default` sur le VPS) avec les alias `inventaire-web` (port 3000) et `inventaire-api` (port 3001) ; aucun port publié sur l'hôte, profil `proxy` inactif ; `SHARED_PROXY_NETWORK` absente : erreur explicite de compose. `deploy/nginx/inventaire.conf.example`, sur le modèle du portfolio, à ajouter par Lucas au conteneur nginx existant (`easyq-nginx-1`) : `resolver 127.0.0.11 valid=10s ipv6=off;`, `set $inv_web http://inventaire-web:3000;`, `set $inv_api http://inventaire-api:3001;`, `location /api/` vers `$inv_api` et `location /` vers `$inv_web` (URI transmise telle quelle), en-têtes `Host`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Robots-Tag: noindex`, HSTS, `client_max_body_size 10m` ; port 80 : `/.well-known/acme-challenge/` servi depuis le webroot de certbot, le reste redirigé en HTTPS ; port 443 : certificats certbot de `inventaire.lucaszivan.app`. `.env.example` : `APP_DOMAIN`, `POSTGRES_PASSWORD`, `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `OFF_USER_AGENT`, `COMPOSE_FILE`, `COMPOSE_PROFILES`, `SHARED_PROXY_NETWORK`, sans aucune valeur réelle. Aucune commande n'est exécutée sur le VPS.
   - Tests : sans objet (test de fumée dans la CI, tâche 0.7).
-  - Fin : avec `APP_DOMAIN=localhost COMPOSE_PROFILES=proxy`, `docker compose up -d --build --wait` réussit et `curl -sk https://localhost/api/health` renvoie 200 ; `docker compose port db 5432` ne renvoie rien.
+  - Fin : (1) avec `APP_DOMAIN=localhost COMPOSE_PROFILES=proxy`, `docker compose up -d --build --wait` réussit et `curl -sk https://localhost/api/health` renvoie 200 ; `docker compose port db 5432` ne renvoie rien. (2) après `docker network create inv_test_proxy`, avec `SHARED_PROXY_NETWORK=inv_test_proxy COMPOSE_FILE=docker-compose.yml:docker-compose.shared-proxy.yml`, `docker compose up -d --wait` réussit, `docker run --rm --network inv_test_proxy curlimages/curl -s http://inventaire-api:3001/api/health` renvoie `{"status":"ok"}`, `http://inventaire-web:3000/` répond, et `docker compose port web 3000` comme `docker compose port api 3001` ne renvoient rien.
 
 - [ ] **0.7 CI GitHub Actions et PR en brouillon**
   - Résultat : six jobs sur chaque PR et chaque push sur `main` ; PR `phase-0-socle` ouverte en brouillon.
@@ -144,9 +144,9 @@
   - Fin : `shellcheck deploy.sh scripts/*.sh` passe ; `./deploy.sh --no-backup` exécuté deux fois de suite en local réussit.
 
 - [ ] **0.20 README de la Phase 0**
-  - Résultat : README exact pour l'installation locale et les deux modes de proxy.
+  - Résultat : README exact pour l'installation locale et les deux modes de proxy (nginx partagé en production, Caddy embarqué).
   - Fichiers : `README.md`.
-  - Comportement : choix de Drizzle et raison ; Node 24 ; démarrage local ; variables du cahier ; tests ; nginx existant (fichier d'exemple, `COMPOSE_FILE`) et Caddy embarqué (`COMPOSE_PROFILES=proxy`) ; premier déploiement ; protection de branche à activer par Lucas.
+  - Comportement : choix de Drizzle et raison ; Node 24 ; démarrage local ; variables du cahier plus `COMPOSE_FILE`, `COMPOSE_PROFILES`, `SHARED_PROXY_NETWORK` ; tests ; production derrière le nginx en conteneur du VPS : `COMPOSE_FILE=docker-compose.yml:docker-compose.shared-proxy.yml`, `SHARED_PROXY_NETWORK=easyq_default`, alias `inventaire-web` et `inventaire-api`, aucun port publié, bloc `deploy/nginx/inventaire.conf.example` à ajouter au nginx existant ; Caddy embarqué (`COMPOSE_PROFILES=proxy`) pour le local et un VPS vierge ; ligne Proxy du tableau Stack corrigée ; premier déploiement ; protection de branche à activer par Lucas. Toutes les étapes sur le VPS sont décrites pour Lucas, jamais exécutées par Claude.
   - Tests : sans objet.
   - Fin : chaque commande du README, exécutée sur un clone neuf, réussit.
 
@@ -440,7 +440,7 @@
 - [ ] **1.38 README complet**
   - Résultat : documentation d'exploitation.
   - Fichiers : `README.md`.
-  - Comportement : installation, variables, déploiement derrière nginx et avec Caddy, cron de sauvegarde (base et images), copie hors du VPS, restauration, reconstruction mensuelle des images (`--no-cache`), recette manuelle sur vrais appareils reprise du cahier (6 points), test manuel du scan.
+  - Comportement : installation, variables ; déploiement en production derrière le nginx partagé, pas à pas pour Lucas : certificat certbot en webroot pour `inventaire.lucaszivan.app`, ajout du bloc d'exemple au nginx existant, test puis rechargement de sa configuration, `./deploy.sh`, vérification de `https://inventaire.lucaszivan.app/api/health`, renouvellement du certificat, dépannage (502 tant que les conteneurs ne sont pas sur `easyq_default`) ; variante Caddy embarqué pour un VPS vierge ; cron de sauvegarde (base et images), copie hors du VPS, restauration, reconstruction mensuelle des images (`--no-cache`), recette manuelle sur vrais appareils reprise du cahier (6 points), test manuel du scan.
   - Tests : sans objet.
   - Fin : chaque commande du README est exécutable telle quelle.
 
@@ -509,7 +509,7 @@
 - [ ] Android (Chrome, Samsung Internet, Firefox) et ordinateur : installation et scan (Lucas).
 - [ ] Caméra refusée ou indisponible : saisie manuelle, photo du code et lecteur USB permettent d'ajouter (tests 1.15, e2e 1.17).
 - [ ] Les couleurs et la police correspondent aux tokens (1.35).
-- [ ] `docker compose up -d` sur un VPS vierge met l'application en ligne en HTTPS (Lucas ; test de fumée Caddy en CI).
+- [ ] `docker compose up -d` sur un VPS vierge met l'application en ligne en HTTPS (Lucas ; test de fumée Caddy en CI). Sur le VPS actuel : en ligne derrière le nginx partagé via `docker-compose.shared-proxy.yml` (Lucas).
 - [ ] Une sauvegarde `pg_dump` se restaure sur une base vide (1.37 ; essai réel avant mise en service : Lucas).
 - [ ] Recette sur appareils réels du cahier, 6 points (Lucas).
 
@@ -521,7 +521,7 @@
 
 ## Décisions prises
 
-- 14/11/2026 : T1. Reverse proxy : Un nginx existe déjà sur le VPS. En production, web et api sont publiés sur `127.0.0.1` et nginx fait l'hôte virtuel. Le Caddy du compose reste disponible par profil (`COMPOSE_PROFILES=proxy`) pour le test local, la CI et un VPS vierge.
+- 14/11/2026 : T1. Reverse proxy (corrigé le même jour) : le proxy du VPS est un nginx en conteneur (`easyq-nginx-1`, image `nginx:alpine`, réseau Docker `easyq_default`), pas un nginx sur l'hôte : il ne peut pas joindre un port publié sur `127.0.0.1`. En production, web et api rejoignent le réseau externe `easyq_default` (`SHARED_PROXY_NETWORK`, fichier `docker-compose.shared-proxy.yml`) sous les noms `inventaire-web` (3000) et `inventaire-api` (3001), sans publier de port sur l'hôte. Les certificats viennent de certbot (webroot). Le Caddy du compose reste disponible par profil (`COMPOSE_PROFILES=proxy`) pour le test local, la CI et un VPS vierge. Claude ne touche jamais au VPS : la configuration nginx est un fichier d'exemple que Lucas installe.
 - 14/11/2026 : T2. Phase 2 : Péremption, Liste de courses, Confort de saisie. Pas de journal global ni d'export.
 - 14/11/2026 : T3. Nom : `name` « Inventaire maison », `short_name` « Inventaire ».
 - 14/11/2026 : T4. Produit trouvé sur Open Food Facts : Enregistré au catalogue dès le scan (`source=off`, `category_guessed=true`), fiche d'ajout ouverte aussitôt.
@@ -568,7 +568,7 @@
 - 14/11/2026 : M10. Suppression d'un produit, modification du code-barres : Hors V1 (le rattachement d'un code-barres arrive en Phase 2).
 - 14/11/2026 : M11. Cache hors ligne des lectures `/api` : Réseau d'abord avec repli cache pour les `GET` (hors `/api/auth`), cache vidé à la déconnexion ; aucune écriture en cache.
 - 14/11/2026 : M12. Sauvegarde hors VPS : destination inconnue : Les scripts produisent des archives locales dans `backups/` ; le README donne un exemple `rsync`. La copie hors site reste à votre main.
-- 14/11/2026 : M13. En-têtes de sécurité quand nginx remplace Caddy : `X-Robots-Tag`, `Permissions-Policy: camera=(self)`, `X-Content-Type-Options`, `Referrer-Policy` envoyés par Next et l'API eux-mêmes ; HSTS dans le Caddyfile et dans l'exemple nginx. Pas de CSP stricte en V1.
+- 14/11/2026 : M13. En-têtes de sécurité quand nginx remplace Caddy : `X-Robots-Tag`, `Permissions-Policy: camera=(self)`, `X-Content-Type-Options`, `Referrer-Policy` envoyés par Next et l'API eux-mêmes ; HSTS et `X-Robots-Tag` aussi dans le Caddyfile et dans l'exemple nginx ; `client_max_body_size 10m` côté nginx, au-dessus de la limite d'envoi de 8 Mo de l'API. Pas de CSP stricte en V1.
 - 14/11/2026 : M14. Reprise après une porte de validation : Vous supprimez la ligne du marqueur d'arrêt dans `TASKS.md` pour relancer la boucle (procédure écrite dans `TASKS.md`).
 - 14/11/2026 : M15. Critères non automatisables (4G en moins de 3 s, vrais appareils, HTTPS sur le VPS, restauration réelle) : Listés « à valider par Lucas » dans chaque PR, jamais cochés par moi.
 - 14/11/2026 : ORM Drizzle ; tests API Vitest + SWC ; service worker Serwist ; repli de scan `zxing-wasm` ; Node 24 ; images `node:24-slim`.
