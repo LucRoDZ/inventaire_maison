@@ -157,7 +157,7 @@
   - Tests : toute la suite.
   - Fin : `npm run lint && npm run typecheck && npm test && npm run test:e2e` passent ; `docker compose down -v && docker compose up -d --build --wait` réussit ; `gh pr checks` vert.
 
-- [ ] **0.22 PR prête et arrêt**
+- [x] **0.22 PR prête et arrêt**
   - Résultat : PR `phase-0-socle` sortie du brouillon avec la liste des critères.
   - Fichiers : `TASKS.md`.
   - Comportement : description de la PR : critères validés, non validés, à valider par Lucas ; décisions prises ; puis marqueur d'arrêt en dernière ligne.
@@ -581,3 +581,5 @@
 
 - (résolu 2026-11-14) 0.4 : WebKit installé par Lucas, e2e verts sur `chromium-mobile` et `webkit-mobile`.
 - (note 2026-11-14) 0.19 : le shell local utilisait Node 20 et `argon2` y faisait un SIGSEGV dans les tests API ; sous Node 24 (`.nvmrc`, `nvm use`) tout passe. Un conteneur local `inv-test-pg` occupe `127.0.0.1:5432` (base de test), ce qui peut gêner `docker-compose.dev.yml`.
+
+STOP: validation requise
