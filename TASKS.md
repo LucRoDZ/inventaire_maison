@@ -52,14 +52,14 @@
   - Tests : sans objet (test de fumée dans la CI, tâche 0.7).
   - Fin : (1) avec `APP_DOMAIN=localhost COMPOSE_PROFILES=proxy`, `docker compose up -d --build --wait` réussit et `curl -sk https://localhost/api/health` renvoie 200 ; `docker compose port db 5432` ne renvoie rien. (2) après `docker network create inv_test_proxy`, avec `SHARED_PROXY_NETWORK=inv_test_proxy COMPOSE_FILE=docker-compose.yml:docker-compose.shared-proxy.yml`, `docker compose up -d --wait` réussit, `docker run --rm --network inv_test_proxy curlimages/curl -s http://inventaire-api:3001/api/health` renvoie `{"status":"ok"}`, `http://inventaire-web:3000/` répond, et `docker compose port web 3000` comme `docker compose port api 3001` ne renvoient rien.
 
-- [ ] **0.7 CI GitHub Actions et PR en brouillon**
+- [x] **0.7 CI GitHub Actions et PR en brouillon**
   - Résultat : six jobs sur chaque PR et chaque push sur `main` ; PR `phase-0-socle` ouverte en brouillon.
   - Fichiers : `.github/workflows/ci.yml`.
   - Comportement : `lint-typecheck` ; `test-api` (service PostgreSQL 16) ; `test-web` ; `e2e` (Chromium et WebKit) ; `docker-build` (`docker compose build`, puis démarrage et `curl` de `/api/health`) ; `audit` (`npm audit --audit-level=high` et `git ls-files .env` vide, `continue-on-error`). Cache npm et cache de couches Docker, annulation des exécutions remplacées, limite de 10 minutes par job, aucun secret.
   - Tests : la CI elle-même.
   - Fin : `gh pr checks` montre les cinq jobs bloquants verts.
 
-- [ ] **0.8 Dependabot**
+- [x] **0.8 Dependabot**
   - Résultat : mises à jour hebdomadaires pour npm, Docker et GitHub Actions.
   - Fichiers : `.github/dependabot.yml`.
   - Comportement : une entrée npm à la racine, une entrée Docker par Dockerfile, une entrée `github-actions` ; mises à jour mineures groupées.
