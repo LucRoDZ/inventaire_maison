@@ -66,7 +66,7 @@
   - Tests : sans objet.
   - Fin : `grep -c package-ecosystem .github/dependabot.yml` renvoie au moins 4 et la CI reste verte.
 
-- [ ] **0.9 Configuration, connexion à la base, migrations au démarrage**
+- [x] **0.9 Configuration, connexion à la base, migrations au démarrage**
   - Résultat : l'API valide son environnement, se connecte à PostgreSQL et applique les migrations avant d'écouter.
   - Fichiers : `apps/api/src/config/`, `apps/api/src/database/`, `apps/api/drizzle.config.ts`, `apps/api/drizzle/`.
   - Comportement : variable manquante ou invalide (`SESSION_SECRET` de moins de 32 caractères, `ADMIN_PASSWORD` de moins de 8) : arrêt au démarrage avec un message qui nomme la variable sans afficher sa valeur. `/api/health` exécute `SELECT 1` : 200, ou 503 `{"status":"error"}` si la base ne répond pas.

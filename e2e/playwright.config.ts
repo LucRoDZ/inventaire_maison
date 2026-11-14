@@ -18,6 +18,14 @@ export default defineConfig({
     cwd: '..',
     url: `${baseURL}/api/health`,
     reuseExistingServer: !process.env['CI'],
+    env: {
+      DATABASE_URL:
+        process.env['DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_test',
+      SESSION_SECRET: process.env['SESSION_SECRET'] ?? 'e2e-session-secret-e2e-session-secret-00',
+      ADMIN_USERNAME: process.env['ADMIN_USERNAME'] ?? 'admin',
+      ADMIN_PASSWORD: process.env['ADMIN_PASSWORD'] ?? 'e2e-admin-password',
+      OFF_USER_AGENT: process.env['OFF_USER_AGENT'] ?? 'InventaireMaison-E2E/1.0',
+    },
     timeout: 240_000,
   },
 });
