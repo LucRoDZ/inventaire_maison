@@ -143,7 +143,7 @@
   - Tests : `shellcheck` dans le job `lint-typecheck` ; test de `backup-db.sh` contre la base du job `docker-build` (fichier créé, rotation à 14).
   - Fin : `shellcheck deploy.sh scripts/*.sh` passe ; `./deploy.sh --no-backup` exécuté deux fois de suite en local réussit.
 
-- [ ] **0.20 README de la Phase 0**
+- [x] **0.20 README de la Phase 0**
   - Résultat : README exact pour l'installation locale et les deux modes de proxy (nginx partagé en production, Caddy embarqué).
   - Fichiers : `README.md`.
   - Comportement : choix de Drizzle et raison ; Node 24 ; démarrage local ; variables du cahier plus `COMPOSE_FILE`, `COMPOSE_PROFILES`, `SHARED_PROXY_NETWORK` ; tests ; production derrière le nginx en conteneur du VPS : `COMPOSE_FILE=docker-compose.yml:docker-compose.shared-proxy.yml`, `SHARED_PROXY_NETWORK=easyq_default`, alias `inventaire-web` et `inventaire-api`, aucun port publié, bloc `deploy/nginx/inventaire.conf.example` à ajouter au nginx existant ; Caddy embarqué (`COMPOSE_PROFILES=proxy`) pour le local et un VPS vierge ; ligne Proxy du tableau Stack corrigée ; premier déploiement ; protection de branche à activer par Lucas. Toutes les étapes sur le VPS sont décrites pour Lucas, jamais exécutées par Claude.
