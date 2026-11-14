@@ -19,7 +19,7 @@ WAIT_LIMIT="${WAIT_LIMIT:-1800}"          # attente après une limite d'usage (s
 WAIT_ERROR="${WAIT_ERROR:-60}"            # attente après une autre erreur (secondes)
 LOG="${LOG:-run-loop.log}"
 
-PROMPT='Lis CLAUDE.md puis TASKS.md. Prends la première tâche non cochée de la phase en cours, implémente-la, lance les tests, commit, coche la case dans TASKS.md, puis continue avec la suivante. Respecte les règles de CLAUDE.md. Fin de phase : écris "STOP: validation requise" dans TASKS.md. Tout terminé : écris "ALL DONE" dans TASKS.md. Si tu es bloqué, note le problème dans la section Problèmes bloquants et passe à la tâche suivante.'
+PROMPT='Lis CLAUDE.md puis TASKS.md et applique leurs règles. Prends la première tâche non cochée de la phase en cours, implémente-la, vérifie son critère Fin, lance lint, typecheck et tests, commit, coche la case dans TASKS.md, puis continue avec la suivante. Fin de phase : écris "STOP: validation requise" seul sur la dernière ligne de TASKS.md. Tout terminé : écris "ALL DONE" seul sur la dernière ligne. Si une tâche est bloquée, note la commande et l erreur dans la section Problèmes bloquants ; si une tâche suivante en dépend, écris le marqueur d arrêt et arrête-toi, sinon passe à la suivante.'
 
 done_marker() {
   grep -qE "^(ALL DONE|STOP: validation requise)" TASKS.md 2>/dev/null
