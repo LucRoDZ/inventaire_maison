@@ -136,7 +136,7 @@
   - Tests : composants des deux encadrés (événements `online`, `offline`, mise à jour simulée). E2E Chromium : après une première visite, hors ligne, la coquille s'ouvre et l'encadré s'affiche.
   - Fin : l'e2e hors ligne passe.
 
-- [ ] **0.19 `deploy.sh` et sauvegarde de la base**
+- [x] **0.19 `deploy.sh` et sauvegarde de la base**
   - Résultat : déploiement en une commande, conforme aux 7 étapes du cahier.
   - Fichiers : `deploy.sh`, `scripts/backup-db.sh`.
   - Comportement : `set -euo pipefail` ; vérifie `.env` et Docker ; `pg_dump` compressé dans `backups/` (14 conservés, étape sautée si la base ne tourne pas encore ou avec `--no-backup`) ; `git pull --ff-only` ; `docker compose build` (`--no-cache` en option) ; `up -d --remove-orphans` ; attente des healthchecks avec délai maximal et affichage de l'état ; suppression des images orphelines. Relançable sans risque. Ne contient aucune commande SSH.

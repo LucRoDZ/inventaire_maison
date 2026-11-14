@@ -29,6 +29,8 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
+      - name: Shellcheck
+        run: shellcheck deploy.sh scripts/*.sh
 
   test-api:
     runs-on: ubuntu-latest
@@ -142,6 +144,8 @@ jobs:
       - name: Health check through the proxy
         run: |
           curl -sfk https://localhost/api/health | tee /dev/stderr | grep -q '"status":"ok"'
+      - name: Database backup script
+        run: scripts/test-backup-db.sh
       - name: Show state on failure
         if: failure()
         run: docker compose ps -a && docker compose logs --tail=80
