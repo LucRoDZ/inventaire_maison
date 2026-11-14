@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` }];
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          { key: 'Permissions-Policy', value: 'camera=(self)' },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

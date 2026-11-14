@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Fails when a colour is written by hand in the web app: hex, rgb()/hsl(), or a Tailwind palette class.
-// Colours come from tokens.css only. Usage: node scripts/check-colors.mjs [dir...]
+// Colours come from tokens.css only. A line containing `check-colors:allow` is skipped: use it only
+// where a literal is imposed (web manifest, theme-color meta). Usage: node scripts/check-colors.mjs [dir...]
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
@@ -44,6 +45,7 @@ export function findViolations(roots) {
       readFileSync(file, 'utf8')
         .split('\n')
         .forEach((line, index) => {
+          if (line.includes('check-colors:allow')) return;
           for (const rule of RULES) {
             for (const match of line.matchAll(rule.regex)) {
               violations.push({ file, line: index + 1, text: match[0], rule: rule.name });

@@ -1,9 +1,26 @@
 import '@fontsource/carlito/latin-400.css';
 import '@fontsource/carlito/latin-700.css';
 import './globals.css';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { APP_NAME, APP_SHORT_NAME, THEME_COLOR } from './manifest';
 
-export const metadata = { title: 'Inventaire maison' };
+export const metadata: Metadata = {
+  title: APP_NAME,
+  applicationName: APP_NAME,
+  robots: { index: false, follow: false },
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
+  appleWebApp: { capable: true, title: APP_SHORT_NAME, statusBarStyle: 'default' },
+  // Next only emits the standard tag; Safari on iOS still reads the Apple one.
+  other: { 'apple-mobile-web-app-capable': 'yes' },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: THEME_COLOR,
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

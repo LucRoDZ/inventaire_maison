@@ -122,7 +122,7 @@
   - Tests : composants : formulaire (validation, message d'erreur), barre d'onglets (onglet actif). E2E : redirection sans session, mauvais mot de passe, connexion, rechargement toujours connecté, déconnexion.
   - Fin : `npm run test:e2e` passe sur Chromium et WebKit.
 
-- [ ] **0.17 Manifeste, icônes et balises iOS**
+- [x] **0.17 Manifeste, icônes et balises iOS**
   - Résultat : application installable.
   - Fichiers : `apps/web/app/manifest.ts`, `apps/web/app/robots.ts`, `apps/web/assets/icon.svg`, `scripts/generate-icons.mjs`, `apps/web/public/icons/`, métadonnées de `app/layout.tsx`, en-têtes dans `next.config.ts`.
   - Comportement : manifeste conforme au tableau du cahier (« Inventaire maison », « Inventaire », `standalone`, `portrait`, `fr`, thème indigo) ; icônes 192, 512, 512 maskable et `apple-touch-icon` 180 générées avec sharp ; balises `apple-mobile-web-app-*`, `viewport-fit=cover` ; `robots.txt` qui interdit tout ; en-têtes `X-Robots-Tag` et `Permissions-Policy`.

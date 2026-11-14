@@ -59,6 +59,10 @@ describe('check-colors', () => {
     ).toBe(0);
   });
 
+  it('skips a line marked check-colors:allow', () => {
+    expect(run('m.ts', `export const c = '#1800ad'; // check-colors:allow`).status).toBe(0);
+  });
+
   it('ignores node_modules and spec files', () => {
     mkdirSync(path.join(dir, 'node_modules'));
     writeFileSync(path.join(dir, 'node_modules', 'x.css'), '.x { color: #ff0000; }');
