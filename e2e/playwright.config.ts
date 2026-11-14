@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env['E2E_BASE_URL'] ?? 'http://localhost:3000';
+const databaseUrl =
+  process.env['E2E_DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_e2e';
+
+export const ADMIN_USERNAME = 'admin';
+export const ADMIN_PASSWORD = 'e2e-admin-password';
 
 export default defineConfig({
   testDir: './tests',
@@ -14,18 +19,17 @@ export default defineConfig({
     { name: 'webkit-mobile', use: { ...devices['iPhone 14'] } },
   ],
   webServer: {
-    command: 'npm run build && npm run start',
+    command: 'node e2e/reset-db.mjs && npm run build && npm run start',
     cwd: '..',
     url: `${baseURL}/api/health`,
     reuseExistingServer: !process.env['CI'],
-    env: {
-      DATABASE_URL:
-        process.env['DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_test',
-      SESSION_SECRET: process.env['SESSION_SECRET'] ?? 'e2e-session-secret-e2e-session-secret-00',
-      ADMIN_USERNAME: process.env['ADMIN_USERNAME'] ?? 'admin',
-      ADMIN_PASSWORD: process.env['ADMIN_PASSWORD'] ?? 'e2e-admin-password',
-      OFF_USER_AGENT: process.env['OFF_USER_AGENT'] ?? 'InventaireMaison-E2E/1.0',
-    },
     timeout: 240_000,
+    env: {
+      DATABASE_URL: databaseUrl,
+      SESSION_SECRET: 'e2e-session-secret-e2e-session-secret-00',
+      ADMIN_USERNAME,
+      ADMIN_PASSWORD,
+      OFF_USER_AGENT: 'InventaireMaison-E2E/1.0',
+    },
   },
 });

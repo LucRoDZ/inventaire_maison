@@ -115,7 +115,7 @@
   - Tests : rendu et rôle accessible de chaque composant ; test du script avec un fichier fautif.
   - Fin : `npm run lint` passe, et échoue si l'on ajoute `color: #ff0000` dans un composant.
 
-- [ ] **0.16 Page de connexion et coquille de l'application**
+- [x] **0.16 Page de connexion et coquille de l'application**
   - Résultat : connexion de bout en bout et navigation à quatre onglets.
   - Fichiers : `apps/web/app/connexion/page.tsx`, `apps/web/app/(app)/layout.tsx`, `apps/web/components/nav/BottomNav.tsx`, `apps/web/lib/{api,auth}.ts`, `apps/web/middleware.ts`, pages provisoires des onglets.
   - Comportement : formulaire pseudo et mot de passe en français ; erreurs 401, 429 et réseau affichées dans un `Callout` ; sans cookie, toute page redirige vers `/connexion` ; une réponse 401 de l'API renvoie à la connexion ; onglets Scanner, Inventaire, À classer, Plus, l'actif en ambre ; déconnexion depuis Plus ; marges `env(safe-area-inset-*)`.
@@ -559,6 +559,7 @@
 - 14/11/2026 : M1. Journal non reconstructible par date limite ; tri « date d'ajout » sans colonne : Colonnes ajoutées : `stock_movements.expiry_date`, `stock_items.created_at`.
 - 14/11/2026 : M2. Stockage de l'anti-force-brute : Table `login_attempts(username, ip, created_at)`. Réponse 429 avec `Retry-After`. IP lue derrière un seul proxy de confiance.
 - 14/11/2026 : D1. Schéma, deux détails : (a) l'unicité de `products.barcode` crée déjà l'index `products(barcode)`, aucun second index n'est ajouté ; (b) l'unicité du pseudo est un index unique sur `lower(username)` (insensible à la casse) ; les noms de catégorie sont uniques de la même façon et une seule catégorie peut être `is_fallback`. Les migrations sont appliquées au démarrage par l'API (`MigrationRunner`) ; l'extension `pg_trgm` est créée en tête de `0000_init.sql`.
+- 14/11/2026 : D2. Next.js 16 a renommé `middleware.ts` en `proxy.ts` (l'ancien nom est déprécié) : la redirection vers `/connexion` est dans `apps/web/proxy.ts`. Les e2e utilisent leur propre base `inventaire_e2e`, recréée à chaque lancement par `e2e/reset-db.mjs`, pour ne pas partager les utilisateurs avec les tests de l'API.
 - 14/11/2026 : M3. Routes absentes du tableau : `GET /products/{id}`, `GET /images/{fichier}` (session exigée, cache immuable), `POST /stock/remove` (retrait automatique T7).
 - 14/11/2026 : M4. Catégorie « Autre » supprimable ? : Colonne `categories.is_fallback` : non supprimable. Supprimer une catégorie renvoie ses produits vers « Autre ».
 - 14/11/2026 : M5. Suppression d'une étagère quand le « Non rangé » a déjà le même produit à la même date : Fusion des quantités dans la transaction, deux mouvements `move`.
