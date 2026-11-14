@@ -129,7 +129,7 @@
   - Tests : unitaire du manifeste (champs, tailles, `short_name` de 12 caractères au plus) ; e2e : `/manifest.webmanifest` et chaque icône répondent 200.
   - Fin : `curl -s localhost:3000/manifest.webmanifest` contient `"display":"standalone"`.
 
-- [ ] **0.18 Service worker, hors connexion, nouvelle version**
+- [x] **0.18 Service worker, hors connexion, nouvelle version**
   - Résultat : coquille disponible hors ligne et mise à jour proposée.
   - Fichiers : `apps/web/app/sw.ts`, configuration Serwist, `apps/web/components/pwa/{OfflineCallout,UpdateCallout,RegisterSW}.tsx`, `apps/web/lib/online.ts`.
   - Comportement : précache de la coquille (JS, CSS, polices, icônes) ; images produits en `stale-while-revalidate` ; `GET /api` réseau d'abord, `/api/auth` jamais en cache, écritures jamais interceptées ; hors ligne : encadré « Pas de connexion » qui dit que l'ajout et le retrait sont indisponibles ; nouvelle version : « Nouvelle version disponible » et bouton Actualiser ; caches vidés à la déconnexion ; service worker inactif en `npm run dev`.

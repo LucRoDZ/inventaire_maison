@@ -1,5 +1,6 @@
 import type { AuthUser } from '@inventaire/shared';
 import { ApiError, apiFetch } from './api';
+import { clearAppCaches } from './clear-caches';
 
 export function login(username: string, password: string): Promise<AuthUser> {
   return apiFetch<AuthUser>('/auth/login', {
@@ -9,8 +10,10 @@ export function login(username: string, password: string): Promise<AuthUser> {
   });
 }
 
-export function logout(): Promise<void> {
-  return apiFetch('/auth/logout', { method: 'POST' });
+export async function logout(): Promise<void> {
+  await apiFetch('/auth/logout', { method: 'POST' });
+  // Private data must not stay on the device after sign-out.
+  await clearAppCaches();
 }
 
 export function fetchMe(): Promise<AuthUser> {

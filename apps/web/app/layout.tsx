@@ -3,6 +3,8 @@ import '@fontsource/carlito/latin-700.css';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { OfflineCallout } from '../components/pwa/OfflineCallout';
+import { RegisterSW } from '../components/pwa/RegisterSW';
 import { APP_NAME, APP_SHORT_NAME, THEME_COLOR } from './manifest';
 
 export const metadata: Metadata = {
@@ -25,7 +27,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <div className="mx-auto flex max-w-xl flex-col gap-2 px-4 pt-4 empty:hidden">
+          <OfflineCallout />
+          <RegisterSW />
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
