@@ -73,7 +73,7 @@
   - Tests : unitaires du schéma d'environnement ; intégration : santé 200 avec base, 503 avec un pool simulé en erreur.
   - Fin : `npm run test:api` passe ; `docker compose stop db` fait passer `/api/health` à 503.
 
-- [ ] **0.10 Schéma et première migration**
+- [x] **0.10 Schéma et première migration**
   - Résultat : toutes les tables du modèle de données, avec contraintes et index.
   - Fichiers : `apps/api/src/database/schema/*.ts`, `apps/api/drizzle/0000_*.sql`.
   - Comportement : tables `users` (+ `disabled_at`), `sessions` (+ `last_seen_at`), `login_attempts`, `locations`, `shelves`, `categories` (+ `is_fallback`), `off_category_map`, `products` (+ `search_text`), `stock_items` (+ `created_at`), `stock_movements` (+ `expiry_date`). Extension `pg_trgm`. Unicité `stock_items(product_id, location_id, shelf_id, expiry_date)` en `NULLS NOT DISTINCT`, `CHECK (quantity > 0)`, `CHECK (delta <> 0)`, pseudo unique en minuscules, `barcode` unique nullable. Index : `products(barcode)`, GIN trigramme sur `search_text`, `stock_items(location_id, shelf_id)`, `stock_items(expiry_date)`.
@@ -558,6 +558,7 @@
 - 14/11/2026 : A12. Boutons de la fiche d'ajout : « Ajouter » revient à l'écran d'origine ; « Ajouter et scanner le suivant » relance la caméra.
 - 14/11/2026 : M1. Journal non reconstructible par date limite ; tri « date d'ajout » sans colonne : Colonnes ajoutées : `stock_movements.expiry_date`, `stock_items.created_at`.
 - 14/11/2026 : M2. Stockage de l'anti-force-brute : Table `login_attempts(username, ip, created_at)`. Réponse 429 avec `Retry-After`. IP lue derrière un seul proxy de confiance.
+- 14/11/2026 : D1. Schéma, deux détails : (a) l'unicité de `products.barcode` crée déjà l'index `products(barcode)`, aucun second index n'est ajouté ; (b) l'unicité du pseudo est un index unique sur `lower(username)` (insensible à la casse) ; les noms de catégorie sont uniques de la même façon et une seule catégorie peut être `is_fallback`. Les migrations sont appliquées au démarrage par l'API (`MigrationRunner`) ; l'extension `pg_trgm` est créée en tête de `0000_init.sql`.
 - 14/11/2026 : M3. Routes absentes du tableau : `GET /products/{id}`, `GET /images/{fichier}` (session exigée, cache immuable), `POST /stock/remove` (retrait automatique T7).
 - 14/11/2026 : M4. Catégorie « Autre » supprimable ? : Colonne `categories.is_fallback` : non supprimable. Supprimer une catégorie renvoie ses produits vers « Autre ».
 - 14/11/2026 : M5. Suppression d'une étagère quand le « Non rangé » a déjà le même produit à la même date : Fusion des quantités dans la transaction, deux mouvements `move`.
