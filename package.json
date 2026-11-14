@@ -7,7 +7,8 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "e2e"
   ],
   "scripts": {
     "dev": "concurrently -n web,api -c auto \"npm run dev -w @inventaire/web\" \"npm run dev -w @inventaire/api\"",
@@ -17,7 +18,10 @@
     "format": "prettier --write .",
     "typecheck": "npm run build -w @inventaire/shared && npm run typecheck --workspaces --if-present",
     "test:api": "npm test -w @inventaire/api",
-    "test": "npm run test:api"
+    "test": "npm run test:api && npm run test:web",
+    "start": "concurrently -n web,api -c auto \"PORT=3001 npm run start -w @inventaire/api\" \"npm run start -w @inventaire/web\"",
+    "test:web": "npm test -w @inventaire/web",
+    "test:e2e": "npm test -w @inventaire/e2e"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

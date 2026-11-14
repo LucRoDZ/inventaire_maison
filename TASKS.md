@@ -575,3 +575,8 @@
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
+
+- 2026-11-14 : tâche 0.4 bloquée (non cochée). Le web (Vitest) et l'e2e Chromium passent ; le projet `webkit-mobile` échoue en local : WebKit ne démarre pas, bibliothèques système manquantes (`libgtk-4.so.1`, `libgraphene-1.0.so.0`, `libevent-2.1.so.7`, `libwebpdemux.so.2`, `libavif.so.16`, `libx264.so`, etc.).
+  - Commande : `npm run test:e2e` → `Host system is missing dependencies to run browsers` (projet `webkit-mobile`, 1 failed / 1 passed).
+  - Cause : `npx playwright install-deps webkit` exige sudo (`sudo: a password is required`), indisponible ici. Action pour Lucas : `sudo npx playwright install-deps webkit` sur cette machine, puis relancer la boucle. Les tâches 0.16, 0.18 et les e2e de la Phase 1 exigent WebKit : la phase s'arrête ici.
+STOP: validation requise
