@@ -24,7 +24,7 @@
   - Tests : sans objet.
   - Fin : `npm run lint && npm run format:check && npm run typecheck` passent.
 
-- [ ] **0.3 Tests de l'API**
+- [x] **0.3 Tests de l'API**
   - Résultat : Vitest (SWC) et supertest opérationnels dans `apps/api`.
   - Fichiers : `apps/api/vitest.config.ts`, `apps/api/test/setup.ts`, `apps/api/src/health/health.spec.ts`.
   - Comportement : l'application Nest est montée en mémoire par un utilitaire `createTestApp()` réutilisé par tous les tests d'intégration.

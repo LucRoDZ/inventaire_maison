@@ -12,6 +12,6 @@
     "baseUrl": "./",
     "incremental": true
   },
-  "include": ["src"],
+  "include": ["src", "test", "vitest.config.ts"],
   "extends": "../../tsconfig.base.json"
 }

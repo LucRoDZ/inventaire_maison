@@ -15,7 +15,9 @@
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "typecheck": "npm run build -w @inventaire/shared && npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run build -w @inventaire/shared && npm run typecheck --workspaces --if-present",
+    "test:api": "npm test -w @inventaire/api",
+    "test": "npm run test:api"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",
