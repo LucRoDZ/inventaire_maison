@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import { DB, type Database } from '../database/database.module';
 import { users } from '../database/schema';
 import { LOGIN_FAILURE_MESSAGE } from './auth.constants';
+import { LoginThrottleService } from './login-throttle.service';
 import { PasswordService } from './password.service';
 import { SessionService, type CreatedSession } from './session.service';
 
@@ -13,6 +14,7 @@ export class AuthService {
     @Inject(DB) private readonly db: Database,
     @Inject(PasswordService) private readonly passwords: PasswordService,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(LoginThrottleService) private readonly throttle: LoginThrottleService,
   ) {}
 
   /** Same answer, and a dummy hash, for an unknown username, a disabled account or a wrong password. */
@@ -20,19 +22,25 @@ export class AuthService {
     username: string,
     password: string,
     userAgent: string | undefined,
+    ip: string,
   ): Promise<{ user: AuthUser; session: CreatedSession }> {
+    await this.throttle.assertAllowed(username, ip);
+
     const [row] = await this.db
       .select()
       .from(users)
-      .where(eq(sql`lower(${users.username})`, username.trim().toLowerCase()));
+      .where(eq(sql`lower(${users.username})`, LoginThrottleService.key(username)));
 
     if (!row || row.disabledAt !== null) {
       await this.passwords.verifyDummy(password);
+      await this.throttle.recordFailure(username, ip);
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
     if (!(await this.passwords.verify(row.passwordHash, password))) {
+      await this.throttle.recordFailure(username, ip);
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
+    await this.throttle.clear(username, ip);
 
     const session = await this.sessions.create(row.id, userAgent);
     return {

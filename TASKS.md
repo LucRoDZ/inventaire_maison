@@ -94,7 +94,7 @@
   - Tests : unitaires du service de mot de passe et de session ; intégration : connexion réussie, mauvais mot de passe, pseudo inconnu, casse du pseudo, compte désactivé, cookie (attributs et durée), `me` sans cookie, déconnexion, session expirée, prolongation, route quelconque sans session, admin créé une seule fois.
   - Fin : `POST /api/auth/login` renvoie 401 avec un mauvais mot de passe et 200 avec le bon ; `GET /api/locations` sans cookie renvoie 401.
 
-- [ ] **0.13 Anti-force-brute et limite de débit**
+- [x] **0.13 Anti-force-brute et limite de débit**
   - Résultat : 5 échecs en 15 minutes bloquent le couple pseudo + IP pendant 15 minutes ; débit global limité.
   - Fichiers : `apps/api/src/auth/login-throttle.service.ts`, configuration `@nestjs/throttler`, `main.ts` (`trust proxy` à 1).
   - Comportement : sixième tentative : 429 « Trop de tentatives, réessayez dans 15 minutes » avec `Retry-After`, même avec le bon mot de passe ; un succès efface les échecs du couple ; une autre IP ou un autre pseudo n'est pas bloqué ; purge des tentatives de plus de 24 h. Limite globale : 300 requêtes par minute et par IP, 429 au-delà.

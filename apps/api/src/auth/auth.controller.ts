@@ -14,6 +14,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthCookieService } from './auth-cookie.service';
 import { AuthService } from './auth.service';
+import { TooManyAttemptsException } from './login-throttle.service';
 import { Public } from './public.decorator';
 import { SessionService } from './session.service';
 
@@ -40,11 +41,21 @@ export class AuthController {
   ): Promise<AuthUser> {
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException('Pseudo et mot de passe requis');
-    const { user, session } = await this.auth.login(
-      parsed.data.username,
-      parsed.data.password,
-      req.get('user-agent'),
-    );
+    let result;
+    try {
+      result = await this.auth.login(
+        parsed.data.username,
+        parsed.data.password,
+        req.get('user-agent'),
+        req.ip ?? 'unknown',
+      );
+    } catch (error) {
+      if (error instanceof TooManyAttemptsException) {
+        res.setHeader('Retry-After', String(error.retryAfterSeconds));
+      }
+      throw error;
+    }
+    const { user, session } = result;
     this.cookies.set(res, session.token, session.expiresAt);
     return user;
   }
