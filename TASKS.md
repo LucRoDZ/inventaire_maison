@@ -101,7 +101,7 @@
   - Tests : intégration avec horloge simulée : blocage au sixième essai, déblocage après 15 minutes, indépendance des couples, remise à zéro après succès.
   - Fin : six `POST /api/auth/login` erronés de suite : le sixième renvoie 429.
 
-- [ ] **0.14 Contrôle de l'origine, rôles, changement de mot de passe**
+- [x] **0.14 Contrôle de l'origine, rôles, changement de mot de passe**
   - Résultat : protection CSRF, garde `admin` prête, chacun peut changer son mot de passe.
   - Fichiers : `apps/api/src/auth/{origin.guard,roles.guard,roles.decorator}.ts`, route `POST /auth/password`.
   - Comportement : `POST`, `PATCH`, `DELETE` sans en-tête `Origin` ou avec une origine différente de l'origine publique : 403. `@Roles('admin')` : 403 pour un membre. `POST /api/auth/password` `{currentPassword, newPassword}` : 204 et révocation des autres sessions ; 400 si le nouveau fait moins de 8 ou plus de 128 caractères ; 403 si l'actuel est faux.

@@ -3,7 +3,7 @@ import { count } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { createUser, FakeClock, MINUTE, HOUR, resetAuth } from '../../test/helpers';
+import { createUser, FakeClock, MINUTE, HOUR, ORIGIN, resetAuth } from '../../test/helpers';
 import { DB, type Database } from '../database/database.module';
 import { loginAttempts } from '../database/schema';
 import { LoginThrottleService } from './login-throttle.service';
@@ -14,6 +14,7 @@ let clock: FakeClock;
 const login = (username: string, password: string, ip = '10.0.0.1') =>
   request(app.getHttpServer())
     .post('/api/auth/login')
+    .set('Origin', ORIGIN)
     .set('X-Forwarded-For', ip)
     .send({ username, password });
 

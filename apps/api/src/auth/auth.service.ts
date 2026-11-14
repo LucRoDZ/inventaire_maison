@@ -1,9 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { AuthUser } from '@inventaire/shared';
 import { eq, sql } from 'drizzle-orm';
 import { DB, type Database } from '../database/database.module';
 import { users } from '../database/schema';
-import { LOGIN_FAILURE_MESSAGE } from './auth.constants';
+import { LOGIN_FAILURE_MESSAGE, WRONG_CURRENT_PASSWORD_MESSAGE } from './auth.constants';
 import { LoginThrottleService } from './login-throttle.service';
 import { PasswordService } from './password.service';
 import { SessionService, type CreatedSession } from './session.service';
@@ -47,5 +47,21 @@ export class AuthService {
       user: { id: row.id, username: row.username, role: row.role as AuthUser['role'] },
       session,
     };
+  }
+
+  /** Changes the password of a user and revokes all of their other sessions. */
+  async changePassword(
+    userId: number,
+    currentSessionId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const [row] = await this.db.select().from(users).where(eq(users.id, userId));
+    if (!row || !(await this.passwords.verify(row.passwordHash, currentPassword))) {
+      throw new ForbiddenException(WRONG_CURRENT_PASSWORD_MESSAGE);
+    }
+    const passwordHash = await this.passwords.hash(newPassword);
+    await this.db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    await this.sessions.deleteForUser(userId, currentSessionId);
   }
 }

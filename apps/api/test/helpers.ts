@@ -19,6 +19,9 @@ export class FakeClock implements Clock {
   }
 }
 
+/** Origin header accepted by the CSRF guard in tests (default PUBLIC_ORIGIN). */
+export const ORIGIN = 'http://localhost:3000';
+
 export const MINUTE = 60 * 1000;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;

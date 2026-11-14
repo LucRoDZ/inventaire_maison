@@ -8,6 +8,7 @@ import {
   DAY,
   FakeClock,
   HOUR,
+  ORIGIN,
   resetAuth,
   setCookieLine,
 } from '../../test/helpers';
@@ -23,7 +24,7 @@ let db: Database;
 
 const server = () => app.getHttpServer();
 const login = (username: string, password: string) =>
-  request(server()).post('/api/auth/login').send({ username, password });
+  request(server()).post('/api/auth/login').set('Origin', ORIGIN).send({ username, password });
 
 async function loginCookie(username: string, password: string): Promise<string> {
   const res = await login(username, password);
@@ -94,10 +95,17 @@ describe('POST /api/auth/login', () => {
   });
 
   it('answers 400 on an invalid body', async () => {
-    expect((await request(server()).post('/api/auth/login').send({})).status).toBe(400);
+    expect(
+      (await request(server()).post('/api/auth/login').set('Origin', ORIGIN).send({})).status,
+    ).toBe(400);
     expect((await login('', 'x')).status).toBe(400);
     expect(
-      (await request(server()).post('/api/auth/login').send({ username: 1, password: 2 })).status,
+      (
+        await request(server())
+          .post('/api/auth/login')
+          .set('Origin', ORIGIN)
+          .send({ username: 1, password: 2 })
+      ).status,
     ).toBe(400);
   });
 });
@@ -123,7 +131,10 @@ describe('GET /api/auth/me', () => {
 describe('POST /api/auth/logout', () => {
   it('deletes the session and clears the cookie', async () => {
     const cookie = await loginCookie('lucas', 'motdepasse1');
-    const res = await request(server()).post('/api/auth/logout').set('Cookie', cookie);
+    const res = await request(server())
+      .post('/api/auth/logout')
+      .set('Origin', ORIGIN)
+      .set('Cookie', cookie);
     expect(res.status).toBe(204);
     expect(setCookieLine(res, 'inv_session')).toMatch(/inv_session=;/);
     const [row] = await db.select({ n: count() }).from(sessions);
@@ -170,8 +181,10 @@ describe('session lifetime', () => {
 describe('global guard', () => {
   it('answers 401 on any route without a session, except login and health', async () => {
     expect((await request(server()).get('/api/locations')).status).toBe(401);
-    expect((await request(server()).post('/api/anything')).status).toBe(401);
-    expect((await request(server()).delete('/api/products/1')).status).toBe(401);
+    expect((await request(server()).post('/api/anything').set('Origin', ORIGIN)).status).toBe(401);
+    expect((await request(server()).delete('/api/products/1').set('Origin', ORIGIN)).status).toBe(
+      401,
+    );
     expect((await request(server()).get('/api/health')).status).toBe(200);
   });
 

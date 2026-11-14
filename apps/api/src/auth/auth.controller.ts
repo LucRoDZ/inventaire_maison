@@ -12,6 +12,7 @@ import {
 import type { AuthUser } from '@inventaire/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@inventaire/shared';
 import { AuthCookieService } from './auth-cookie.service';
 import { AuthService } from './auth.service';
 import { TooManyAttemptsException } from './login-throttle.service';
@@ -21,6 +22,11 @@ import { SessionService } from './session.service';
 const loginSchema = z.object({
   username: z.string().trim().min(1).max(64),
   password: z.string().min(1).max(128),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+  newPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
 });
 
 @Controller('auth')
@@ -71,5 +77,23 @@ export class AuthController {
   me(@Req() req: Request): AuthUser {
     const { id, username, role } = req.user!;
     return { id, username, role };
+  }
+
+  @Post('password')
+  @HttpCode(204)
+  async changePassword(@Body() body: unknown, @Req() req: Request): Promise<void> {
+    const parsed = passwordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        `Le nouveau mot de passe doit faire entre ${PASSWORD_MIN_LENGTH} et ${PASSWORD_MAX_LENGTH} caractères`,
+      );
+    }
+    const user = req.user!;
+    await this.auth.changePassword(
+      user.id,
+      user.sessionId,
+      parsed.data.currentPassword,
+      parsed.data.newPassword,
+    );
   }
 }
