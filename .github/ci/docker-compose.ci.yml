@@ -1,0 +1,14 @@
+# CI only: local layer cache restored by actions/cache.
+services:
+  web:
+    build:
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache/web
+      cache_to:
+        - type=local,dest=/tmp/.buildx-cache-new/web,mode=max
+  api:
+    build:
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache/api
+      cache_to:
+        - type=local,dest=/tmp/.buildx-cache-new/api,mode=max
