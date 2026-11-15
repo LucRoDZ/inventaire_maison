@@ -393,7 +393,7 @@
   - Tests : composants des formulaires. E2E : l'admin crée un membre, qui se connecte ; l'admin le désactive, sa connexion échoue.
   - Fin : l'e2e passe.
 
-- [ ] **1.32 Administration : lieux et étagères**
+- [x] **1.32 Administration : lieux et étagères**
   - Résultat : renommer et réordonner les lieux, gérer leurs étagères.
   - Fichiers : `apps/web/app/(app)/plus/administration/lieux/page.tsx`.
   - Comportement : nom, icône et ordre d'un lieu ; ajouter, renommer, changer le type, réordonner (boutons monter et descendre), supprimer une étagère avec confirmation « les produits iront dans Non rangé ».

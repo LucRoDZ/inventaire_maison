@@ -724,3 +724,73 @@ test('administration : l’admin crée un membre qui se connecte, puis le désac
   ).toBeVisible();
   await other.close();
 });
+
+const SHELF_ADMIN = {
+  'chromium-mobile': { shelf: 'Étagère admin A', product: 'Olives admin A', code: '3760010000004' },
+  'webkit-mobile': { shelf: 'Étagère admin B', product: 'Raisins admin B', code: '3760011111113' },
+} as const;
+
+test('administration : une étagère ajoutée apparaît dans la vue Maison ; supprimée, ses produits passent en Non rangé', async ({
+  page,
+}, testInfo) => {
+  const { shelf, product } = SHELF_ADMIN[testInfo.project.name as keyof typeof SHELF_ADMIN];
+  const origin = { Origin: testInfo.project.use.baseURL! };
+  await signIn(page);
+  await page.goto('/plus/administration/lieux');
+  const cellar = page.getByRole('region', { name: 'Lieu Cave' });
+  await expect(cellar).toBeVisible();
+
+  await cellar.getByLabel('Nom de la nouvelle étagère').fill(shelf);
+  await cellar.getByRole('button', { name: 'Ajouter l’étagère' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Étagère ajoutée.' })).toBeVisible();
+  await expect(cellar.getByRole('listitem', { name: shelf })).toBeVisible();
+
+  // The shelf shows in the open furniture.
+  await page.goto('/inventaire');
+  await page.getByRole('link', { name: /^Cave/ }).click();
+  await expect(page.getByRole('region', { name: shelf })).toBeVisible();
+
+  // Put a product on it through the API, then delete the shelf from the administration.
+  const categories = (await (await page.request.get('/api/categories')).json()) as { id: number }[];
+  const created = await page.request.post('/api/products', {
+    headers: origin,
+    data: { name: product, categoryId: categories[0]!.id },
+  });
+  const { id: productId } = (await created.json()) as { id: number };
+  const places = (await (await page.request.get('/api/locations')).json()) as {
+    id: number;
+    name: string;
+    shelves: { id: number; name: string }[];
+  }[];
+  const cave = places.find((l) => l.name === 'Cave')!;
+  const shelfId = cave.shelves.find((s) => s.name === shelf)!.id;
+  const adjust = await page.request.post('/api/stock/adjust', {
+    headers: origin,
+    data: {
+      productId,
+      locationId: cave.id,
+      shelfId,
+      delta: 2,
+      reason: 'manual',
+    },
+  });
+  expect(adjust.ok()).toBe(true);
+
+  await page.goto('/plus/administration/lieux');
+  const row = page
+    .getByRole('region', { name: 'Lieu Cave' })
+    .getByRole('listitem', { name: shelf });
+  await row.getByRole('button', { name: 'Supprimer' }).click();
+  await expect(row).toContainText('Les produits iront dans Non rangé.');
+  await row.getByRole('button', { name: 'Confirmer la suppression' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Étagère supprimée.' })).toBeVisible();
+
+  await page.goto('/inventaire');
+  await page.getByRole('link', { name: /^Cave/ }).click();
+  await expect(page.getByRole('region', { name: shelf })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole('region', { name: 'Non rangé' })
+      .getByRole('button', { name: `${product}, quantité 2` }),
+  ).toBeVisible();
+});
