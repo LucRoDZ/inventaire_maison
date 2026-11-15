@@ -71,7 +71,7 @@ Modifier nom, catégorie, photo et lieu habituel ; voir le stock par lieu et l'h
 
 ### 6. À classer
 
-Liste des produits dont la catégorie est « Autre » ou a été devinée automatiquement, avec un classement en un tap.
+Liste des produits en stock dont la catégorie a été devinée automatiquement et que personne n'a encore confirmée, avec un classement en un tap. Une catégorie « Autre » choisie ou confirmée par une personne est un classement valide : le produit sort de la liste (corrigé le 15 novembre 2026, voir `TASKS.md` P1.46).
 
 ### 7. Administration (rôle admin)
 

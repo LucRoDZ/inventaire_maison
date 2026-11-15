@@ -78,15 +78,9 @@ export class ProductsService {
             .from(stockItems)
             .where(eq(stockItems.productId, products.id)),
         ),
-        or(
-          eq(products.categoryGuessed, true),
-          exists(
-            this.db
-              .select({ one: sql`1` })
-              .from(categories)
-              .where(and(eq(categories.id, products.categoryId), eq(categories.isFallback, true))),
-          ),
-        ) as SQL,
+        // Only a category nobody has confirmed yet is pending. « Autre » chosen or confirmed by a
+        // person is a valid classification: counting it would keep the product here for ever.
+        eq(products.categoryGuessed, true),
       );
     }
 
