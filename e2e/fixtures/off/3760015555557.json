@@ -1,0 +1,11 @@
+{
+  "code": "3760015555557",
+  "status": 1,
+  "product": {
+    "product_name": "Beurre fermier salé",
+    "product_name_fr": "Beurre fermier salé",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:butters"]
+  }
+}
