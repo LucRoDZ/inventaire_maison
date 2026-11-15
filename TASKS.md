@@ -400,7 +400,7 @@
   - Tests : composants. E2E : une étagère ajoutée apparaît dans la vue Maison ; supprimée, ses produits passent en « Non rangé ».
   - Fin : l'e2e passe.
 
-- [ ] **1.33 Administration : catégories et correspondances**
+- [x] **1.33 Administration : catégories et correspondances**
   - Résultat : gérer les catégories et la table Open Food Facts.
   - Fichiers : `apps/web/app/(app)/plus/administration/{categories,correspondances}/page.tsx`.
   - Comportement : nom, icône (sélecteur d'icônes Lucide), ordre ; suppression avec confirmation « les produits iront dans Autre » ; « Autre » non supprimable ; correspondances : liste filtrable, ajout, modification, suppression, doublon signalé.

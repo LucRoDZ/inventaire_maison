@@ -794,3 +794,44 @@ test('administration : une étagère ajoutée apparaît dans la vue Maison ; sup
       .getByRole('button', { name: `${product}, quantité 2` }),
   ).toBeVisible();
 });
+
+const MAPPING = {
+  'chromium-mobile': {
+    tag: 'en:herbal-teas',
+    code: '3760012222223',
+    name: 'Tisane du classement admin',
+  },
+  'webkit-mobile': { tag: 'en:syrups', code: '3760013333331', name: 'Sirop du classement admin' },
+} as const;
+
+test('administration : une correspondance ajoutée classe un produit scanné ensuite', async ({
+  page,
+}, testInfo) => {
+  const { tag, code, name } = MAPPING[testInfo.project.name as keyof typeof MAPPING];
+  await signIn(page);
+  await page.goto('/plus/administration/correspondances');
+
+  // A tag nobody mapped yet: the same tag twice is reported.
+  const form = page.getByRole('form', { name: 'Ajouter une correspondance' });
+  await form.getByLabel('Nouveau tag Open Food Facts').fill(tag);
+  await form.getByLabel('Catégorie du nouveau tag').selectOption({ label: 'Boissons' });
+  await form.getByRole('button', { name: 'Ajouter la correspondance' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Correspondance ajoutée.' }),
+  ).toBeVisible();
+  await form.getByLabel('Nouveau tag Open Food Facts').fill(tag);
+  await form.getByRole('button', { name: 'Ajouter la correspondance' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'déjà associé' })).toBeVisible();
+
+  await startScannerFrom(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  const proposed = sheet.getByLabel('Catégorie proposée');
+  await expect(proposed).toBeVisible();
+  await expect(proposed.locator('option:checked')).toHaveText('Boissons');
+});
+
+async function startScannerFrom(page: Page) {
+  await page.goto('/');
+  await startScanner(page);
+}

@@ -1,0 +1,11 @@
+{
+  "code": "3760013333331",
+  "status": 1,
+  "product": {
+    "product_name": "Sirop du classement admin",
+    "product_name_fr": "Sirop du classement admin",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:syrups"]
+  }
+}
