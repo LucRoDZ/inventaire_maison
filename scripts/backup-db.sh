@@ -6,7 +6,8 @@
 #   BACKUP_DIR   target directory           (default: <repo>/backups)
 #   BACKUP_KEEP  number of dumps to keep    (default: 14)
 #
-# Exit 0 without a dump when the db service is not running yet (first deployment).
+# Exit 0 without a dump when the db service is not running yet (first deployment);
+# exit 1 when Docker Compose cannot be queried.
 set -euo pipefail
 # Dumps contain password hashes: readable by the owner only (directory 700, files 600).
 umask 077
@@ -21,7 +22,13 @@ if ! [[ "$keep" =~ ^[1-9][0-9]*$ ]]; then
   exit 2
 fi
 
-if ! docker compose ps --status running --services 2>/dev/null | grep -qx 'db'; then
+# A failing `docker compose ps` is an error, not a stopped database: deploy.sh must not go on
+# without a backup. Only a successful listing without `db` skips the dump (first deployment).
+if ! running="$(docker compose ps --status running --services)"; then
+  echo "backup-db : impossible d'interroger Docker Compose, sauvegarde non faite." >&2
+  exit 1
+fi
+if ! grep -qx 'db' <<<"$running"; then
   echo "backup-db : la base ne tourne pas, sauvegarde ignorée."
   exit 0
 fi

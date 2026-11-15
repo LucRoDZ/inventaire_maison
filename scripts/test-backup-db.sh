@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Checks scripts/backup-db.sh against the running db service: a dump is created and the rotation keeps 14.
+# Checks scripts/backup-db.sh against the running db service: a dump is created (mode 600), the
+# rotation keeps 14, a Docker Compose error fails, a stopped database is skipped.
 # Requires `docker compose up -d --wait` beforehand.
 set -euo pipefail
 
@@ -31,5 +32,14 @@ count="$(find "$dir" -name 'inventaire-*.sql.gz' | wc -l)"
 [ ! -e "$dir/inventaire-20000101-000000.sql.gz" ] || fail "la plus ancienne sauvegarde devait être supprimée"
 newest="$(find "$dir" -name 'inventaire-*.sql.gz' -printf '%f\n' | sort | tail -n 1)"
 [[ "$newest" != inventaire-2000* ]] || fail "la nouvelle sauvegarde manque"
+
+# 3. A failing `docker compose ps` stops the script with an error instead of skipping the dump.
+if COMPOSE_FILE=/nonexistent/docker-compose.yml scripts/backup-db.sh >/dev/null 2>&1; then
+  fail "une erreur de docker compose doit faire échouer la sauvegarde"
+fi
+
+# 4. A project whose db is not running: the dump is skipped, exit 0.
+out="$(COMPOSE_PROJECT_NAME=inv-backup-test-absent scripts/backup-db.sh)" || fail "base absente : code de sortie non nul"
+[[ "$out" == *"sauvegarde ignorée"* ]] || fail "base absente : message attendu, reçu « $out »"
 
 echo "test-backup-db : OK"
