@@ -215,6 +215,7 @@ docker exec easyq-nginx-1 nginx -s reload                          # à lancer a
   ```
 
   `inventaire-web-1` et `inventaire-api-1` (préfixe : nom du dossier du projet Compose, ici `inventaire`) doivent y figurer ; sinon contrôler `COMPOSE_FILE` et `SHARED_PROXY_NETWORK` dans `.env`, puis relancer `./deploy.sh`. nginx résout les noms `inventaire-web` et `inventaire-api` à chaque requête : aucun rechargement n'est nécessaire une fois les conteneurs démarrés.
+- **L'API ne se connecte pas à la base (`password authentication failed`) alors que le mot de passe est bon** : le nom visé désigne la base d'une autre application du réseau partagé. L'API doit joindre `inventaire-db` (alias propre à ce projet, voir `docker-compose.yml`), jamais `db`.
 - **`/api/health` répond 503** : la base ne répond pas. `docker compose logs db api --tail=50`.
 - **Pas de connexion possible après changement de `SESSION_SECRET`** : normal, toutes les sessions sont révoquées ; se reconnecter.
 - **Connexions refusées en 429 pour tout le monde** : nginx n'envoie pas (ou pas la bonne) valeur de `X-Proxy-Secret` : l'API ignore alors `X-Forwarded-For` et voit toutes les requêtes venir de nginx. Comparer `proxy_set_header X-Proxy-Secret` dans `/opt/proxy/conf.d/inventaire.conf` avec `PROXY_SECRET` dans `/opt/inventaire/.env`.
