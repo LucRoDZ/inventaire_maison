@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 
 const PORT = Number(process.env.OFF_FIXTURE_PORT ?? 4010);
-const DOWN_CODES = new Set(['5000112637922']);
+const DOWN_CODES = new Set(['5000112637922', '3212345678906']);
 const dir = path.join(import.meta.dirname, 'off');
 
 createServer(async (req, res) => {

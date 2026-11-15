@@ -17,6 +17,7 @@ import type { ScanResult } from '../../lib/scanner/types';
 import { AddSheet, type AddedInfo } from '../add/AddSheet';
 import { UndoToast } from '../add/UndoToast';
 import { Callout } from '../ui/Callout';
+import { ProductForm } from '../product/ProductForm';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
 import { ManualCodeInput } from './ManualCodeInput';
 import { PhotoCodeButton } from './PhotoCodeButton';
@@ -26,15 +27,15 @@ export interface UnknownContext {
   barcode: string;
   reason: ScanUnknownReason;
   hints: ScanHints | null;
-  /** The product now exists: carry on with the add sheet. */
-  onCreated: (product: ProductDto) => void;
+  /** The product now exists: carry on with the add sheet. `notice` is shown if set. */
+  onCreated: (product: ProductDto, notice?: string) => void;
   onCancel: () => void;
 }
 
 interface ScanFlowProps {
   /** Furniture and shelf the scanner was opened from, when it was. */
   origin?: { locationId: number; shelfId?: number | null } | null;
-  /** The creation form (task 1.18) for a code Open Food Facts could not describe. */
+  /** Replaces the creation form for a code Open Food Facts could not describe (tests). */
   renderUnknown?: (context: UnknownContext) => ReactNode;
   /** Removal mode (task 1.20); without it a code read in that mode is ignored. */
   onRemoveCode?: (result: ScanResult) => void;
@@ -70,7 +71,8 @@ export function ScanFlow({
   const online = useOnline();
   const [mode, setMode] = useState<ScanMode>('add');
   const [step, setStep] = useState<Step>({ name: 'scanning' });
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ title: string; text: string } | null>(null);
+  const showNotice = (text: string, title = 'Scan impossible') => setNotice({ title, text });
   const [toast, setToast] = useState<AddedInfo | null>(null);
   const [refs, setRefs] = useState<References | null>(null);
   const controls = useRef<ScannerControls>(null);
@@ -108,7 +110,7 @@ export function ScanFlow({
         setStep({ name: 'add', product, reason });
       } catch {
         setStep({ name: 'scanning' });
-        setNotice('Impossible de charger les lieux et les catégories, réessayez.');
+        showNotice('Impossible de charger les lieux et les catégories, réessayez.');
       }
     },
     [loadReferences],
@@ -128,18 +130,25 @@ export function ScanFlow({
         });
         switch (outcome.kind) {
           case 'invalid':
-            setNotice(outcome.message);
+            showNotice(outcome.message);
             setStep({ name: 'scanning' });
             break;
           case 'offline':
-            setNotice(OFFLINE_MESSAGE);
+            showNotice('Réessayez quand la connexion sera revenue.', OFFLINE_MESSAGE);
             setStep({ name: 'scanning' });
             break;
           case 'error':
-            setNotice(outcome.message);
+            showNotice(outcome.message);
             setStep({ name: 'scanning' });
             break;
           case 'unknown':
+            try {
+              await loadReferences();
+            } catch {
+              showNotice('Impossible de charger les lieux et les catégories, réessayez.');
+              setStep({ name: 'scanning' });
+              break;
+            }
             setStep({
               name: 'unknown',
               barcode: outcome.barcode,
@@ -176,18 +185,15 @@ export function ScanFlow({
     try {
       await current?.undo();
     } catch (error) {
-      setNotice(error instanceof ApiError ? error.message : 'Impossible d’annuler, réessayez.');
+      showNotice(error instanceof ApiError ? error.message : 'Impossible d’annuler, réessayez.');
     }
   };
 
   return (
     <div className="flex flex-col gap-4">
       {notice ? (
-        <Callout
-          role="alert"
-          title={notice === OFFLINE_MESSAGE ? OFFLINE_MESSAGE : 'Scan impossible'}
-        >
-          {notice === OFFLINE_MESSAGE ? 'Réessayez quand la connexion sera revenue.' : notice}
+        <Callout role="alert" title={notice.title}>
+          {notice.text}
         </Callout>
       ) : null}
 
@@ -225,18 +231,32 @@ export function ScanFlow({
         />
       ) : null}
 
-      {step.name === 'unknown'
-        ? (renderUnknown?.({
-            barcode: step.barcode,
-            reason: step.reason,
-            hints: step.hints,
-            onCreated: (product) => void openAdd(product),
-            onCancel: () => setStep({ name: 'scanning' }),
-          }) ?? (
-            <Callout role="alert" title="Produit inconnu">
-              Ce code n’est pas encore au catalogue.
-            </Callout>
-          ))
+      {step.name === 'unknown' && refs
+        ? (() => {
+            const context: UnknownContext = {
+              barcode: step.barcode,
+              reason: step.reason,
+              hints: step.hints,
+              onCreated: (product, productNotice) => {
+                if (productNotice) showNotice(productNotice, 'Photo non envoyée');
+                void openAdd(product);
+              },
+              onCancel: () => setStep({ name: 'scanning' }),
+            };
+            return (
+              renderUnknown?.(context) ?? (
+                <ProductForm
+                  barcode={context.barcode}
+                  reason={context.reason}
+                  hints={context.hints}
+                  categories={refs.categories}
+                  locations={refs.locations}
+                  onCreated={context.onCreated}
+                  onCancel={context.onCancel}
+                />
+              )
+            );
+          })()
         : null}
 
       {toast ? (

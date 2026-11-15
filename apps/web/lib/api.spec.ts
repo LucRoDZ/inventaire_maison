@@ -19,6 +19,16 @@ const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
 describe('apiFetch', () => {
+  it('sends a FormData body as is, without a JSON content type', async () => {
+    fetchMock.mockResolvedValue(json(200, {}));
+    const form = new FormData();
+    form.append('image', new Blob(['x']), 'a.jpg');
+    await apiFetch('/products/1/image', { method: 'POST', body: form });
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    expect(init.body).toBe(form);
+    expect(init.headers).not.toHaveProperty('Content-Type');
+  });
+
   it('returns the parsed body', async () => {
     fetchMock.mockResolvedValue(json(200, { status: 'ok' }));
     expect(await apiFetch('/health')).toEqual({ status: 'ok' });

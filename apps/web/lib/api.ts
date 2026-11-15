@@ -38,10 +38,13 @@ export async function apiFetch<T = void>(path: string, options: ApiOptions = {})
       credentials: 'same-origin',
       ...init,
       headers: {
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        // A FormData body sets its own multipart boundary.
+        ...(body !== undefined && !(body instanceof FormData)
+          ? { 'Content-Type': 'application/json' }
+          : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(0, 'Impossible de joindre le serveur');
