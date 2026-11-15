@@ -15,6 +15,6 @@ import { StockService } from './stock.service';
     StockRemoveService,
     MovementHistoryService,
   ],
-  exports: [StockService],
+  exports: [StockService, StockQuery],
 })
 export class StockModule {}

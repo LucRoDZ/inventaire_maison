@@ -11,6 +11,7 @@ import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { SeedModule } from './database/seed/seed.module';
 import { HealthController } from './health/health.controller';
+import { HomeModule } from './home/home.module';
 import { ImagesModule } from './images/images.module';
 import { LocationsModule } from './locations/locations.module';
 import { UsersModule } from './users/users.module';
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     ScanModule,
     StockModule,
+    HomeModule,
     ImagesModule,
     NotFoundModule,
   ],

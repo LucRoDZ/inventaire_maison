@@ -6,8 +6,9 @@ export default defineConfig({
   test: {
     globals: false,
     fileParallelism: false,
-    // Setup hooks create and migrate a PostgreSQL database: 10 s is too short on a loaded machine.
-    hookTimeout: 30_000,
+    // Hooks create, migrate and drop PostgreSQL databases; DROP DATABASE waits for a checkpoint,
+    // which can take over 30 s right after the heavier suites on a loaded machine.
+    hookTimeout: 120_000,
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
