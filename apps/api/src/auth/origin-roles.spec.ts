@@ -1,9 +1,14 @@
 import { Controller, Get, type INestApplication, Post } from '@nestjs/common';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { count, eq } from 'drizzle-orm';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
 import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
+import { DB, type Database } from '../database/database.module';
+import { sessions, users } from '../database/schema';
+import { PasswordService } from './password.service';
 import { Roles } from './roles.decorator';
+import { SessionService } from './session.service';
 
 @Controller('test-admin')
 class TestAdminController {
@@ -37,6 +42,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 beforeEach(async () => {
@@ -195,6 +204,47 @@ describe('POST /api/auth/password', () => {
         .status,
     ).toBe(400);
     expect((await change(cookie, { currentPassword: 'motdepasse1' })).status).toBe(400);
+  });
+
+  it('refuses a login whose password changed while it was being checked', async () => {
+    const db = app.get<Database>(DB);
+    const passwords = app.get(PasswordService);
+    const newHash = await passwords.hash('nouveau-mdp-9');
+    const verify = passwords.verify.bind(passwords);
+    // The password change completes between the argon2 check and the creation of the session.
+    vi.spyOn(passwords, 'verify').mockImplementationOnce(async (hash, password) => {
+      const ok = await verify(hash, password);
+      await db.update(users).set({ passwordHash: newHash }).where(eq(users.username, 'membre'));
+      return ok;
+    });
+    const res = await request(server())
+      .post('/api/auth/login')
+      .set('Origin', ORIGIN)
+      .send({ username: 'membre', password: 'motdepasse1' });
+    expect(res.status).toBe(401);
+    const [row] = await db.select({ n: count() }).from(sessions);
+    expect(row!.n).toBe(0);
+  });
+
+  it('changes nothing when revoking the other sessions fails', async () => {
+    const here = await loginAs('membre');
+    const otherDevice = await loginAs('membre');
+    vi.spyOn(app.get(SessionService), 'deleteForUser').mockRejectedValueOnce(new Error('panne'));
+    const res = await change(here, {
+      currentPassword: 'motdepasse1',
+      newPassword: 'nouveau-mdp-9',
+    });
+    expect(res.status).toBe(500);
+    // Rolled back: the old password still works, the new one does not, the other device stays.
+    expect((await request(server()).get('/api/auth/me').set('Cookie', otherDevice)).status).toBe(
+      200,
+    );
+    await loginAs('membre', 'motdepasse1');
+    const withNew = await request(server())
+      .post('/api/auth/login')
+      .set('Origin', ORIGIN)
+      .send({ username: 'membre', password: 'nouveau-mdp-9' });
+    expect(withNew.status).toBe(401);
   });
 
   it('answers 401 without a session', async () => {

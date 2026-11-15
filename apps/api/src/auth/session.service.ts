@@ -4,7 +4,7 @@ import { and, eq, ne } from 'drizzle-orm';
 import { CLOCK, type Clock } from '../common/clock';
 import { APP_CONFIG } from '../config/config.module';
 import type { AppConfig } from '../config/env.schema';
-import { DB, type Database } from '../database/database.module';
+import { DB, type Database, type Executor } from '../database/database.module';
 import { sessions, users } from '../database/schema';
 import { SESSION_REFRESH_AFTER_MS, SESSION_TTL_MS } from './auth.constants';
 import type { RequestUser } from './auth.types';
@@ -40,11 +40,15 @@ export class SessionService {
     return sessionId(this.config.SESSION_SECRET, token);
   }
 
-  async create(userId: number, userAgent: string | undefined): Promise<CreatedSession> {
+  async create(
+    userId: number,
+    userAgent: string | undefined,
+    executor: Executor = this.db,
+  ): Promise<CreatedSession> {
     const token = randomBytes(32).toString('base64url');
     const now = this.clock.now();
     const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
-    await this.db.insert(sessions).values({
+    await executor.insert(sessions).values({
       id: this.idOf(token),
       userId,
       expiresAt,
@@ -99,8 +103,12 @@ export class SessionService {
   }
 
   /** Revokes every session of a user, optionally keeping one. */
-  async deleteForUser(userId: number, exceptSessionId?: string): Promise<void> {
-    await this.db
+  async deleteForUser(
+    userId: number,
+    exceptSessionId?: string,
+    executor: Executor = this.db,
+  ): Promise<void> {
+    await executor
       .delete(sessions)
       .where(
         exceptSessionId === undefined

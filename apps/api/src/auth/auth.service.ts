@@ -6,6 +6,7 @@ import { users } from '../database/schema';
 import { LOGIN_FAILURE_MESSAGE, WRONG_CURRENT_PASSWORD_MESSAGE } from './auth.constants';
 import { LoginThrottleService } from './login-throttle.service';
 import { PasswordService } from './password.service';
+import { lockUser } from './user-lock';
 import { SessionService, type CreatedSession } from './session.service';
 
 @Injectable()
@@ -39,9 +40,20 @@ export class AuthService {
     if (!(await this.passwords.verify(row.passwordHash, password))) {
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
+    // Under the user's lock, the password checked above must still be the current one: a password
+    // change (or a deactivation) that finished meanwhile would otherwise leave this new session alive.
+    const session = await this.db.transaction(async (tx) => {
+      await lockUser(tx, row.id);
+      const [current] = await tx
+        .select({ passwordHash: users.passwordHash, disabledAt: users.disabledAt })
+        .from(users)
+        .where(eq(users.id, row.id));
+      if (!current || current.passwordHash !== row.passwordHash || current.disabledAt !== null) {
+        throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
+      }
+      return this.sessions.create(row.id, userAgent, tx);
+    });
     await this.throttle.clear(username, ip);
-
-    const session = await this.sessions.create(row.id, userAgent);
     return {
       user: { id: row.id, username: row.username, role: row.role as AuthUser['role'] },
       session,
@@ -58,16 +70,19 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ): Promise<void> {
-    const userId = user.id;
-    const currentSessionId = user.sessionId;
     await this.throttle.reserve(user.username, ip);
-    const [row] = await this.db.select().from(users).where(eq(users.id, userId));
-    if (!row || !(await this.passwords.verify(row.passwordHash, currentPassword))) {
-      throw new ForbiddenException(WRONG_CURRENT_PASSWORD_MESSAGE);
-    }
+    // One transaction under the user's lock: the new hash and the revocation of the other sessions
+    // are written together, and no login can slip a session in between.
+    await this.db.transaction(async (tx) => {
+      await lockUser(tx, user.id);
+      const [row] = await tx.select().from(users).where(eq(users.id, user.id));
+      if (!row || !(await this.passwords.verify(row.passwordHash, currentPassword))) {
+        throw new ForbiddenException(WRONG_CURRENT_PASSWORD_MESSAGE);
+      }
+      const passwordHash = await this.passwords.hash(newPassword);
+      await tx.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+      await this.sessions.deleteForUser(user.id, user.sessionId, tx);
+    });
     await this.throttle.clear(user.username, ip);
-    const passwordHash = await this.passwords.hash(newPassword);
-    await this.db.update(users).set({ passwordHash }).where(eq(users.id, userId));
-    await this.sessions.deleteForUser(userId, currentSessionId);
   }
 }
