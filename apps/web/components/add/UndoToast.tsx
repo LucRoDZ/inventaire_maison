@@ -13,6 +13,9 @@ interface UndoToastProps {
 }
 
 /** Confirmation with an Annuler button for 5 s. */
+// Amber on the indigo toast (contrast), never on white.
+const UNDO_COLOR = 'text-amber'; // check-colors:allow
+
 export function UndoToast({
   message,
   onUndo,
@@ -34,7 +37,7 @@ export function UndoToast({
       className="rounded-card shadow-card bg-indigo fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-center justify-between gap-3 p-4 text-white"
     >
       <span>{message}</span>
-      <button type="button" onClick={onUndo} className="tap-target text-amber px-2 font-bold">
+      <button type="button" onClick={onUndo} className={`tap-target px-2 font-bold ${UNDO_COLOR}`}>
         Annuler
       </button>
     </div>

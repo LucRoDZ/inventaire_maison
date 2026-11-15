@@ -22,6 +22,11 @@ const RULES = [
     name: 'classe de palette Tailwind hors tokens',
     regex: new RegExp(`\\b(?:${UTILITIES})-(?:(?:${PALETTES})-\\d{2,3}|black)\\b`, 'g'),
   },
+  {
+    // Amber is a background (or an outline on a tint); amber text on white fails the contrast.
+    name: 'texte ambre (illisible sur blanc)',
+    regex: /\btext-amber(?![-\w])/g,
+  },
 ];
 
 function isSourceFile(file) {

@@ -286,7 +286,7 @@ test('vue Maison : quatre meubles nommés', async ({ page }) => {
     'true',
   );
   for (const name of ['Garde-manger', 'Frigo', 'Congélateur', 'Cave']) {
-    await expect(page.getByRole('link', { name: new RegExp(`^${name}`) })).toBeVisible();
+    await expect(page.getByRole('link', { name: new RegExp(`\\b${name}\\b`) })).toBeVisible();
     await expect(page.getByRole('img', { name })).toBeVisible();
   }
   await expect(page.getByRole('link', { name: /^Frigo/ })).toContainText(/\d+ articles?/);

@@ -416,7 +416,7 @@
   - Tests : unitaires de la machine d'états (plateformes, délais avec horloge simulée, standalone) ; composants ; e2e Chromium avec événement simulé.
   - Fin : tests verts ; la fenêtre n'apparaît pas sur `/connexion`.
 
-- [ ] **1.35 Audit compatibilité, accessibilité, identité**
+- [x] **1.35 Audit compatibilité, accessibilité, identité**
   - Résultat : conformité vérifiée sur tous les écrans.
   - Fichiers : `e2e/tests/a11y.spec.ts`, corrections dans les composants.
   - Comportement : aucun défilement horizontal à 360 px ; zones tactiles de 44 px ; contrastes AA (axe) ; aucun texte ambre sur blanc ; statuts toujours avec un mot ; aucun emoji ; animations coupées par `prefers-reduced-motion` ; marges de zone sûre ; police Carlito chargée.
