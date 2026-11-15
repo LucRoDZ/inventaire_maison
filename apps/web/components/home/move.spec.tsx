@@ -134,6 +134,7 @@ describe('ProductSheet', () => {
     stockItemId: 5,
     productId: 50,
     name: 'Lait',
+    brand: null,
     imageUrl: null,
     category: { id: 1, name: 'Boissons', icon: 'milk' },
     quantity: 2,

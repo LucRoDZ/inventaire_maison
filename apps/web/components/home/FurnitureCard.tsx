@@ -18,14 +18,16 @@ interface FurnitureCardProps {
   location: HomeLocationDto;
   /** Surrounds the card in amber: it holds a result of the current search. */
   highlighted?: boolean;
+  /** `?q=…&cat=…`: the filter follows into the opened furniture. */
+  query?: string;
 }
 
-export function FurnitureCard({ location, highlighted = false }: FurnitureCardProps) {
+export function FurnitureCard({ location, highlighted = false, query = '' }: FurnitureCardProps) {
   const Drawing = DRAWINGS[location.kind];
   const { products, expiringSoon } = location.counts;
   return (
     <Link
-      href={`/inventaire/${location.id}`}
+      href={`/inventaire/${location.id}${query}`}
       className={`border-line rounded-card shadow-card relative flex flex-col items-center gap-2 border bg-white p-3 ${
         highlighted ? 'ring-amber ring-4' : ''
       }`}

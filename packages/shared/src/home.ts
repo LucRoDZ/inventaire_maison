@@ -6,6 +6,7 @@ export interface HomeTileDto {
   stockItemId: number;
   productId: number;
   name: string;
+  brand: string | null;
   /** Null: the category icon is drawn instead. */
   imageUrl: string | null;
   category: { id: number; name: string; icon: string };

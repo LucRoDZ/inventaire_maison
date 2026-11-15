@@ -20,6 +20,7 @@ const tile = (
   stockItemId: id,
   productId: id * 10,
   name,
+  brand: null,
   imageUrl,
   category: { id: 1, name: 'Boissons', icon: 'milk' },
   quantity,

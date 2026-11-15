@@ -95,6 +95,7 @@ describe('GET /api/home', () => {
     expect(fridge.shelves[1].tiles[0]).toMatchObject({
       productId,
       name: 'Lait',
+      brand: null,
       quantity: 3,
       imageUrl: null,
       category: { icon: expect.any(String) },

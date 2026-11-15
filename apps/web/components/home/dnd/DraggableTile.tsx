@@ -9,13 +9,14 @@ import { ProductTile } from '../ProductTile';
 interface DraggableTileProps {
   tile: HomeTileDto;
   onSelect?: (tile: HomeTileDto) => void;
+  dimmed?: boolean;
 }
 
 /** After a drop (or its cancellation) the browser may still send a click: ignore it. */
 const CLICK_GUARD_MS = 400;
 
 /** A tile that can be picked up (long press, mouse, or keyboard) and dropped on a shelf. */
-export function DraggableTile({ tile, onSelect }: DraggableTileProps) {
+export function DraggableTile({ tile, onSelect, dimmed }: DraggableTileProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: tileDragId(tile.stockItemId),
   });
@@ -33,6 +34,7 @@ export function DraggableTile({ tile, onSelect }: DraggableTileProps) {
     <div className={`touch-manipulation ${isDragging ? 'opacity-40' : ''}`}>
       <ProductTile
         tile={tile}
+        dimmed={dimmed}
         dragRef={setNodeRef}
         dragProps={{
           ...attributes,

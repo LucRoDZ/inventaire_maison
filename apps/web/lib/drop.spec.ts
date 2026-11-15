@@ -22,6 +22,7 @@ const tile = (
   stockItemId: id,
   productId,
   name: `P${productId}`,
+  brand: null,
   imageUrl: null,
   category: { id: 1, name: 'C', icon: 'milk' },
   quantity,

@@ -6,13 +6,21 @@ interface ProductTileProps {
   tile: HomeTileDto;
   /** Opens the product panel. */
   onSelect?: (tile: HomeTileDto) => void;
+  /** Outside the current filter: the tile fades. */
+  dimmed?: boolean;
   /** Set by the drag-and-drop wrapper: the button itself is the draggable element. */
   dragRef?: Ref<HTMLButtonElement>;
   dragProps?: ButtonHTMLAttributes<HTMLButtonElement>;
 }
 
 /** Square thumbnail: the photo or the category glyph, with an amber quantity badge. */
-export function ProductTile({ tile, onSelect, dragRef, dragProps }: ProductTileProps) {
+export function ProductTile({
+  tile,
+  onSelect,
+  dimmed = false,
+  dragRef,
+  dragProps,
+}: ProductTileProps) {
   const Glyph = categoryIcon(tile.category.icon);
   return (
     <button
@@ -21,7 +29,9 @@ export function ProductTile({ tile, onSelect, dragRef, dragProps }: ProductTileP
       {...dragProps}
       onClick={() => onSelect?.(tile)}
       aria-label={`${tile.name}, quantité ${tile.quantity}`}
-      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white"
+      className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white transition-opacity ${
+        dimmed ? 'opacity-30' : ''
+      }`}
     >
       {tile.imageUrl ? (
         <img src={tile.imageUrl} alt="" className="h-full w-full object-cover" />

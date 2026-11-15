@@ -1,6 +1,13 @@
 import type { HomeLocationDto, HomeResponse } from '@inventaire/shared';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: () => undefined }),
+  usePathname: () => '/inventaire',
+}));
+vi.mock('../../lib/stock-api', () => ({ fetchCategories: async () => [] }));
 import { FurnitureCard } from './FurnitureCard';
 import { HomeView } from './HomeView';
 

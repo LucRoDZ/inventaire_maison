@@ -16,6 +16,7 @@ const toTile = (item: StockListItemDto): HomeTileDto => ({
   stockItemId: item.id,
   productId: item.product.id,
   name: item.product.name,
+  brand: item.product.brand,
   imageUrl: item.product.imageUrl,
   category: item.category,
   quantity: item.quantity,

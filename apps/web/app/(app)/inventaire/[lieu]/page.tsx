@@ -1,10 +1,16 @@
 'use client';
 
-import type { HomeLocationDto, HomeResponse, HomeTileDto, LocationDto } from '@inventaire/shared';
+import type {
+  CategoryDto,
+  HomeLocationDto,
+  HomeResponse,
+  HomeTileDto,
+  LocationDto,
+} from '@inventaire/shared';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { DndProvider } from '../../../../components/home/dnd/DndProvider';
 import { OpenFurniture } from '../../../../components/home/OpenFurniture';
 import { ProductSheet } from '../../../../components/home/ProductSheet';
@@ -12,7 +18,14 @@ import { Callout } from '../../../../components/ui/Callout';
 import { applyMove, findTile, type Destination } from '../../../../lib/drop';
 import { ApiError } from '../../../../lib/api';
 import { fetchHome } from '../../../../lib/home-api';
-import { fetchLocations, moveStock } from '../../../../lib/stock-api';
+import { HomeFilters } from '../../../../components/home/HomeFilters';
+import {
+  filtersToQuery,
+  isFiltering,
+  tileMatches,
+  useHomeFilters,
+} from '../../../../lib/home-filters';
+import { fetchCategories, fetchLocations, moveStock } from '../../../../lib/stock-api';
 
 /** The shelf (or the tray) holding a line of the furniture. */
 function placeOf(location: HomeLocationDto, tile: HomeTileDto) {
@@ -27,10 +40,12 @@ function placeOf(location: HomeLocationDto, tile: HomeTileDto) {
   };
 }
 
-export default function MeublePage() {
+function Meuble() {
   const { lieu } = useParams<{ lieu: string }>();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [locations, setLocations] = useState<LocationDto[]>([]);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [filters, setFilters] = useHomeFilters();
   const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<HomeTileDto | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,6 +64,9 @@ export default function MeublePage() {
     load();
     fetchLocations()
       .then(setLocations)
+      .catch(() => undefined);
+    fetchCategories()
+      .then(setCategories)
       .catch(() => undefined);
   }, [load]);
 
@@ -103,7 +121,7 @@ export default function MeublePage() {
   return (
     <main className="flex flex-col gap-4">
       <Link
-        href="/inventaire"
+        href={`/inventaire${filtersToQuery(filters)}`}
         className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
       >
         <ChevronLeft size={18} aria-hidden="true" />
@@ -132,7 +150,12 @@ export default function MeublePage() {
       {location && home ? (
         <DndProvider home={home} onMove={(id, to) => void drop(id, to)}>
           <h1 className="text-title">{location.name}</h1>
-          <OpenFurniture location={location} onSelect={setSelected} />
+          <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
+          <OpenFurniture
+            location={location}
+            onSelect={setSelected}
+            isDimmed={isFiltering(filters) ? (tile) => !tileMatches(tile, filters) : undefined}
+          />
         </DndProvider>
       ) : null}
       {location && current ? (
@@ -149,5 +172,13 @@ export default function MeublePage() {
         />
       ) : null}
     </main>
+  );
+}
+
+export default function MeublePage() {
+  return (
+    <Suspense>
+      <Meuble />
+    </Suspense>
   );
 }

@@ -1,11 +1,19 @@
 'use client';
 
-import type { HomeResponse } from '@inventaire/shared';
+import type { CategoryDto, HomeResponse } from '@inventaire/shared';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { fetchHome } from '../../lib/home-api';
+import {
+  filtersToQuery,
+  isFiltering,
+  locationMatches,
+  useHomeFilters,
+} from '../../lib/home-filters';
+import { fetchCategories } from '../../lib/stock-api';
 import { Callout } from '../ui/Callout';
 import { FurnitureCard } from './FurnitureCard';
+import { HomeFilters } from './HomeFilters';
 
 interface HomeViewProps {
   /** Test seam. */
@@ -16,6 +24,8 @@ interface HomeViewProps {
 export function HomeView({ load = fetchHome }: HomeViewProps) {
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [filters, setFilters] = useHomeFilters();
   const loader = useRef(load);
 
   useEffect(() => {
@@ -29,6 +39,9 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
             : 'Impossible de charger la maison : vérifiez la connexion.',
         ),
       );
+    fetchCategories()
+      .then(setCategories)
+      .catch(() => undefined);
   }, []);
 
   if (error) {
@@ -57,11 +70,16 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
           {units > 1 ? 'unités' : 'unité'}
         </p>
       </header>
+      <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {home.locations.map((location) => (
           <li key={location.id} className="flex">
             <div className="flex w-full flex-col">
-              <FurnitureCard location={location} />
+              <FurnitureCard
+                location={location}
+                query={filtersToQuery(filters)}
+                highlighted={isFiltering(filters) && locationMatches(location, filters)}
+              />
             </div>
           </li>
         ))}

@@ -9,6 +9,8 @@ interface ShelfRowProps {
   locationId: number;
   shelf: HomeShelfDto;
   onSelect?: (tile: HomeTileDto) => void;
+  /** True for a tile that does not pass the current filter. */
+  isDimmed?: (tile: HomeTileDto) => boolean;
 }
 
 /** Where the scanner opens from: the furniture and the shelf are chosen in advance. */
@@ -16,7 +18,7 @@ export const scanHref = (locationId: number, shelfId?: number): string =>
   `/?lieu=${locationId}${shelfId ? `&etagere=${shelfId}` : ''}`;
 
 /** One shelf: tiles on a board (`rack` shows posts, `plain` a flat board); empty: dotted outline. */
-export function ShelfRow({ locationId, shelf, onSelect }: ShelfRowProps) {
+export function ShelfRow({ locationId, shelf, onSelect, isDimmed }: ShelfRowProps) {
   return (
     <DroppableShelf id={shelfDropId(locationId, shelf.id)}>
       <section aria-label={shelf.name} className="flex flex-col gap-1">
@@ -36,7 +38,7 @@ export function ShelfRow({ locationId, shelf, onSelect }: ShelfRowProps) {
           <ul className="flex gap-2 overflow-x-auto pb-1">
             {shelf.tiles.map((tile) => (
               <li key={tile.stockItemId} className="shrink-0">
-                <DraggableTile tile={tile} onSelect={onSelect} />
+                <DraggableTile tile={tile} onSelect={onSelect} dimmed={isDimmed?.(tile)} />
               </li>
             ))}
           </ul>
