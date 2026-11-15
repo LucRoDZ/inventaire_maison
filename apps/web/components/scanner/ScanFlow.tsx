@@ -15,7 +15,9 @@ import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import { fetchCategories, fetchLocations } from '../../lib/stock-api';
 import type { ScanResult } from '../../lib/scanner/types';
 import { AddSheet, type AddedInfo } from '../add/AddSheet';
+import { CatalogSearch } from '../add/CatalogSearch';
 import { UndoToast } from '../add/UndoToast';
+import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { ProductForm } from '../product/ProductForm';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
@@ -44,6 +46,7 @@ interface ScanFlowProps {
     fetchScan?: (code: string) => Promise<ScanResponse>;
     fetchLocations?: () => Promise<LocationDto[]>;
     fetchCategories?: () => Promise<CategoryDto[]>;
+    searchProducts?: (query: string) => Promise<ProductDto[]>;
   };
   makeScanner?: React.ComponentProps<typeof ScannerView>['makeScanner'];
 }
@@ -52,6 +55,8 @@ type Step =
   | { name: 'scanning' }
   | { name: 'resolving' }
   | { name: 'add'; product: ProductDto; reason: 'scan_add' | 'manual' }
+  | { name: 'search' }
+  | { name: 'create'; productName: string }
   | { name: 'unknown'; barcode: string; reason: ScanUnknownReason; hints: ScanHints | null };
 
 interface References {
@@ -115,6 +120,16 @@ export function ScanFlow({
     },
     [loadReferences],
   );
+
+  const openSearch = async () => {
+    setNotice(null);
+    try {
+      await loadReferences();
+      setStep({ name: 'search' });
+    } catch {
+      showNotice('Impossible de charger les lieux et les catégories, réessayez.');
+    }
+  };
 
   const handleCode = useCallback(
     async (result: ScanResult) => {
@@ -197,6 +212,10 @@ export function ScanFlow({
         </Callout>
       ) : null}
 
+      <Button variant="secondary" className="self-start" onClick={() => void openSearch()}>
+        Ajouter sans code-barres
+      </Button>
+
       <ScannerView
         mode={mode}
         onModeChange={setMode}
@@ -228,6 +247,30 @@ export function ScanFlow({
           origin={origin}
           onAdded={added}
           onClose={() => setStep({ name: 'scanning' })}
+        />
+      ) : null}
+
+      {step.name === 'search' ? (
+        <CatalogSearch
+          onPick={(product) => void openAdd(product, 'manual')}
+          onCreate={(productName) => setStep({ name: 'create', productName })}
+          onClose={() => setStep({ name: 'scanning' })}
+          search={api.searchProducts}
+        />
+      ) : null}
+
+      {step.name === 'create' && refs ? (
+        <ProductForm
+          barcode={null}
+          reason="manual"
+          initialName={step.productName}
+          categories={refs.categories}
+          locations={refs.locations}
+          onCreated={(product, productNotice) => {
+            if (productNotice) showNotice(productNotice, 'Photo non envoyée');
+            void openAdd(product, 'manual');
+          }}
+          onCancel={() => setStep({ name: 'scanning' })}
         />
       ) : null}
 

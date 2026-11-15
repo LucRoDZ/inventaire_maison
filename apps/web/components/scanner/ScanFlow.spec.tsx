@@ -276,4 +276,27 @@ describe('ScanFlow', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ajouter et scanner le suivant' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalledTimes(2));
   });
+
+  it('adds a product found by name with the manual reason', async () => {
+    const searchProducts = vi.fn(async () => [product]);
+    render(
+      <ScanFlow
+        api={{
+          searchProducts,
+          fetchLocations: async () => locations,
+          fetchCategories: async () => categories,
+        }}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter sans code-barres' }));
+    await userEvent.type(await screen.findByLabelText('Nom du produit'), 'pate');
+    await userEvent.click(await screen.findByRole('button', { name: /Pâte à tartiner Nutella/ }));
+    const sheet = await screen.findByRole('dialog', { name: 'Pâte à tartiner Nutella' });
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(stockApi.adjustStock).toHaveBeenCalledWith(
+        expect.objectContaining({ productId: 7, reason: 'manual' }),
+      ),
+    );
+  });
 });

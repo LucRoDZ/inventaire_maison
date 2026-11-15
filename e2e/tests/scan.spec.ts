@@ -112,3 +112,45 @@ test('Open Food Facts en panne : formulaire vide et ajout possible', async ({ pa
   );
   expect(((await stock.json()) as { items: unknown[] }).items).toHaveLength(1);
 });
+
+const BY_NAME = {
+  'chromium-mobile': 'Tomates',
+  'webkit-mobile': 'Poireaux',
+} as const;
+
+test('ajout manuel d’un produit sans code-barres', async ({ page }, testInfo) => {
+  const name = BY_NAME[testInfo.project.name as keyof typeof BY_NAME];
+  await signIn(page);
+
+  await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
+  const search = page.getByRole('dialog', { name: 'Ajouter sans code-barres' });
+  await search.getByLabel('Nom du produit').fill(name);
+  await expect(search.getByText(`Aucun produit trouvé pour « ${name} »`)).toBeVisible();
+  await search.getByRole('button', { name: 'Créer ce produit' }).click();
+
+  const form = page.getByRole('dialog', { name: 'Nouveau produit' });
+  await expect(form.getByLabel('Nom')).toHaveValue(name);
+  await expect(form.getByText(/Code-barres :/)).toHaveCount(0);
+  await form.getByLabel('Catégorie').selectOption({ index: 1 });
+  await form.getByRole('button', { name: 'Enregistrer et ajouter' }).click();
+
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}, Frigo` }),
+  ).toBeVisible();
+
+  const products = (await (await page.request.get(`/api/products?q=${name}`)).json()) as {
+    id: number;
+    barcode: string | null;
+  }[];
+  expect(products).toHaveLength(1);
+  expect(products[0]!.barcode).toBeNull();
+  const history = (await (
+    await page.request.get(`/api/products/${products[0]!.id}/movements`)
+  ).json()) as {
+    items: { reason: string; delta: number }[];
+  };
+  expect(history.items[0]).toMatchObject({ reason: 'manual', delta: 1 });
+});
