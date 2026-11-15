@@ -6,7 +6,11 @@ import { createTestApp } from '../../test/create-test-app';
 import { createUser, FakeClock, MINUTE, HOUR, ORIGIN, resetAuth } from '../../test/helpers';
 import { DB, type Database } from '../database/database.module';
 import { loginAttempts } from '../database/schema';
-import { LoginThrottleService } from './login-throttle.service';
+import {
+  LoginThrottleService,
+  MAX_FAILURES_PER_USERNAME,
+  throttleIp,
+} from './login-throttle.service';
 
 let app: INestApplication;
 let clock: FakeClock;
@@ -128,6 +132,30 @@ describe('login throttling', () => {
     await app.get(LoginThrottleService).purge();
     const [row] = await app.get<Database>(DB).select({ n: count() }).from(loginAttempts);
     expect(row!.n).toBe(0);
+  });
+});
+
+describe('throttle per username and per IPv6 prefix', () => {
+  it('blocks a username after 30 failures spread over 30 IPs, even from a new IP', async () => {
+    for (let i = 0; i < MAX_FAILURES_PER_USERNAME; i++) await fail(1, 'lucas', `10.1.0.${i + 1}`);
+    expect((await login('lucas', 'mauvais', '10.1.1.1')).status).toBe(429);
+    expect((await login('lucas', 'motdepasse1', '10.1.1.2')).status).toBe(429);
+    expect((await login('bob', 'motdepasse1', '10.1.1.3')).status).toBe(200);
+  });
+
+  it('counts the addresses of one IPv6 /64 as a single client', async () => {
+    for (let i = 1; i <= 5; i++) await fail(1, 'lucas', `2001:db8:1:2::${i}`);
+    expect((await login('lucas', 'motdepasse1', '2001:db8:1:2:aaaa::9')).status).toBe(429);
+    expect((await login('lucas', 'motdepasse1', '2001:db8:1:3::1')).status).toBe(200);
+  });
+
+  it('reduces addresses to the key the throttle uses', () => {
+    expect(throttleIp('10.0.0.1')).toBe('10.0.0.1');
+    expect(throttleIp('::ffff:10.0.0.1')).toBe('10.0.0.1');
+    expect(throttleIp('2001:db8:1:2:3:4:5:6')).toBe('2001:db8:1:2::/64');
+    expect(throttleIp('2001:0DB8:0001:0002::7')).toBe('2001:db8:1:2::/64');
+    expect(throttleIp('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(throttleIp('::1')).toBe('0:0:0:0::/64');
   });
 });
 
