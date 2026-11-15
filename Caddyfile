@@ -12,7 +12,9 @@
 		request_body {
 			max_size 10MB
 		}
-		reverse_proxy api:3001
+		reverse_proxy api:3001 {
+			header_up X-Proxy-Secret {$PROXY_SECRET}
+		}
 	}
 
 	handle {

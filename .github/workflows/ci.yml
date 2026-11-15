@@ -129,6 +129,7 @@ jobs:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: ci-admin-password
       OFF_USER_AGENT: InventaireMaison-CI/1.0
+      PROXY_SECRET: ci-proxy-secret-ci-proxy-secret
       COMPOSE_PROFILES: proxy
       COMPOSE_FILE: docker-compose.yml:.github/ci/docker-compose.ci.yml
     steps:

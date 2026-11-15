@@ -12,6 +12,8 @@ export interface TestAppOptions {
   controllers?: Type<unknown>[];
   /** Global rate limit for this app (the test setup raises it for all the others). */
   rateLimitPerMinute?: number;
+  /** Enables the proxy secret check (disabled in the other tests). */
+  proxySecret?: string;
 }
 
 export async function createTestApp(options: TestAppOptions = {}): Promise<INestApplication> {
@@ -20,10 +22,14 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<INest
     controllers: options.controllers ?? [],
   });
   if (options.clock) builder = builder.overrideProvider(CLOCK).useValue(options.clock);
-  if (options.rateLimitPerMinute !== undefined) {
-    builder = builder
-      .overrideProvider(APP_CONFIG)
-      .useValue({ ...parseEnv(process.env), RATE_LIMIT_PER_MINUTE: options.rateLimitPerMinute });
+  if (options.rateLimitPerMinute !== undefined || options.proxySecret !== undefined) {
+    builder = builder.overrideProvider(APP_CONFIG).useValue({
+      ...parseEnv(process.env),
+      ...(options.rateLimitPerMinute !== undefined && {
+        RATE_LIMIT_PER_MINUTE: options.rateLimitPerMinute,
+      }),
+      ...(options.proxySecret !== undefined && { PROXY_SECRET: options.proxySecret }),
+    });
   }
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication();
