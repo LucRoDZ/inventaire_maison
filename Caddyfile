@@ -1,0 +1,21 @@
+{$APP_DOMAIN:localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Robots-Tag "noindex, nofollow"
+		Permissions-Policy "camera=(self)"
+		-Server
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 10MB
+		}
+		reverse_proxy api:3001
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

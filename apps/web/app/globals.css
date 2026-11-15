@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+@import '../../../tokens.css';
+
+/* Tailwind utilities are generated from the tokens: no colour is ever written here. */
+@theme inline {
+  --color-*: initial;
+  --color-indigo: var(--indigo);
+  --color-indigo-mid: var(--indigo-mid);
+  --color-lavender: var(--lavender);
+  --color-lavender-line: var(--lavender-line);
+  --color-amber: var(--amber);
+  --color-amber-tint: var(--amber-tint);
+  --color-white: var(--white);
+  --color-ink: var(--ink);
+  --color-grey: var(--grey);
+  --color-line: var(--line);
+  --color-ok: var(--ok);
+  --color-ok-tint: var(--ok-tint);
+  --color-alert: var(--alert);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --font-sans: var(--font-sans);
+  --radius-card: var(--radius-card);
+  --shadow-card: var(--shadow-card);
+}
+
+@utility text-title {
+  font: var(--text-title);
+  color: var(--indigo);
+}
+@utility text-card-title {
+  font: var(--text-card-title);
+  color: var(--indigo);
+}
+@utility text-body {
+  font: var(--text-body);
+  color: var(--grey);
+}
+@utility text-small {
+  font: var(--text-small);
+  color: var(--grey);
+}
+@utility text-help {
+  font: var(--text-help);
+  color: var(--grey);
+}
+@utility text-label {
+  font: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--indigo-mid);
+}
+@utility text-stat {
+  font: var(--text-stat);
+}
+@utility tap-target {
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
+}
+
+html {
+  background: var(--white);
+}
+
+body {
+  margin: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
+}
+
+:focus-visible {
+  outline: 2px solid var(--indigo-mid);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

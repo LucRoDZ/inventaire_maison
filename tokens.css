@@ -34,10 +34,12 @@
   /* Typographie */
   --font-sans: Carlito, Calibri, Arial, sans-serif;
   --text-title: 700 28px/34px var(--font-sans);   /* Titre d'écran, indigo. */
-  --text-card-title: 700 20px/26px var(--font-sans); /* Titre de carte, indigo. */
+  --text-card-title: 700 18px/24px var(--font-sans); /* Titre de carte, indigo. */
   --text-body: 400 16px/24px var(--font-sans);    /* Texte courant, grey. */
-  --text-small: 400 14px/20px var(--font-sans);   /* Légendes, métadonnées, grey. */
-  --text-label: 700 13px/16px var(--font-sans);   /* Étiquette en capitales, indigo (pas d'ambre sur blanc). */
+  --text-small: 400 14px/20px var(--font-sans);   /* Texte de carte, légendes, métadonnées, grey. */
+  --text-help: 400 12px/16px var(--font-sans);    /* Aide, pied de carte, grey. */
+  --text-label: 700 12px/16px var(--font-sans);   /* Étiquette de section en capitales : indigo-mid sur blanc, ambre sur indigo. */
+  --tracking-label: 0.12em;                       /* Interlettrage des étiquettes. */
   --text-stat: 700 40px/44px var(--font-sans);    /* Gros chiffre (quantité, total). */
 
   /* Cibles tactiles */

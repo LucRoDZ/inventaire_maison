@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+package-lock.json
+docs
+tokens.css
+TASKS.md
+CLAUDE.md
+README.md
+apps/web/public/sw.js*
+apps/web/public/swe-worker-*
