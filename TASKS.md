@@ -210,7 +210,7 @@
   - Tests : unitaires avec `fetch` simulé : fiche complète, fiche sans nom français, fiche sans nom, 404, délai dépassé, 500, JSON invalide, présence du `User-Agent`.
   - Fin : `npm run test:api` passe sans aucun appel réseau réel.
 
-- [ ] **1.7 Catégorie devinée et image distante**
+- [x] **1.7 Catégorie devinée et image distante**
   - Résultat : une fiche Open Food Facts donne une catégorie locale et une miniature.
   - Fichiers : `apps/api/src/off/category-guess.service.ts`, `apps/api/src/images/remote-image.service.ts`.
   - Comportement : parcours de `categories_tags` du dernier au premier, première correspondance retenue, sinon « Autre ». Image : HTTPS seulement, hôte terminé par `.openfoodfacts.org`, redirections non suivies, 8 Mo maximum, délai de 4 s ; tout échec laisse `image_path` vide sans erreur.
