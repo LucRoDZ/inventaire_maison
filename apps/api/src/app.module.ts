@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 import { ClockModule } from './common/clock';
 import { RateLimitModule } from './common/rate-limit.module';
 import { NotFoundModule } from './common/not-found.module';
@@ -20,6 +21,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     LocationsModule,
+    CategoriesModule,
     NotFoundModule,
   ],
   controllers: [HealthController],

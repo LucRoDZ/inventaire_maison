@@ -175,7 +175,7 @@
   - Tests : intégration de chaque route, dont la suppression avec fusion et le journal.
   - Fin : `DELETE /api/shelves/{id}` par un membre renvoie 403 ; par l'admin 204, et le stock réapparaît avec `shelf_id` nul.
 
-- [ ] **1.2 API catégories et correspondances Open Food Facts**
+- [x] **1.2 API catégories et correspondances Open Food Facts**
   - Résultat : référentiels de classement administrables.
   - Fichiers : `apps/api/src/categories/`.
   - Comportement : `GET/POST/PATCH/DELETE /categories` (nom, icône parmi une liste fermée d'icônes Lucide, ordre) ; supprimer une catégorie renvoie ses produits vers « Autre » avec `category_guessed=true` et supprime ses correspondances ; « Autre » non supprimable (409). `GET/POST/PATCH/DELETE /off-category-map` (`off_tag` unique au format `xx:slug`, 409 en cas de doublon).
@@ -584,6 +584,7 @@
 - 15/11/2026 : R5. Revue Copilot de la PR #1 (15 commentaires), choix retenus : le blocage dure 15 minutes après l'échec qui complète 5 échecs en 15 minutes (et non 15 minutes après le plus ancien) ; connexion et changement de mot de passe prennent un verrou consultatif sur l'utilisateur, la connexion relit le hachage sous ce verrou avant de créer la session, le changement écrit le hachage et révoque les autres sessions dans une seule transaction ; `deploy.sh` saute `git pull` sur un HEAD détaché (retour arrière) et s'arrête si `docker compose ps` échoue ; `backup-db.sh` échoue si Docker Compose ne répond pas au lieu de sauter la sauvegarde. Le contrôle des `.env` reste dans le job `audit` (rendu bloquant, R2) plutôt que dans `lint-typecheck` comme le proposait Copilot.
 - 15/11/2026 : P1.1a. Suppression d'une étagère et journal : `stock_movements.shelf_id` référence `shelves(id)` sans cascade ; les mouvements qui pointaient vers l'étagère supprimée (dont le premier `move`) passent à `shelf_id` nul dans la même transaction, plutôt que de modifier le schéma. L'historique garde le lieu, la date et le delta, mais plus l'étagère d'origine.
 - 15/11/2026 : P1.1b. `PATCH /shelves/{id}` avec un autre `locationId` : refusé en 409 si l'étagère contient du stock (une ligne de stock est liée au lieu de son étagère) ; une étagère vide change de meuble et passe en fin d'ordre.
+- 15/11/2026 : P1.2. Catégories : liste fermée d'icônes dans `packages/shared/src/categories.ts` (39 icônes Lucide vérifiées dans `lucide-react`, dont les 15 du seed) ; `GET /categories` ouvert à tous, écritures réservées à l'admin ; `/off-category-map` entièrement réservé à l'admin (outil d'administration) ; format du tag `^[a-z]{2}:[a-z0-9]+(-[a-z0-9]+)*$` ; catégorie inconnue dans une correspondance : 404.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
