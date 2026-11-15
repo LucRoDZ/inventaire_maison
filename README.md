@@ -71,7 +71,7 @@ shellcheck deploy.sh scripts/*.sh
 scripts/test-backup-db.sh   # pile Compose démarrée (`docker compose up -d --wait`)
 ```
 
-La CI GitHub Actions (`.github/workflows/ci.yml`) lance ces vérifications sur chaque Pull Request. Active la protection de la branche `main` dans les réglages GitHub : merge seulement si `lint-typecheck`, `test-api`, `test-web`, `e2e` et `docker-build` sont verts (le job `audit` est informatif).
+La CI GitHub Actions (`.github/workflows/ci.yml`) lance ces vérifications sur chaque Pull Request. Active la protection de la branche `main` dans les réglages GitHub : merge seulement si `lint-typecheck`, `test-api`, `test-web`, `e2e`, `docker-build` et `audit` sont verts. Dans `audit`, le contrôle des fichiers `.env` versionnés est bloquant ; `npm audit` ne produit qu'un avertissement.
 
 ## Production et proxy
 

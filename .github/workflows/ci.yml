@@ -157,17 +157,26 @@ jobs:
       - if: always()
         run: docker compose down -v
 
+  # Blocking for the .env check; npm audit only raises a warning (cahier: audit informatif).
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+      - name: No .env file committed
+        if: always()
+        run: |
+          tracked="$(git ls-files -- '*.env' '.env.*' '*/.env.*' ':!*.env.example')"
+          if [ -n "$tracked" ]; then
+            echo "::error title=Fichier .env versionné::$(echo "$tracked" | tr '\n' ' ')"
+            exit 1
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
-      - name: No .env committed
-        run: test -z "$(git ls-files .env)"
+      - name: npm audit (warning only)
+        run: |
+          npm audit --audit-level=high || \
+            echo "::warning title=npm audit::Vulnérabilités de niveau high ou plus, à traiter via Dependabot"
