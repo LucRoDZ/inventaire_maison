@@ -386,7 +386,7 @@
   - Tests : composants : entrée Administration masquée pour un membre, formulaire. E2E : changement de mot de passe puis reconnexion.
   - Fin : l'e2e passe.
 
-- [ ] **1.31 Administration : membres**
+- [x] **1.31 Administration : membres**
   - Résultat : créer, réinitialiser, désactiver, réactiver un membre.
   - Fichiers : `apps/web/app/(app)/plus/administration/membres/page.tsx`.
   - Comportement : liste avec rôle et état ; création avec mot de passe temporaire ; confirmation avant désactivation ; erreurs 409 expliquées ; un membre qui ouvre l'URL voit « Accès réservé à l'administrateur ».

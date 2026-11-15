@@ -687,3 +687,40 @@ test('mot de passe : changement depuis Compte, puis reconnexion', async ({ page 
   ).toBeVisible();
   await signIn(page, member, 'nouveau-mot-de-passe');
 });
+
+const MEMBER_ADMIN = { 'chromium-mobile': 'camille', 'webkit-mobile': 'hugo' } as const;
+
+test('administration : l’admin crée un membre qui se connecte, puis le désactive', async ({
+  page,
+  browser,
+}, testInfo) => {
+  const member = MEMBER_ADMIN[testInfo.project.name as keyof typeof MEMBER_ADMIN];
+  await signIn(page);
+  await page.goto('/plus/administration/membres');
+  await expect(page.getByRole('heading', { name: 'Membres', level: 1 })).toBeVisible();
+  await page.getByLabel('Pseudo du nouveau membre').fill(member);
+  await page.getByLabel('Mot de passe temporaire').fill('temporaire-1234');
+  await page.getByRole('button', { name: 'Créer le membre' }).click();
+  const row = page.getByRole('listitem', { name: member });
+  await expect(row).toContainText('Membre · Actif');
+
+  // The new member signs in, and a member cannot open the administration.
+  const other = await browser.newContext({ baseURL: testInfo.project.use.baseURL });
+  const memberPage = await other.newPage();
+  await signIn(memberPage, member, 'temporaire-1234');
+  await memberPage.goto('/plus/administration/membres');
+  await expect(memberPage.getByText('Accès réservé à l’administrateur').first()).toBeVisible();
+
+  // The admin deactivates the account: the open session is cut and a new sign-in fails.
+  await row.getByRole('button', { name: 'Désactiver' }).click();
+  await row.getByRole('button', { name: 'Confirmer la désactivation' }).click();
+  await expect(row).toContainText('Membre · Désactivé');
+  await memberPage.goto('/connexion');
+  await memberPage.getByLabel('Pseudo').fill(member);
+  await memberPage.getByLabel('Mot de passe').fill('temporaire-1234');
+  await memberPage.getByRole('button', { name: 'Se connecter' }).click();
+  await expect(
+    memberPage.getByRole('alert').filter({ hasText: 'Pseudo ou mot de passe incorrect' }),
+  ).toBeVisible();
+  await other.close();
+});
