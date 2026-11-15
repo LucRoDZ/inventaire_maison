@@ -57,7 +57,8 @@ export const stockMovements = pgTable(
     locationId: integer('location_id')
       .notNull()
       .references(() => locations.id),
-    shelfId: integer('shelf_id').references(() => shelves.id),
+    /** Plain integer on purpose: the journal is never modified, so it must survive the deletion of a shelf. */
+    shelfId: integer('shelf_id'),
     expiryDate: date('expiry_date', { mode: 'string' }),
     delta: integer().notNull(),
     reason: text().notNull(),

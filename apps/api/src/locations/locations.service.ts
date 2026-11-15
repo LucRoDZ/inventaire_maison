@@ -167,8 +167,7 @@ export class LocationsService {
         ]);
       }
 
-      // The journal keeps its rows; they just stop pointing at a shelf that no longer exists.
-      await tx.update(stockMovements).set({ shelfId: null }).where(eq(stockMovements.shelfId, id));
+      // The journal is never modified: its rows keep the id of the deleted shelf (no foreign key).
       await tx.delete(shelves).where(eq(shelves.id, id));
     });
   }

@@ -293,7 +293,7 @@ describe('DELETE /api/shelves/:id', () => {
     expect(await db().select().from(stockMovements)).toHaveLength(6);
   });
 
-  it('keeps older journal rows and detaches them from the deleted shelf', async () => {
+  it('never modifies older journal rows when a shelf is deleted', async () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 2');
     const lait = await makeProduct('Lait');
@@ -308,7 +308,8 @@ describe('DELETE /api/shelves/:id', () => {
     expect((await as(admin).delete(`/api/shelves/${shelf.id}`)).status).toBe(204);
     const moves = await db().select().from(stockMovements);
     expect(moves).toHaveLength(1);
-    expect(moves[0]!.shelfId).toBeNull();
+    expect(moves[0]!.shelfId).toBe(shelf.id);
+    expect(moves[0]!.delta).toBe(2);
   });
 
   it('rolls everything back when the transaction fails', async () => {
