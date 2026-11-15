@@ -4,6 +4,7 @@ import { ChevronRight, Settings, UserRound, type LucideIcon } from 'lucide-react
 import Link from 'next/link';
 import { useCurrentUser } from '../auth/AuthProvider';
 import { LogoutButton } from '../auth/LogoutButton';
+import { InstallEntry } from './InstallEntry';
 
 function Entry({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
   return (
@@ -30,7 +31,7 @@ export function PlusMenu() {
         {user?.role === 'admin' ? (
           <Entry href="/plus/administration" label="Administration" icon={Settings} />
         ) : null}
-        {/* Installer l'application : emplacement réservé à la tâche 1.34. */}
+        <InstallEntry />
       </ul>
       <LogoutButton />
     </div>

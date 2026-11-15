@@ -409,7 +409,7 @@
 
 ### PWA, compatibilité, qualité
 
-- [ ] **1.34 Fenêtre d'installation**
+- [x] **1.34 Fenêtre d'installation**
   - Résultat : invitation à installer tant que l'application ne l'est pas.
   - Fichiers : `apps/web/lib/install.ts`, `apps/web/components/pwa/{InstallSheet,IosInstallSteps,BrowserInstallHelp}.tsx`.
   - Comportement : après la connexion seulement, jamais en `standalone` ; Chrome, Edge, Android : `beforeinstallprompt` mis de côté, `prompt()` au clic sur Installer, `appinstalled` ferme ; iOS : trois étapes illustrées (Partager, Sur l'écran d'accueil, Ajouter) ; Firefox Android : instructions du menu ; sans support : rien ; « Plus tard » masque 7 jours, « Ne plus afficher » définitivement (stockage local) ; lien « Installer l'application » dans Plus ; présentation `Callout` en feuille du bas.

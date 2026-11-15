@@ -18,7 +18,21 @@ export async function waitForHydration(page: Page) {
   });
 }
 
-export async function signIn(page: Page, username = USERNAME, password = PASSWORD) {
+/**
+ * Signs in. The install invitation (shown on iOS from the first sign-in) is dismissed for good
+ * beforehand so that it does not cover the screens under test; the install test keeps it.
+ */
+export async function signIn(
+  page: Page,
+  username = USERNAME,
+  password = PASSWORD,
+  { keepInstallInvite = false }: { keepInstallInvite?: boolean } = {},
+) {
+  if (!keepInstallInvite) {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('inventaire.install', '{"kind":"never"}');
+    });
+  }
   await page.goto('/connexion');
   await waitForHydration(page);
   await page.getByLabel('Pseudo').fill(username);

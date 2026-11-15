@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createMember, pushCode, signIn, startScanner } from './helpers';
+import { createMember, pushCode, signIn, startScanner, waitForHydration } from './helpers';
 
 // Both browser projects share one database: each one scans its own product.
 const FIXTURES = {
@@ -835,3 +835,46 @@ async function startScannerFrom(page: Page) {
   await page.goto('/');
   await startScanner(page);
 }
+
+test('installation : jamais sur la connexion, proposée après connexion, « Plus tard » mémorisé', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'événement beforeinstallprompt : Chromium seulement');
+  const fire = () =>
+    page.evaluate(() => {
+      const event = new Event('beforeinstallprompt') as Event & Record<string, unknown>;
+      event['prompt'] = () => {
+        (window as unknown as Record<string, boolean>)['__prompted'] = true;
+        return Promise.resolve();
+      };
+      event['userChoice'] = Promise.resolve({ outcome: 'accepted' });
+      window.dispatchEvent(event);
+    });
+
+  await page.goto('/connexion');
+  await waitForHydration(page);
+  await fire();
+  await expect(page.getByRole('dialog', { name: 'Installer l’application' })).toHaveCount(0);
+
+  await signIn(page, undefined, undefined, { keepInstallInvite: true });
+  await fire();
+  const sheet = page.getByRole('dialog', { name: 'Installer l’application' });
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('button', { name: 'Installer', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as Record<string, boolean>)['__prompted']))
+    .toBe(true);
+
+  await page.reload();
+  await waitForHydration(page);
+  await fire();
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('button', { name: 'Plus tard' }).click();
+  await expect(sheet).toHaveCount(0);
+  await page.reload();
+  await waitForHydration(page);
+  await fire();
+  await page.waitForTimeout(500);
+  await expect(sheet).toHaveCount(0);
+});
