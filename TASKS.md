@@ -270,7 +270,7 @@
   - Tests : composants avec faux `MediaStream` : démarrage, arrêt sur `visibilitychange`, lampe masquée, refus de permission, bascule de mode.
   - Fin : tests verts ; en local sur Chrome, la caméra s'allume et s'éteint au changement d'onglet.
 
-- [ ] **1.15 Solutions de repli**
+- [x] **1.15 Solutions de repli**
   - Résultat : un code peut toujours être saisi sans flux vidéo.
   - Fichiers : `apps/web/components/scanner/{ManualCodeInput,PhotoCodeButton,InAppBrowserNotice}.tsx`, `apps/web/lib/platform.ts`.
   - Comportement : champ au clavier numérique, validé par Entrée (lecteur USB ou Bluetooth), code invalide refusé avec un message ; « Prendre une photo du code » (`capture="environment"`) décodée par ZXing, « Code illisible, réessayez » sinon ; navigateur intégré (Instagram, Facebook, WhatsApp) : « Ouvrez cette page dans Safari ou Chrome ».
@@ -592,6 +592,7 @@
 - 15/11/2026 : P1.12. `GET /home` réutilise `StockQuery` (mêmes statuts d'échéance que `/stock`) ; « bientôt périmés » d'un meuble compte les lignes de stock périmées ou à 3 jours ou moins (une vignette = une ligne) ; vignettes triées par nom. Tests API : `hookTimeout` passé de 30 s à 120 s, car `DROP DATABASE` de `seed.spec.ts` dépassait 30 s par intermittence juste après les suites lourdes (quelques dizaines de ms au repos).
 - 15/11/2026 : P1.13. `zxing-wasm` ajouté au web ; `scripts/copy-zxing-wasm.mjs` (appelé par `predev` et `prebuild`, copié dans l'image Docker) place le WASM dans `apps/web/public/zxing/` (ignoré par git, servi par l'application, jamais par un CDN). ZXing renvoie un UPC-A comme un EAN-13 préfixé d'un 0 : le flux de scan normalise, le résultat est le même qu'avec `normalizeBarcode`. `next.config.ts` définit toujours `NEXT_PUBLIC_E2E` (`0` sauf `1`) : webpack supprime alors `fake-engine` de tout autre build (vérifié : aucune occurrence dans `.next`, présent avec `NEXT_PUBLIC_E2E=1`). Les photos sont réduites à 1600 px avant décodage.
 - 15/11/2026 : P1.14. Écran Scanner : `facingMode` est demandé en `ideal` (une webcam de PC démarre aussi) ; la caméra reste éteinte tant qu'on n'a pas touché « Scanner », et elle ne repart pas toute seule au retour sur l'onglet ; `lib/platform.ts` (détection iOS, Android, ordinateur) sert déjà aux consignes de permission, la tâche 1.15 y ajoutera les navigateurs intégrés ; `ScannerView` accepte un emplacement `fallbacks` que 1.15 remplit. La partie « en local sur Chrome, la caméra s'allume et s'éteint » de la tâche n'est pas automatisable : étapes dans le README (« Écran Scanner »), **à valider par Lucas**.
+- 15/11/2026 : P1.15. Les replis (code saisi, photo) livrent un code déjà canonique (`parseCode` : EAN-13 ou EAN-8, un UPC-A saisi devient `0` + 12 chiffres) ; la photo est toujours décodée par ZXing, quel que soit le moteur de la caméra ; un code lu sur photo dont la clé est fausse est traité comme illisible. Navigateurs intégrés reconnus : Instagram, Facebook (`FBAN`, `FBAV`, `FB_IAB`), WhatsApp.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

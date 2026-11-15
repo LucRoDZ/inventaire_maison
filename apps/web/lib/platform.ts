@@ -10,3 +10,10 @@ export function detectPlatform(
   if (/Android/i.test(userAgent)) return 'android';
   return 'desktop';
 }
+
+/** In-app browsers (Instagram, Facebook, WhatsApp) do not give access to the camera. */
+export function isInAppBrowser(
+  userAgent: string = typeof navigator === 'undefined' ? '' : navigator.userAgent,
+): boolean {
+  return /Instagram|FBAN|FBAV|FB_IAB|WhatsApp/i.test(userAgent);
+}
