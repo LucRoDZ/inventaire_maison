@@ -182,7 +182,7 @@
   - Tests : intégration de chaque route et de chaque erreur.
   - Fin : `DELETE /api/categories/{id de Autre}` renvoie 409.
 
-- [ ] **1.3 Normalisation des codes-barres**
+- [x] **1.3 Normalisation des codes-barres**
   - Résultat : une fonction partagée par le web et l'API.
   - Fichiers : `packages/shared/src/barcode.ts`.
   - Comportement : retire espaces et tirets ; EAN-13 et EAN-8 validés par clé de contrôle ; UPC-A (12 chiffres) préfixé d'un 0 ; UPC-E développé seulement si le format est fourni ; tout le reste (lettres, autre longueur, clé fausse) renvoie une erreur typée.
@@ -585,6 +585,7 @@
 - 15/11/2026 : P1.1a. Suppression d'une étagère et journal : `stock_movements.shelf_id` référence `shelves(id)` sans cascade ; les mouvements qui pointaient vers l'étagère supprimée (dont le premier `move`) passent à `shelf_id` nul dans la même transaction, plutôt que de modifier le schéma. L'historique garde le lieu, la date et le delta, mais plus l'étagère d'origine.
 - 15/11/2026 : P1.1b. `PATCH /shelves/{id}` avec un autre `locationId` : refusé en 409 si l'étagère contient du stock (une ligne de stock est liée au lieu de son étagère) ; une étagère vide change de meuble et passe en fin d'ordre.
 - 15/11/2026 : P1.2. Catégories : liste fermée d'icônes dans `packages/shared/src/categories.ts` (39 icônes Lucide vérifiées dans `lucide-react`, dont les 15 du seed) ; `GET /categories` ouvert à tous, écritures réservées à l'admin ; `/off-category-map` entièrement réservé à l'admin (outil d'administration) ; format du tag `^[a-z]{2}:[a-z0-9]+(-[a-z0-9]+)*$` ; catégorie inconnue dans une correspondance : 404.
+- 15/11/2026 : P1.3. `normalizeBarcode(code, format?)` lève `InvalidBarcodeError` (raison `empty`, `not_digits`, `bad_length`, `bad_check_digit`) ; `tryNormalizeBarcode` renvoie `null`. Le format ne compte que pour un code à 8 chiffres (`upc_e`). Le test est dans `apps/api/test/barcode.spec.ts` pour tourner dans le job CI `test-api` sans nouveau job ; le web importe la même fonction depuis `@inventaire/shared`.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
