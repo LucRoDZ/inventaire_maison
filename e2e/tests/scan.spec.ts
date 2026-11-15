@@ -528,12 +528,35 @@ test('glisser-déposer à la souris', async ({ page, browserName }, testInfo) =>
     .getByRole('region', { name: drag.from })
     .getByRole('button', { name: `${drag.name}, quantité 1` });
   const target = page.getByRole('region', { name: drag.to });
-  const from = (await tile.boundingBox())!;
-  const to = (await target.boundingBox())!;
+  // Both shelves must be on screen without scrolling (a drag that needs auto-scroll is not what is
+  // tested here), and their position must be settled before the pointer goes down.
+  await page.setViewportSize({ width: 412, height: 1600 });
+  await expect(tile).toBeVisible();
+  await expect(target).toBeVisible();
+  let from = (await tile.boundingBox())!;
+  let to = (await target.boundingBox())!;
+  await expect(async () => {
+    const [nextFrom, nextTo] = [(await tile.boundingBox())!, (await target.boundingBox())!];
+    const settled = nextFrom.y === from.y && nextTo.y === to.y;
+    from = nextFrom;
+    to = nextTo;
+    expect(settled).toBe(true);
+  }).toPass({ timeout: 10_000 });
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 20, { steps: 4 });
+  // The drag has started: the shelf the tile leaves looks empty and shrinks, which moves the
+  // shelves below it. Aim at where the target is now, not where it was.
+  await expect(page.getByRole('navigation', { name: 'Déposer dans un meuble' })).toBeVisible();
+  await expect(async () => {
+    const before = (await target.boundingBox())!;
+    await page.waitForTimeout(150);
+    const after = (await target.boundingBox())!;
+    expect(after.y).toBe(before.y);
+    to = after;
+  }).toPass({ timeout: 10_000 });
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
+  await page.waitForTimeout(150);
   await page.mouse.up();
   await expectMoved(page, drag);
 });
