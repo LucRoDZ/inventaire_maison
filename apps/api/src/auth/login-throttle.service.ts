@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { and, count, eq, gt, lt, min, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, lt, sql } from 'drizzle-orm';
 import { CLOCK, type Clock } from '../common/clock';
 import { DB, type Database } from '../database/database.module';
 import { loginAttempts } from '../database/schema';
@@ -41,13 +41,15 @@ export class LoginThrottleService {
   async reserve(username: string, ip: string): Promise<void> {
     const key = LoginThrottleService.key(username);
     const now = this.clock.now();
-    const since = new Date(now.getTime() - FAILURE_WINDOW_MS);
+    // A block can only still be running if it started within the window, from failures that are
+    // themselves at most one window older.
+    const since = new Date(now.getTime() - 2 * FAILURE_WINDOW_MS);
     await this.db.transaction(async (tx) => {
       await tx.execute(
         sql`select pg_advisory_xact_lock(${LOCK_NAMESPACE}::int, hashtext(${`${key}|${ip}`}))`,
       );
-      const [row] = await tx
-        .select({ n: count(), oldest: min(loginAttempts.createdAt) })
+      const rows = await tx
+        .select({ at: loginAttempts.createdAt })
         .from(loginAttempts)
         .where(
           and(
@@ -55,16 +57,32 @@ export class LoginThrottleService {
             eq(loginAttempts.ip, ip),
             gt(loginAttempts.createdAt, since),
           ),
-        );
-      if (row && row.n >= MAX_FAILURES && row.oldest) {
-        const unblockAt = row.oldest.getTime() + FAILURE_WINDOW_MS;
+        )
+        .orderBy(asc(loginAttempts.createdAt));
+      const blockedUntil = LoginThrottleService.blockedUntil(rows.map((row) => row.at.getTime()));
+      if (blockedUntil > now.getTime()) {
         throw new TooManyAttemptsException(
-          Math.max(1, Math.ceil((unblockAt - now.getTime()) / 1000)),
+          Math.max(1, Math.ceil((blockedUntil - now.getTime()) / 1000)),
         );
       }
       await tx.insert(loginAttempts).values({ username: key, ip, createdAt: now });
     });
     await this.purge();
+  }
+
+  /**
+   * End of the block, in ms (0 if none): 15 minutes after the failure that completes
+   * 5 failures within 15 minutes. `times` is sorted in ascending order.
+   */
+  static blockedUntil(times: readonly number[]): number {
+    let until = 0;
+    for (let i = MAX_FAILURES - 1; i < times.length; i++) {
+      const last = times[i]!;
+      if (last - times[i - (MAX_FAILURES - 1)]! <= FAILURE_WINDOW_MS) {
+        until = Math.max(until, last + FAILURE_WINDOW_MS);
+      }
+    }
+    return until;
   }
 
   /** Forgets the attempts of the pair, after a successful login. */

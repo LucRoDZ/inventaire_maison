@@ -63,6 +63,22 @@ describe('login throttling', () => {
     expect((await login('lucas', 'motdepasse1')).status).toBe(200);
   });
 
+  it('keeps the block for 15 minutes after the fifth failure, not after the first', async () => {
+    // Failures at minutes 0, 5, 10, 12 and 14: blocked until minute 29.
+    for (const step of [0, 5, 5, 2, 2]) {
+      clock.advance(step * MINUTE);
+      await fail(1);
+    }
+    clock.advance(2 * MINUTE); // minute 16: the first failure has left the window
+    const res = await login('lucas', 'motdepasse1');
+    expect(res.status).toBe(429);
+    expect(Number(res.headers['retry-after'])).toBe(13 * 60);
+    clock.advance(12 * MINUTE); // minute 28
+    expect((await login('lucas', 'motdepasse1')).status).toBe(429);
+    clock.advance(2 * MINUTE); // minute 30
+    expect((await login('lucas', 'motdepasse1')).status).toBe(200);
+  });
+
   it('does not block another IP or another username', async () => {
     await fail(5);
     expect((await login('lucas', 'motdepasse1', '10.0.0.2')).status).toBe(200);
