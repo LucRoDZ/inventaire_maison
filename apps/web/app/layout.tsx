@@ -3,6 +3,7 @@ import '@fontsource/carlito/latin-700.css';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { InstallCapture } from '../components/pwa/InstallCapture';
 import { OfflineCallout } from '../components/pwa/OfflineCallout';
 import { RegisterSW } from '../components/pwa/RegisterSW';
 import { APP_NAME, APP_SHORT_NAME, THEME_COLOR } from './manifest';
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <OfflineCallout />
           <RegisterSW />
         </div>
+        <InstallCapture />
         {children}
       </body>
     </html>

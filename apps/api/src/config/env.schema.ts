@@ -12,6 +12,12 @@ export const envSchema = z.object({
   OFF_USER_AGENT: z.string().min(1).default('InventaireMaison/1.0'),
   OFF_BASE_URL: z.string().url().optional(),
   PUBLIC_ORIGIN: z.string().url().default('http://localhost:3000'),
+  /**
+   * Shared with the reverse proxy, which sends it in `X-Proxy-Secret`. When set, X-Forwarded-* is
+   * honoured only on requests that carry it: another container on the same Docker network cannot
+   * forge its client address (rate limit, login throttle).
+   */
+  PROXY_SECRET: z.string().min(16).optional(),
   IMAGES_DIR: z.string().min(1).default('./data/images'),
   /** Global limit per IP; the tests raise it so that their many requests from 127.0.0.1 pass. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(300),
@@ -34,6 +40,20 @@ export function parseEnv(raw: Record<string, string | undefined>): AppConfig {
     throw new EnvError(names);
   }
   const config = result.data;
+  if (config.NODE_ENV === 'production') {
+    // The values of .env.example are public: refuse to run with them.
+    const placeholders = (
+      [
+        ['SESSION_SECRET', config.SESSION_SECRET],
+        ['ADMIN_PASSWORD', config.ADMIN_PASSWORD],
+        ['DATABASE_URL', config.DATABASE_URL],
+        ['PROXY_SECRET', config.PROXY_SECRET],
+      ] as const
+    )
+      .filter(([, value]) => value?.includes('change-me'))
+      .map(([name]) => name);
+    if (placeholders.length > 0) throw new EnvError(placeholders);
+  }
   // The test double of Open Food Facts is never honoured in production.
   if (config.NODE_ENV === 'production') delete config.OFF_BASE_URL;
   return config;

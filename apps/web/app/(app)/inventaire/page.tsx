@@ -1,8 +1,23 @@
+'use client';
+
+import { Suspense, useState } from 'react';
+import { HomeView } from '../../../components/home/HomeView';
+import { ListView } from '../../../components/list/ListView';
+import { ViewToggle, type InventoryView } from '../../../components/list/ViewToggle';
+
 export default function InventairePage() {
+  const [view, setView] = useState<InventoryView>('home');
   return (
-    <main>
+    <main className="flex flex-col gap-4">
       <h1 className="text-title">Inventaire</h1>
-      <p className="text-body">Écran provisoire.</p>
+      <ViewToggle value={view} onChange={setView} />
+      {view === 'list' ? (
+        <ListView />
+      ) : (
+        <Suspense>
+          <HomeView />
+        </Suspense>
+      )}
     </main>
   );
 }

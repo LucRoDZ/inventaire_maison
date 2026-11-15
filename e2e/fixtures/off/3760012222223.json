@@ -1,0 +1,11 @@
+{
+  "code": "3760012222223",
+  "status": 1,
+  "product": {
+    "product_name": "Tisane du classement admin",
+    "product_name_fr": "Tisane du classement admin",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:herbal-teas"]
+  }
+}

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { AuthProvider } from '../../components/auth/AuthProvider';
 import { BottomNav } from '../../components/nav/BottomNav';
+import { InstallSheet } from '../../components/pwa/InstallSheet';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {children}
       </div>
       <BottomNav />
+      <InstallSheet />
     </AuthProvider>
   );
 }

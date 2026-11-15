@@ -16,6 +16,19 @@ describe('parseEnv', () => {
     expect(config.RATE_LIMIT_PER_MINUTE).toBe(300);
   });
 
+  it('refuses the placeholder values of .env.example in production only', () => {
+    const placeholders = {
+      ...valid,
+      SESSION_SECRET: 'change-me-change-me-change-me-change-me',
+      ADMIN_PASSWORD: 'change-me-now',
+      DATABASE_URL: 'postgres://inventaire:change-me@db:5432/inventaire',
+    };
+    expect(() => parseEnv({ ...placeholders, NODE_ENV: 'production' })).toThrow(
+      /SESSION_SECRET, ADMIN_PASSWORD, DATABASE_URL/,
+    );
+    expect(() => parseEnv({ ...placeholders, NODE_ENV: 'development' })).not.toThrow();
+  });
+
   it('names a missing variable', () => {
     expect(() => parseEnv({ ...valid, ADMIN_USERNAME: undefined })).toThrow(/ADMIN_USERNAME/);
   });

@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
+  // Always defined, so that webpack drops the fake scan engine (end-to-end tests only) from
+  // every other build instead of emitting it as an unused chunk.
+  env: { NEXT_PUBLIC_E2E: process.env['NEXT_PUBLIC_E2E'] === '1' ? '1' : '0' },
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` }];
   },

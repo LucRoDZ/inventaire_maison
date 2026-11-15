@@ -1,4 +1,8 @@
-# Block to add (by Lucas) to the existing nginx container (easyq-nginx-1).
+# Block to add (by Lucas) to the existing nginx container (easyq-nginx-1):
+# copy this file to /opt/proxy/conf.d/inventaire.conf on the VPS (step by step: README).
+# Certificates: volume easyq_certbot_certs, ACME challenges: volume easyq_certbot_www. The paths
+# below (/etc/letsencrypt, /var/www/certbot) are where those volumes are expected to be mounted in
+# easyq-nginx-1: check with `docker inspect easyq-nginx-1` and adapt if they differ.
 # Web and api join the Docker network of that nginx with the aliases inventaire-web and inventaire-api.
 # The resolver is declared inside the server block, so it cannot clash with the http-level
 # configuration of the existing nginx.
@@ -37,6 +41,9 @@ server {
 
     location /api/ {
         proxy_pass $inv_api;
+        # Same value as PROXY_SECRET in /opt/inventaire/.env: without it the API ignores
+        # X-Forwarded-For (another container of easyq_default cannot forge a client address).
+        proxy_set_header X-Proxy-Secret "REMPLACER_PAR_PROXY_SECRET";
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

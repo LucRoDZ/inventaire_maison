@@ -15,6 +15,13 @@
       "when": 1794717112807,
       "tag": "0001_shelf_location_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794754878085,
+      "tag": "0002_journal_keeps_deleted_shelf",
+      "breakpoints": true
     }
   ]
 }

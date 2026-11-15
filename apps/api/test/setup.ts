@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import 'reflect-metadata';
 
 process.env['NODE_ENV'] = 'test';
@@ -8,3 +10,4 @@ process.env['ADMIN_PASSWORD'] ??= 'test-admin-password';
 process.env['OFF_USER_AGENT'] ??= 'InventaireMaison-Test/1.0';
 // Every test request comes from 127.0.0.1: the global limit is raised, except in its own test.
 process.env['RATE_LIMIT_PER_MINUTE'] ??= '100000';
+process.env['IMAGES_DIR'] ??= path.join(tmpdir(), `inventaire-test-images-${process.pid}`);

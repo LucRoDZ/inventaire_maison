@@ -1,0 +1,12 @@
+{
+  "code": "3017620422003",
+  "status": 1,
+  "product": {
+    "product_name": "Nutella",
+    "product_name_fr": "Pâte à tartiner Nutella",
+    "brands": "Ferrero, Nutella",
+    "quantity": "400 g",
+    "image_front_url": "https://images.openfoodfacts.org/images/products/301/762/042/2003/front_fr.jpg",
+    "categories_tags": ["en:spreads", "en:sweet-spreads", "en:chocolate-spreads"]
+  }
+}

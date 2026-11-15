@@ -1,0 +1,11 @@
+{
+  "code": "3760004444442",
+  "status": 1,
+  "product": {
+    "product_name": "Red wine",
+    "product_name_fr": "Vin rouge de la souris",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:red-wines"]
+  }
+}

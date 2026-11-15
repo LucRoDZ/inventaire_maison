@@ -20,3 +20,9 @@ apps/web/public/sw.js
 apps/web/public/sw.js.map
 apps/web/public/swe-worker-*.js
 apps/web/public/swe-worker-*.js.map
+
+# Local image storage
+data/
+
+# Copied from zxing-wasm by scripts/copy-zxing-wasm.mjs
+apps/web/public/zxing/

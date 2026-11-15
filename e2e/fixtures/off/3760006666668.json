@@ -1,0 +1,11 @@
+{
+  "code": "3760006666668",
+  "status": 1,
+  "product": {
+    "product_name": "Wholemeal bread",
+    "product_name_fr": "Brioche des deux membres",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:breads"]
+  }
+}

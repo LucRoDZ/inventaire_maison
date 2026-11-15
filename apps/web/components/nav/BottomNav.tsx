@@ -3,6 +3,8 @@
 import { EllipsisVertical, ListChecks, Package, ScanBarcode, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { refreshReviewCount, useReviewCount } from '../../lib/review-count';
 
 interface Tab {
   href: string;
@@ -23,6 +25,10 @@ export function isActive(pathname: string, href: string): boolean {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const reviewCount = useReviewCount();
+  useEffect(() => {
+    void refreshReviewCount();
+  }, [pathname]);
   return (
     <nav
       aria-label="Navigation principale"
@@ -39,9 +45,17 @@ export function BottomNav() {
                 className="tap-target text-indigo flex flex-col items-center justify-center gap-0.5 py-2"
               >
                 <span
-                  className={`flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber' : 'bg-transparent'}`}
+                  className={`relative flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber' : 'bg-transparent'}`}
                 >
                   <Icon size={22} aria-hidden="true" />
+                  {href === '/a-classer' && reviewCount > 0 ? (
+                    <span
+                      aria-label={`${reviewCount} à classer`}
+                      className="bg-indigo text-help absolute -top-0.5 right-1 min-w-5 rounded-full px-1 text-center text-white"
+                    >
+                      {reviewCount}
+                    </span>
+                  ) : null}
                 </span>
                 <span className={`text-help ${active ? 'font-bold' : ''}`}>{label}</span>
               </Link>

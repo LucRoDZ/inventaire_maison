@@ -78,3 +78,12 @@ describe('check-colors', () => {
     expect(result.status).toBe(0);
   });
 });
+
+describe('check-colors: amber text', () => {
+  it('fails on amber text and accepts an amber background', () => {
+    expect(
+      run('ok.tsx', `export const A = () => <p className="bg-amber text-indigo" />;`).status,
+    ).toBe(0);
+    expect(run('bad.tsx', `export const A = () => <p className="text-amber" />;`).status).toBe(1);
+  });
+});

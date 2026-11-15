@@ -1,0 +1,11 @@
+{
+  "code": "3760005555550",
+  "status": 1,
+  "product": {
+    "product_name": "Brown beer",
+    "product_name_fr": "Bière brune du clavier",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:beers"]
+  }
+}

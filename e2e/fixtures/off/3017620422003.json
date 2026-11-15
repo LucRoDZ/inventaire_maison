@@ -1,0 +1,11 @@
+{
+  "code": "3017620422003",
+  "status": 1,
+  "product": {
+    "product_name": "Nutella",
+    "product_name_fr": "Pâte à tartiner Nutella",
+    "brands": "Ferrero, Nutella",
+    "quantity": "400 g",
+    "categories_tags": ["en:spreads", "en:sweet-spreads", "en:chocolate-spreads"]
+  }
+}

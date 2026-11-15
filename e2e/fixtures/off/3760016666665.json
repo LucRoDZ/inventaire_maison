@@ -1,0 +1,11 @@
+{
+  "code": "3760016666665",
+  "status": 1,
+  "product": {
+    "product_name": "Yaourt grec onctueux",
+    "product_name_fr": "Yaourt grec onctueux",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:yogurts"]
+  }
+}

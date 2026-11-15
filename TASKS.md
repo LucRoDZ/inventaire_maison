@@ -168,56 +168,56 @@
 
 ### Référentiels, catalogue, Open Food Facts
 
-- [ ] **1.1 API lieux et étagères**
+- [x] **1.1 API lieux et étagères**
   - Résultat : lecture pour tous, écriture pour l'admin.
   - Fichiers : `apps/api/src/locations/`, `packages/shared/src/locations.ts`.
   - Comportement : `GET /locations` (étagères incluses, triées) ; `PATCH /locations/{id}` (nom, icône, ordre) ; `POST/PATCH/DELETE /shelves` (nom, type `rack` ou `plain`, ordre, lieu). Supprimer une étagère renvoie son stock au « Non rangé » du meuble, avec fusion des lignes identiques et deux mouvements `move` par ligne, dans une transaction. Nom vide ou de plus de 40 caractères : 400 ; identifiant inconnu : 404 ; membre en écriture : 403.
   - Tests : intégration de chaque route, dont la suppression avec fusion et le journal.
   - Fin : `DELETE /api/shelves/{id}` par un membre renvoie 403 ; par l'admin 204, et le stock réapparaît avec `shelf_id` nul.
 
-- [ ] **1.2 API catégories et correspondances Open Food Facts**
+- [x] **1.2 API catégories et correspondances Open Food Facts**
   - Résultat : référentiels de classement administrables.
   - Fichiers : `apps/api/src/categories/`.
   - Comportement : `GET/POST/PATCH/DELETE /categories` (nom, icône parmi une liste fermée d'icônes Lucide, ordre) ; supprimer une catégorie renvoie ses produits vers « Autre » avec `category_guessed=true` et supprime ses correspondances ; « Autre » non supprimable (409). `GET/POST/PATCH/DELETE /off-category-map` (`off_tag` unique au format `xx:slug`, 409 en cas de doublon).
   - Tests : intégration de chaque route et de chaque erreur.
   - Fin : `DELETE /api/categories/{id de Autre}` renvoie 409.
 
-- [ ] **1.3 Normalisation des codes-barres**
+- [x] **1.3 Normalisation des codes-barres**
   - Résultat : une fonction partagée par le web et l'API.
   - Fichiers : `packages/shared/src/barcode.ts`.
   - Comportement : retire espaces et tirets ; EAN-13 et EAN-8 validés par clé de contrôle ; UPC-A (12 chiffres) préfixé d'un 0 ; UPC-E développé seulement si le format est fourni ; tout le reste (lettres, autre longueur, clé fausse) renvoie une erreur typée.
   - Tests : unitaires sur une table de cas : codes réels valides, clé fausse, UPC-A, UPC-E, espaces, chaîne vide, 14 chiffres.
   - Fin : `npm test` passe ; `normalizeBarcode("3 017620 422003")` renvoie `3017620422003`.
 
-- [ ] **1.4 API catalogue**
+- [x] **1.4 API catalogue**
   - Résultat : création, lecture, recherche floue et modification des produits.
   - Fichiers : `apps/api/src/products/`, `packages/shared/src/products.ts`.
   - Comportement : `GET /products?q=&needsReview=&limit=` (similarité trigramme sur `search_text`, sans accents, 20 résultats par défaut ; `needsReview=true` : produits en stock dont la catégorie est « Autre » ou devinée) ; `GET /products/{id}` (avec stock par lieu) ; `POST /products` (nom et catégorie obligatoires ; marque, format, lieu habituel, code-barres facultatifs ; code normalisé, 409 si déjà présent ; `source=manual`, `created_by`) ; `PATCH /products/{id}` (nom, marque, catégorie, lieu habituel ; toute modification de catégorie remet `category_guessed` à faux).
   - Tests : intégration : recherche avec faute de frappe et sans accent, doublon de code, code invalide, catégorie inconnue, produit sans code-barres, confirmation de catégorie.
   - Fin : `GET /api/products?q=lait+ecreme` retrouve « Lait demi-écrémé ».
 
-- [ ] **1.5 Images : miniatures et envoi de photo**
+- [x] **1.5 Images : miniatures et envoi de photo**
   - Résultat : toute image devient une miniature WebP locale de 400 px.
   - Fichiers : `apps/api/src/images/`.
   - Comportement : `POST /products/{id}/image` (multipart, 8 Mo maximum, JPEG, PNG ou WebP vérifiés par signature) : réencodage sharp, 400 px de large, orientation appliquée puis EXIF retiré, nom aléatoire généré par le serveur, ancienne image supprimée ; 413 si trop lourd, 415 si le type est refusé. `GET /images/{fichier}` : session exigée, motif de nom strict, `Cache-Control: private, max-age=31536000, immutable`, 404 sinon.
   - Tests : unitaires du service (dimensions, format, absence d'EXIF) ; intégration : envoi valide, fichier trop lourd, faux JPEG, tentative de traversée de chemin, accès sans session.
   - Fin : `GET /api/images/..%2F..%2Fetc%2Fpasswd` renvoie 404 ; l'image servie est un WebP de 400 px.
 
-- [ ] **1.6 Client Open Food Facts**
+- [x] **1.6 Client Open Food Facts**
   - Résultat : lecture d'une fiche produit depuis le serveur.
   - Fichiers : `apps/api/src/off/{off.client,off.mapper}.ts`, `apps/api/test/fixtures/off/*.json`.
   - Comportement : `GET {base}/api/v2/product/{code}.json` avec `User-Agent` = `OFF_USER_AGENT` et délai de 4 s ; renvoie nom (`product_name_fr`, sinon `product_name`), marque, `quantity`, `image_front_url`, `categories_tags`, ou un résultat typé `not_found` / `unavailable` (délai, erreur réseau, 5xx, JSON invalide), sans jamais lever d'exception ; `OFF_BASE_URL` ignorée en production.
   - Tests : unitaires avec `fetch` simulé : fiche complète, fiche sans nom français, fiche sans nom, 404, délai dépassé, 500, JSON invalide, présence du `User-Agent`.
   - Fin : `npm run test:api` passe sans aucun appel réseau réel.
 
-- [ ] **1.7 Catégorie devinée et image distante**
+- [x] **1.7 Catégorie devinée et image distante**
   - Résultat : une fiche Open Food Facts donne une catégorie locale et une miniature.
   - Fichiers : `apps/api/src/off/category-guess.service.ts`, `apps/api/src/images/remote-image.service.ts`.
   - Comportement : parcours de `categories_tags` du dernier au premier, première correspondance retenue, sinon « Autre ». Image : HTTPS seulement, hôte terminé par `.openfoodfacts.org`, redirections non suivies, 8 Mo maximum, délai de 4 s ; tout échec laisse `image_path` vide sans erreur.
   - Tests : unitaires : tag le plus spécifique prioritaire, aucun tag connu, liste vide ; URL en HTTP, hôte étranger, redirection, fichier trop gros, contenu non image.
   - Fin : tests verts ; une URL `https://exemple.test/x.jpg` n'est jamais appelée.
 
-- [ ] **1.8 Résolution d'un scan**
+- [x] **1.8 Résolution d'un scan**
   - Résultat : `GET /scan/{barcode}` répond `known`, `suggested` ou `unknown`.
   - Fichiers : `apps/api/src/scan/`, `packages/shared/src/scan.ts`.
   - Comportement : code invalide : 400 sans appel réseau. Présent au catalogue : `known` avec le produit et son stock. Trouvé chez Open Food Facts avec un nom : produit créé (`source=off`, `category_guessed=true`, `off_payload`), image téléchargée en tâche de fond, réponse `suggested`. Fiche sans nom : `unknown` raison `poor_data` avec indices. Absent : `unknown/not_found`. Panne : `unknown/off_unavailable`. Deux scans simultanés du même code inconnu ne créent qu'un produit.
@@ -226,28 +226,28 @@
 
 ### Stock
 
-- [ ] **1.9 Ajustement du stock et journal**
+- [x] **1.9 Ajustement du stock et journal**
   - Résultat : `POST /stock/adjust` modifie le stock et écrit le journal dans la même transaction.
   - Fichiers : `apps/api/src/stock/{stock.controller,stock.service}.ts`, `packages/shared/src/stock.ts`.
   - Comportement : entrée `{productId, locationId, shelfId?, expiryDate?, delta, reason}` avec `reason` parmi `scan_add`, `scan_remove`, `manual`, `correction`. Delta positif : crée la ligne ou additionne. Delta négatif : décrémente, supprime la ligne à 0, 409 « Stock insuffisant » au-delà. Delta 0, étagère d'un autre lieu, date invalide : 400. Fixe le lieu habituel du produit s'il est vide. Réponse : la ligne à jour (ou `null`) et le mouvement.
   - Tests : intégration : création, addition sur la même clé, date différente = autre ligne, passage à 0, dépassement, étagère incohérente, auteur du mouvement, deux décréments concurrents, somme du journal égale au stock.
   - Fin : deux `adjust` de +2 puis −4 renvoient 409 et laissent la quantité à 4.
 
-- [ ] **1.10 Lecture du stock et compteurs**
+- [x] **1.10 Lecture du stock et compteurs**
   - Résultat : `GET /stock` alimente la vue Liste.
   - Fichiers : `apps/api/src/stock/stock.query.ts`.
   - Comportement : filtres `location`, `shelf`, `category`, `q` (nom ou marque) ; tri `name`, `added`, `expiry` (sans date en dernier) ; chaque ligne porte produit, catégorie, lieu, étagère, quantité, date limite et statut d'échéance (`expired`, `soon` avec nombre de jours, ou aucun) calculé en Europe/Paris ; compteurs par lieu : produits distincts et unités.
   - Tests : intégration sur un jeu de données : chaque filtre, chaque tri, bornes J-3, aujourd'hui, hier, compteurs.
   - Fin : `GET /api/stock?location={frigo}&sort=expiry` renvoie les lignes du frigo, la plus proche de l'échéance en premier.
 
-- [ ] **1.11 Déplacement, retrait automatique, historique**
+- [x] **1.11 Déplacement, retrait automatique, historique**
   - Résultat : `POST /stock/move`, `POST /stock/remove`, `GET /products/{id}/movements`.
   - Fichiers : `apps/api/src/stock/{stock-move.service,stock-remove.service}.ts`.
   - Comportement : `move` `{stockItemId, toLocationId, toShelfId?, quantity}` : deux mouvements `move` (moins et plus) en une transaction, fusion à la destination, 400 si origine = destination, 409 si quantité supérieure au stock. `remove` `{productId}` : décrémente de 1 la ligne à la date limite la plus proche, sinon la plus ancienne ; 404 « Pas en stock » ; réponse : la ligne touchée, pour le message et l'annulation. `movements` : du plus récent au plus ancien, avec pseudo, lieu, étagère, delta, raison ; pagination par curseur.
   - Tests : intégration : déplacement partiel et total, fusion, erreurs ; choix de la ligne en retrait ; auteur et ordre de l'historique ; compte désactivé toujours nommé.
   - Fin : après un `move`, l'historique du produit contient deux lignes `move` de deltas opposés.
 
-- [ ] **1.12 `GET /home`**
+- [x] **1.12 `GET /home`**
   - Résultat : toute la vue Maison en un appel.
   - Fichiers : `apps/api/src/home/`.
   - Comportement : par lieu (ordre `sort_order`) : type, icône, compteurs (produits, unités, bientôt périmés), étagères ordonnées avec leurs vignettes (ligne de stock, produit, image ou icône de catégorie, quantité, date limite, statut), et plateau « Non rangé ».
@@ -256,56 +256,56 @@
 
 ### Scanner et ajout
 
-- [ ] **1.13 Moteurs de scan**
+- [x] **1.13 Moteurs de scan**
   - Résultat : une interface `Scanner` qui cache `BarcodeDetector` et `zxing-wasm`.
   - Fichiers : `apps/web/lib/scanner/{types,native-engine,zxing-engine,create-scanner,fake-engine}.ts`, WASM copié dans `apps/web/public/`.
   - Comportement : choix du moteur natif s'il gère EAN-13, EAN-8, UPC-A et UPC-E, sinon ZXing ; environ 10 lectures par seconde ; résultat `{code, format}` ; même code ignoré pendant 2 s ; `decodeImage(blob)` pour la photo ; WASM chargé depuis l'application, jamais depuis un CDN ; moteur factice seulement si `NEXT_PUBLIC_E2E=1`.
   - Tests : unitaires : sélection du moteur, cadence, anti-doublon, décodage par ZXing d'images EAN-13, EAN-8 et UPC-A en fixtures, image sans code.
   - Fin : `npm run test:web` passe ; le build de production ne contient pas `fake-engine`.
 
-- [ ] **1.14 Écran Scanner**
+- [x] **1.14 Écran Scanner**
   - Résultat : caméra arrière plein écran sur `/`.
   - Fichiers : `apps/web/app/(app)/page.tsx`, `apps/web/components/scanner/{ScannerView,CameraControls,PermissionHelp}.tsx`, `apps/web/lib/scanner/camera.ts`.
   - Comportement : flux démarré par le bouton Scanner (`facingMode: environment`, 1280 × 720, `playsinline muted`) ; cadre de visée horizontal ; bip et vibration si disponibles ; bouton lampe et mise au point continue seulement si `getCapabilities()` les expose ; choix de caméra s'il y en a plusieurs ; caméra coupée en quittant l'écran ou en masquant l'onglet ; bascule Ajouter / Retirer ; caméra refusée ou absente : message avec les étapes de la plateforme détectée et accès direct aux replis ; contexte non sécurisé : message « HTTPS requis ».
   - Tests : composants avec faux `MediaStream` : démarrage, arrêt sur `visibilitychange`, lampe masquée, refus de permission, bascule de mode.
   - Fin : tests verts ; en local sur Chrome, la caméra s'allume et s'éteint au changement d'onglet.
 
-- [ ] **1.15 Solutions de repli**
+- [x] **1.15 Solutions de repli**
   - Résultat : un code peut toujours être saisi sans flux vidéo.
   - Fichiers : `apps/web/components/scanner/{ManualCodeInput,PhotoCodeButton,InAppBrowserNotice}.tsx`, `apps/web/lib/platform.ts`.
   - Comportement : champ au clavier numérique, validé par Entrée (lecteur USB ou Bluetooth), code invalide refusé avec un message ; « Prendre une photo du code » (`capture="environment"`) décodée par ZXing, « Code illisible, réessayez » sinon ; navigateur intégré (Instagram, Facebook, WhatsApp) : « Ouvrez cette page dans Safari ou Chrome ».
   - Tests : composants : saisie valide, clé fausse, saisie rapide terminée par Entrée, photo lisible et illisible, détection par agent utilisateur.
   - Fin : tests verts.
 
-- [ ] **1.16 Fiche d'ajout**
+- [x] **1.16 Fiche d'ajout**
   - Résultat : feuille quantité, lieu, étagère, date limite.
   - Fichiers : `apps/web/components/add/{AddSheet,QuantityStepper,LocationPicker,UndoToast}.tsx`.
   - Comportement : photo ou pictogramme, nom, marque, catégorie ; quantité 1 par défaut, minimum 1 ; lieu prérempli selon l'ordre A6 ; étagère facultative (« Non rangé » par défaut) ; date limite facultative ; « Ajouter » et « Ajouter et scanner le suivant » ; message « Ajouté : 2 × Lait demi-écrémé, Frigo, étagère 2 » avec Annuler pendant 5 s (mouvement `correction`) ; hors ligne ou erreur : la feuille reste ouverte avec un message, rien n'est perdu.
   - Tests : composants : valeurs par défaut, stepper, changement de lieu qui vide l'étagère, envoi, annulation, échec réseau.
   - Fin : tests verts.
 
-- [ ] **1.17 Flux de scan, mode Ajouter**
+- [x] **1.17 Flux de scan, mode Ajouter**
   - Résultat : du code détecté à l'ajout, pour un produit connu ou trouvé.
   - Fichiers : `apps/web/lib/scan-flow.ts`, `apps/web/components/scanner/ScanFlow.tsx`.
   - Comportement : code détecté : pause du scan, appel de `/scan` ; `known` ou `suggested` : fiche d'ajout (mention « Catégorie proposée » si devinée, modifiable sur place) ; `unknown` : formulaire de la tâche 1.18 ; code invalide : message, le scan reprend ; hors ligne : « Pas de connexion ».
   - Tests : composants pour chaque issue. E2E (moteur factice et serveur de fixtures) : produit Open Food Facts ajouté et visible ; second scan reconnu ; saisie manuelle du même code.
   - Fin : l'e2e « scan simulé d'un produit Open Food Facts » passe sur les deux navigateurs.
 
-- [ ] **1.18 Formulaire produit inconnu**
+- [x] **1.18 Formulaire produit inconnu**
   - Résultat : un produit inconnu est décrit une seule fois.
   - Fichiers : `apps/web/components/product/{ProductForm,PhotoField}.tsx`.
   - Comportement : nom et catégorie obligatoires, marque, lieu habituel, photo facultative ; indices préremplis si fournis ; message adapté à la raison (introuvable, Open Food Facts injoignable) ; validation : création, envoi de la photo, puis fiche d'ajout ; si la photo échoue, le produit est gardé et un message le dit.
   - Tests : composants : champs obligatoires, envoi, photo en échec. E2E : code inconnu, formulaire, ajout, second scan reconnu ; Open Food Facts en panne : formulaire vide et ajout possible.
   - Fin : les deux e2e passent.
 
-- [ ] **1.19 Ajouter sans code-barres**
+- [x] **1.19 Ajouter sans code-barres**
   - Résultat : fruits, légumes et boucherie ajoutés par le nom.
   - Fichiers : `apps/web/components/add/CatalogSearch.tsx`.
   - Comportement : lien sur l'écran Scanner ; recherche dès 2 caractères avec temporisation ; résultat touché : fiche d'ajout (raison `manual`) ; aucun résultat : « Créer ce produit » ouvre le formulaire sans code-barres.
   - Tests : composants : recherche, état vide, création. E2E : « Tomates » créé et ajouté sans code.
   - Fin : l'e2e « ajout manuel d'un produit » passe.
 
-- [ ] **1.20 Mode Retirer**
+- [x] **1.20 Mode Retirer**
   - Résultat : un scan décrémente de 1.
   - Fichiers : `apps/web/components/scanner/RemoveFlow.tsx`.
   - Comportement : `known` : `POST /stock/remove`, message « Retiré : 1 × Lait, Frigo » avec Annuler 5 s, le scan reprend ; pas en stock : « Pas en stock » ; inconnu : « Produit inconnu », proposition de passer en mode Ajouter ; aucun produit n'est créé en mode Retirer.
@@ -314,56 +314,56 @@
 
 ### Inventaire
 
-- [ ] **1.21 Vue Liste**
+- [x] **1.21 Vue Liste**
   - Résultat : inventaire par lieu et catégorie.
   - Fichiers : `apps/web/app/(app)/inventaire/page.tsx`, `apps/web/components/list/{ListView,LocationTabs,CategorySection,StockCard,ExpiryBadge,ListToolbar}.tsx`.
   - Comportement : bascule Maison / Liste ; onglets Tout puis lieux ; sections repliables par catégorie ; carte : photo ou pictogramme, nom, marque, quantité, − / + (raison `manual`, mise à jour optimiste, retour arrière en cas d'erreur, la carte disparaît à 0) ; recherche, filtre de catégorie, tri ; pastille ambre « J-3 » ou « Aujourd'hui », rouge « Périmé », toujours avec le mot ; compteurs d'articles et d'unités ; état vide avec bouton vers le scanner.
   - Tests : composants : pastille aux bornes, carte et retour arrière, sections, état vide. E2E : 3 unités ajoutées au Frigo visibles sous Frigo dans la bonne catégorie ; modification de quantité.
   - Fin : l'e2e « modification de quantité » passe.
 
-- [ ] **1.22 Vue Maison : les quatre meubles**
+- [x] **1.22 Vue Maison : les quatre meubles**
   - Résultat : grille des meubles dessinés.
   - Fichiers : `apps/web/components/home/{HomeView,FurnitureCard}.tsx`, `apps/web/components/home/furniture/{Pantry,Fridge,Freezer,Cellar}.tsx`.
   - Comportement : 2 colonnes sur téléphone, 4 sur ordinateur ; en-tête indigo ; chaque meuble : SVG aux seules couleurs des tokens (intérieur lavande, traits indigo, lumière ambre du frigo), nombre d'articles, pastille ambre « n bientôt périmés » si besoin ; dessin choisi par `locations.kind`.
   - Tests : composants : quatre meubles rendus, compteur, pastille absente à 0. E2E : la vue Maison affiche quatre meubles nommés.
   - Fin : l'e2e « vue Maison » passe.
 
-- [ ] **1.23 Meuble ouvert**
+- [x] **1.23 Meuble ouvert**
   - Résultat : étagères et vignettes d'un meuble.
   - Fichiers : `apps/web/app/(app)/inventaire/[lieu]/page.tsx`, `apps/web/components/home/{OpenFurniture,ShelfRow,ProductTile,UnshelvedTray}.tsx`.
   - Comportement : ouverture animée (250 ms, `transform` et `opacity` seulement, coupée par `prefers-reduced-motion`) ; étagères empilées dans l'ordre, dessin `rack` ou `plain` ; vignette carrée avec photo ou pictogramme et pastille ambre de quantité ; étagère pleine : défilement horizontal ; étagère vide : contour pointillé `lavender-line`, « Vide », bouton + qui ouvre le scanner avec ce meuble et cette étagère préchoisis ; plateau « Non rangé » en bas.
   - Tests : composants : ordre, étagère vide, plateau, contexte transmis au scanner. E2E : ajout depuis une étagère vide, le produit y apparaît avec sa photo.
   - Fin : l'e2e passe ; le critère « 3 unités au Frigo, étagère 2 » est vérifié dans les deux vues.
 
-- [ ] **1.24 Panneau produit et « Déplacer vers… »**
+- [x] **1.24 Panneau produit et « Déplacer vers… »**
   - Résultat : agir sur une vignette sans glisser.
   - Fichiers : `apps/web/components/home/{ProductSheet,MoveDialog}.tsx`.
   - Comportement : feuille du bas : photo, nom, quantité − / +, date limite, lien vers la fiche produit, « Déplacer vers… » (meuble, étagère ou « Non rangé », quantité = toute la ligne par défaut) ; destination identique impossible ; message de confirmation.
   - Tests : composants : choix de destination, quantité partielle, erreur 409. E2E : déplacement d'une étagère à une autre par le menu.
   - Fin : l'e2e « Déplacer vers… » passe.
 
-- [ ] **1.25 Glisser-déposer**
+- [x] **1.25 Glisser-déposer**
   - Résultat : déplacement par appui long, à la souris et au clavier.
   - Fichiers : `apps/web/components/home/dnd/{DndProvider,DroppableShelf,FurnitureDropBar}.tsx`.
   - Comportement : `@dnd-kit/core` ; tactile : appui de 250 ms, tolérance 5 px ; souris : distance de 8 px ; clavier : Espace, flèches, Espace, avec annonces en français ; barre des meubles visible en haut pendant le glissement (dépôt = « Non rangé » du meuble) ; mise à jour optimiste et retour arrière en cas d'erreur ; glisser déplace toute la ligne.
   - Tests : composants : logique de dépôt (étagère, meuble, origine). E2E : déplacement au clavier sur les deux navigateurs, à la souris sur Chromium ; l'historique contient deux mouvements `move`.
   - Fin : l'e2e de glisser-déposer passe.
 
-- [ ] **1.26 Recherche et filtres de la vue Maison**
+- [x] **1.26 Recherche et filtres de la vue Maison**
   - Résultat : retrouver un produit dans la maison.
   - Fichiers : `apps/web/components/home/HomeFilters.tsx`.
   - Comportement : recherche et puces de catégorie (fond lavande) ; les vignettes hors filtre s'estompent ; les meubles qui contiennent un résultat sont entourés d'ambre ; filtre conservé en ouvrant un meuble.
   - Tests : composants : filtrage par texte et par catégorie, meuble entouré.
   - Fin : tests verts.
 
-- [ ] **1.27 Fiche produit**
+- [x] **1.27 Fiche produit**
   - Résultat : modifier un produit et lire son historique.
   - Fichiers : `apps/web/app/(app)/produits/[id]/page.tsx`, `apps/web/components/product/{ProductEdit,StockByLocation,MovementList}.tsx`.
   - Comportement : modifier nom, marque, catégorie, lieu habituel, photo ; stock par lieu et étagère ; historique « qui, quand, combien, où, pourquoi » en français, chargé par pages ; produit inconnu : page « Produit introuvable ».
   - Tests : composants : formulaire, libellés des raisons. E2E : deux membres agissent sur un produit, l'historique nomme chacun ; la catégorie modifiée se voit dans la vue Liste.
   - Fin : l'e2e « deux membres, même stock » passe.
 
-- [ ] **1.28 À classer**
+- [x] **1.28 À classer**
   - Résultat : classer en un toucher.
   - Fichiers : `apps/web/app/(app)/a-classer/page.tsx`, `apps/web/components/review/ReviewCard.tsx`.
   - Comportement : produits en stock dont la catégorie est « Autre » ou devinée ; un toucher sur « Confirmer » ou sur une autre catégorie classe le produit et le retire de la liste ; pastille de compteur sur l'onglet ; état vide « Tout est classé ».
@@ -372,35 +372,35 @@
 
 ### Comptes et administration
 
-- [ ] **1.29 API membres**
+- [x] **1.29 API membres**
   - Résultat : gestion des comptes par l'admin.
   - Fichiers : `apps/api/src/users/`.
   - Comportement : `GET /users` ; `POST /users` (pseudo, mot de passe temporaire, rôle ; 409 si le pseudo existe, même désactivé) ; `PATCH /users/{id}` (rôle, nouveau mot de passe : révoque ses sessions ; réactivation) ; `DELETE /users/{id}` : désactivation et révocation des sessions. Dernier admin et soi-même protégés (409). Tout en 403 pour un membre. Le hachage ne sort jamais dans une réponse.
   - Tests : intégration de chaque route et de chaque garde-fou ; compte désactivé incapable de se connecter et session coupée.
   - Fin : `POST /api/users` par un membre renvoie 403 ; `POST /api/users` sans session renvoie 401.
 
-- [ ] **1.30 Écrans Plus et Compte**
+- [x] **1.30 Écrans Plus et Compte**
   - Résultat : compte personnel et accès à l'administration.
   - Fichiers : `apps/web/app/(app)/plus/page.tsx`, `apps/web/app/(app)/plus/compte/page.tsx`.
   - Comportement : Plus : Compte, Administration (visible pour l'admin seulement), Installer l'application (emplacement prévu pour 1.34), Se déconnecter. Compte : pseudo, rôle, changement de mot de passe avec messages d'erreur clairs.
   - Tests : composants : entrée Administration masquée pour un membre, formulaire. E2E : changement de mot de passe puis reconnexion.
   - Fin : l'e2e passe.
 
-- [ ] **1.31 Administration : membres**
+- [x] **1.31 Administration : membres**
   - Résultat : créer, réinitialiser, désactiver, réactiver un membre.
   - Fichiers : `apps/web/app/(app)/plus/administration/membres/page.tsx`.
   - Comportement : liste avec rôle et état ; création avec mot de passe temporaire ; confirmation avant désactivation ; erreurs 409 expliquées ; un membre qui ouvre l'URL voit « Accès réservé à l'administrateur ».
   - Tests : composants des formulaires. E2E : l'admin crée un membre, qui se connecte ; l'admin le désactive, sa connexion échoue.
   - Fin : l'e2e passe.
 
-- [ ] **1.32 Administration : lieux et étagères**
+- [x] **1.32 Administration : lieux et étagères**
   - Résultat : renommer et réordonner les lieux, gérer leurs étagères.
   - Fichiers : `apps/web/app/(app)/plus/administration/lieux/page.tsx`.
   - Comportement : nom, icône et ordre d'un lieu ; ajouter, renommer, changer le type, réordonner (boutons monter et descendre), supprimer une étagère avec confirmation « les produits iront dans Non rangé ».
   - Tests : composants. E2E : une étagère ajoutée apparaît dans la vue Maison ; supprimée, ses produits passent en « Non rangé ».
   - Fin : l'e2e passe.
 
-- [ ] **1.33 Administration : catégories et correspondances**
+- [x] **1.33 Administration : catégories et correspondances**
   - Résultat : gérer les catégories et la table Open Food Facts.
   - Fichiers : `apps/web/app/(app)/plus/administration/{categories,correspondances}/page.tsx`.
   - Comportement : nom, icône (sélecteur d'icônes Lucide), ordre ; suppression avec confirmation « les produits iront dans Autre » ; « Autre » non supprimable ; correspondances : liste filtrable, ajout, modification, suppression, doublon signalé.
@@ -409,49 +409,49 @@
 
 ### PWA, compatibilité, qualité
 
-- [ ] **1.34 Fenêtre d'installation**
+- [x] **1.34 Fenêtre d'installation**
   - Résultat : invitation à installer tant que l'application ne l'est pas.
   - Fichiers : `apps/web/lib/install.ts`, `apps/web/components/pwa/{InstallSheet,IosInstallSteps,BrowserInstallHelp}.tsx`.
   - Comportement : après la connexion seulement, jamais en `standalone` ; Chrome, Edge, Android : `beforeinstallprompt` mis de côté, `prompt()` au clic sur Installer, `appinstalled` ferme ; iOS : trois étapes illustrées (Partager, Sur l'écran d'accueil, Ajouter) ; Firefox Android : instructions du menu ; sans support : rien ; « Plus tard » masque 7 jours, « Ne plus afficher » définitivement (stockage local) ; lien « Installer l'application » dans Plus ; présentation `Callout` en feuille du bas.
   - Tests : unitaires de la machine d'états (plateformes, délais avec horloge simulée, standalone) ; composants ; e2e Chromium avec événement simulé.
   - Fin : tests verts ; la fenêtre n'apparaît pas sur `/connexion`.
 
-- [ ] **1.35 Audit compatibilité, accessibilité, identité**
+- [x] **1.35 Audit compatibilité, accessibilité, identité**
   - Résultat : conformité vérifiée sur tous les écrans.
   - Fichiers : `e2e/tests/a11y.spec.ts`, corrections dans les composants.
   - Comportement : aucun défilement horizontal à 360 px ; zones tactiles de 44 px ; contrastes AA (axe) ; aucun texte ambre sur blanc ; statuts toujours avec un mot ; aucun emoji ; animations coupées par `prefers-reduced-motion` ; marges de zone sûre ; police Carlito chargée.
   - Tests : e2e axe sur chaque écran à 360 px ; test qui échoue sur un caractère emoji dans `apps/web` ; `check-colors`.
   - Fin : `npm run test:e2e` et `npm run lint` passent.
 
-- [ ] **1.36 Consolidation du parcours critique e2e**
+- [x] **1.36 Consolidation du parcours critique e2e**
   - Résultat : un scénario unique de bout en bout, en plus des e2e de chaque tâche.
   - Fichiers : `e2e/tests/critical-path.spec.ts`.
   - Comportement : connexion, ajout manuel, scan simulé, modification de quantité, vue Maison, déplacement, retrait jusqu'à 0, second membre qui voit le même stock ; durée du job e2e sous 10 minutes.
   - Tests : le scénario, sur Chromium et WebKit.
   - Fin : `gh pr checks` : job `e2e` vert en moins de 10 minutes.
 
-- [ ] **1.37 Sauvegardes et restauration**
+- [x] **1.37 Sauvegardes et restauration**
   - Résultat : sauvegarde complète et restauration prouvée.
   - Fichiers : `scripts/{backup-images.sh,restore-db.sh,test-backup-restore.sh}`.
   - Comportement : archive datée du volume `images`, 14 conservées, créée avec `umask 077` (dossier 700, archives 600, comme `backup-db.sh`) ; `restore-db.sh <fichier>` refuse une base non vide sauf `--force` ; test : sauvegarde, restauration sur une base vide, comparaison du nombre de lignes de chaque table.
   - Tests : `test-backup-restore.sh` dans le job `docker-build`, qui vérifie aussi que chaque archive d'images est en mode 600 ; `shellcheck`.
   - Fin : `./scripts/test-backup-restore.sh` se termine par `OK`.
 
-- [ ] **1.38 README complet**
+- [x] **1.38 README complet**
   - Résultat : documentation d'exploitation.
   - Fichiers : `README.md`.
   - Comportement : installation, variables ; déploiement en production derrière le nginx partagé, pas à pas pour Lucas : certificat certbot en webroot pour `inventaire.lucaszivan.app`, ajout du bloc d'exemple au nginx existant, test puis rechargement de sa configuration, `./deploy.sh`, vérification de `https://inventaire.lucaszivan.app/api/health`, renouvellement du certificat, dépannage (502 tant que les conteneurs ne sont pas sur `easyq_default`) ; variante Caddy embarqué pour un VPS vierge ; cron de sauvegarde (base et images), copie hors du VPS, restauration, reconstruction mensuelle des images (`--no-cache`), recette manuelle sur vrais appareils reprise du cahier (6 points), test manuel du scan.
   - Tests : sans objet.
   - Fin : chaque commande du README est exécutable telle quelle.
 
-- [ ] **1.39 Checklist des critères d'acceptation**
+- [x] **1.39 Checklist des critères d'acceptation**
   - Résultat : chaque critère du MVP noté validé (avec le test qui le prouve), non validé, ou à valider par Lucas.
   - Fichiers : `TASKS.md` (section Critères de fin de phase).
   - Comportement : aucun critère coché sans preuve ; les critères sur vrais appareils, 4G, VPS et HTTPS restent à la charge de Lucas.
   - Tests : toute la suite.
   - Fin : la section est remplie et la suite complète est verte.
 
-- [ ] **1.40 PR et arrêt**
+- [x] **1.40 PR et arrêt**
   - Résultat : PR `phase-1-v1` avec CI verte.
   - Fichiers : `TASKS.md`.
   - Comportement : description avec la checklist et les décisions ; marqueur d'arrêt en dernière ligne.
@@ -498,22 +498,22 @@
 - [x] Les couleurs et la police de l'écran de connexion viennent des tokens. **Validé** : `check-colors` dans `npm run lint` et son test sur l'application réelle ; palette Tailwind remplacée par les seuls tokens (`globals.css`) ; Carlito auto-hébergée (`@fontsource/carlito`, 400 et 700). Réserve mineure non corrigée : quelques espacements et rayons Tailwind par défaut (`rounded-xl`, `px-3`) hors échelle du cahier.
 
 ### Phase 1 (critères d'acceptation du MVP)
-- [ ] Produit présent sur Open Food Facts prérempli en moins de 3 secondes en 4G (e2e 1.17 pour le flux ; mesure : Lucas).
-- [ ] Code inconnu partout : formulaire vide ; validé, le scan suivant est reconnu (e2e 1.18).
-- [ ] 3 unités au Frigo, étagère 2 : visibles dans la vue Liste et sur la bonne étagère de la vue Maison, avec la photo (e2e 1.21, 1.23).
-- [ ] La vue Maison affiche les quatre meubles ; déplacement par glisser-déposer et par « Déplacer vers… » (e2e 1.22, 1.24, 1.25).
-- [ ] Le mode Retirer décrémente ; à 0, l'article disparaît (e2e 1.20).
-- [ ] Deux membres voient le même stock ; le journal indique l'auteur (e2e 1.27).
-- [ ] Open Food Facts injoignable : formulaire vide, rien ne plante (test 1.8, e2e 1.18).
-- [ ] La fenêtre d'installation s'affiche tant que l'application n'est pas installée et ne revient plus ensuite (tests 1.34 ; appareils : Lucas).
-- [ ] Installée, l'application s'ouvre en plein écran ; hors connexion, « Pas de connexion » (e2e 0.18 ; appareils : Lucas).
-- [ ] iPhone (Safari, puis Chrome ou Edge) : installation et scan (Lucas).
-- [ ] Android (Chrome, Samsung Internet, Firefox) et ordinateur : installation et scan (Lucas).
-- [ ] Caméra refusée ou indisponible : saisie manuelle, photo du code et lecteur USB permettent d'ajouter (tests 1.15, e2e 1.17).
-- [ ] Les couleurs et la police correspondent aux tokens (1.35).
-- [ ] `docker compose up -d` sur un VPS vierge met l'application en ligne en HTTPS (Lucas ; test de fumée Caddy en CI). Sur le VPS actuel : en ligne derrière le nginx partagé via `docker-compose.shared-proxy.yml` (Lucas).
-- [ ] Une sauvegarde `pg_dump` se restaure sur une base vide (1.37 ; essai réel avant mise en service : Lucas).
-- [ ] Recette sur appareils réels du cahier, 6 points (Lucas).
+- [ ] Produit présent sur Open Food Facts prérempli en moins de 3 secondes en 4G. **Flux validé** : e2e « scan simulé d'un produit Open Food Facts » (1.17) sur Chromium et WebKit, tests API 1.8. **À valider par Lucas** : la mesure en 4G réelle.
+- [x] Code inconnu partout : formulaire vide ; validé, le scan suivant est reconnu. **Validé** : e2e « code inconnu : formulaire, ajout, second scan reconnu » (1.18) sur les deux navigateurs.
+- [x] 3 unités au Frigo, étagère 2 : visibles dans la vue Liste et sur la bonne étagère de la vue Maison, avec la photo. **Validé** : e2e « vue Liste : 3 unités au Frigo, étagère 2 » (catégorie, quantité, modification) ; vue Maison : `home.spec.ts` (1.12, un ajout au Frigo étagère 2 apparaît sur cette étagère) et e2e « meuble ouvert » (vignette avec sa photo) ; parcours critique (1.36).
+- [x] La vue Maison affiche les quatre meubles ; déplacement par glisser-déposer et par « Déplacer vers… ». **Validé** : e2e « vue Maison : quatre meubles nommés », « Déplacer vers… » (deux navigateurs), glisser-déposer au clavier (deux navigateurs) et à la souris (Chromium) ; le tactile (appui long) est couvert par la logique de dépôt en composant, appareils réels : Lucas.
+- [x] Le mode Retirer décrémente ; à 0, l'article disparaît. **Validé** : e2e « mode Retirer : stock 2, deux retraits, l'article disparaît du stock » (1.20) et parcours critique (1.36).
+- [x] Deux membres voient le même stock ; le journal indique l'auteur. **Validé** : e2e « deux membres, même stock » (1.27, l'historique nomme chacun) et parcours critique (1.36) ; tests API 1.11 (auteur et compte désactivé toujours nommé).
+- [x] Open Food Facts injoignable : formulaire vide, rien ne plante. **Validé** : tests API 1.6 et 1.8 (`unknown/off_unavailable`, sans exception) ; e2e « Open Food Facts en panne : formulaire vide et ajout possible » (1.18).
+- [ ] La fenêtre d'installation s'affiche tant que l'application n'est pas installée et ne revient plus ensuite. **Logique validée** : `install.spec.ts` (plateformes, 7 jours avec horloge simulée, « ne plus afficher », standalone), composants `install.spec.tsx`, e2e Chromium (jamais sur `/connexion`, événement simulé, « Plus tard » mémorisé). **À valider par Lucas** : comportement réel sur les appareils.
+- [ ] Installée, l'application s'ouvre en plein écran ; hors connexion, « Pas de connexion ». **Hors connexion validé sur Chromium** (e2e `offline.spec.ts`). **À valider par Lucas** : plein écran (`display: standalone` testé dans le manifeste) et hors connexion sur appareils réels.
+- [ ] iPhone (Safari, puis Chrome ou Edge) : installation et scan. **À valider par Lucas** (caméra non testable en CI ; test manuel dans le README).
+- [ ] Android (Chrome, Samsung Internet, Firefox) et ordinateur : installation et scan. **À valider par Lucas** (idem).
+- [x] Caméra refusée ou indisponible : saisie manuelle, photo du code et lecteur USB permettent d'ajouter. **Validé** : composants 1.14 (refus de permission, accès aux replis) et 1.15 (saisie, saisie rapide terminée par Entrée comme un lecteur USB, photo lisible et illisible) ; e2e 1.17 (saisie manuelle du même code). Réserve : la photo n'a pas d'e2e, seulement un test de composant avec ZXing.
+- [x] Les couleurs et la police correspondent aux tokens. **Validé** : `check-colors` dans `npm run lint` (couleurs en dur, palettes Tailwind, texte ambre) ; e2e `a11y.spec.ts` (Carlito chargée, axe AA sur 13 écrans à 360 px, aucun emoji, zones tactiles, `prefers-reduced-motion`).
+- [ ] `docker compose up -d` sur un VPS vierge met l'application en ligne en HTTPS. **Validé en CI** : job `docker-build` (Caddy, `/api/health` en HTTPS) ; **à valider par Lucas** : VPS vierge réel, et en ligne derrière le nginx partagé via `docker-compose.shared-proxy.yml` (pas à pas dans le README).
+- [x] Une sauvegarde `pg_dump` se restaure sur une base vide. **Validé** : `scripts/test-backup-restore.sh` (job `docker-build`) compare le nombre de lignes de chaque table après restauration, vérifie les droits `600` et le refus d'écraser une base non vide. Essai réel sur les données de production avant la mise en service : Lucas.
+- [ ] Recette sur appareils réels du cahier, 6 points. **À valider par Lucas** (liste dans le README, section « Test manuel sur vrais appareils »).
 
 ### Phase 2
 - [ ] Un produit sous le seuil apparaît dans « Bientôt périmés » et, si l'appareil est abonné, dans le résumé quotidien.
@@ -582,7 +582,46 @@
 - 15/11/2026 : R3. Premier admin : `ADMIN_USERNAME` suit la règle M6 (3 à 30 caractères `[a-z0-9_.-]`, espaces retirés, mis en minuscules) et `ADMIN_PASSWORD` fait 8 à 128 caractères, comme à la connexion ; sinon l'API refuse de démarrer en nommant la variable. Un mauvais mot de passe actuel sur `POST /auth/password` compte comme un échec de connexion du couple pseudo + IP (429 et `Retry-After` après 5). Le hachage factice est calculé au démarrage.
 - 15/11/2026 : R4. Image de la base : `postgres:16-alpine` (cahier) au lieu de `postgres:16`, dans le compose et la CI. Un volume créé par l'image Debian démarre avec l'avertissement « no actual collation version » (index texte triés sous glibc) : sauvegarde puis restauration dans un volume neuf, procédure dans le README, testée le 15/11/2026 sur une pile jetable. Le VPS n'est pas concerné si sa base est créée avec l'image Alpine.
 - 15/11/2026 : R5. Revue Copilot de la PR #1 (15 commentaires), choix retenus : le blocage dure 15 minutes après l'échec qui complète 5 échecs en 15 minutes (et non 15 minutes après le plus ancien) ; connexion et changement de mot de passe prennent un verrou consultatif sur l'utilisateur, la connexion relit le hachage sous ce verrou avant de créer la session, le changement écrit le hachage et révoque les autres sessions dans une seule transaction ; `deploy.sh` saute `git pull` sur un HEAD détaché (retour arrière) et s'arrête si `docker compose ps` échoue ; `backup-db.sh` échoue si Docker Compose ne répond pas au lieu de sauter la sauvegarde. Le contrôle des `.env` reste dans le job `audit` (rendu bloquant, R2) plutôt que dans `lint-typecheck` comme le proposait Copilot.
-
+- 15/11/2026 : P1.1a. Suppression d'une étagère et journal : `stock_movements.shelf_id` référence `shelves(id)` sans cascade ; les mouvements qui pointaient vers l'étagère supprimée (dont le premier `move`) passent à `shelf_id` nul dans la même transaction, plutôt que de modifier le schéma. L'historique garde le lieu, la date et le delta, mais plus l'étagère d'origine.
+- 15/11/2026 : P1.1b. `PATCH /shelves/{id}` avec un autre `locationId` : refusé en 409 si l'étagère contient du stock (une ligne de stock est liée au lieu de son étagère) ; une étagère vide change de meuble et passe en fin d'ordre.
+- 15/11/2026 : P1.2. Catégories : liste fermée d'icônes dans `packages/shared/src/categories.ts` (39 icônes Lucide vérifiées dans `lucide-react`, dont les 15 du seed) ; `GET /categories` ouvert à tous, écritures réservées à l'admin ; `/off-category-map` entièrement réservé à l'admin (outil d'administration) ; format du tag `^[a-z]{2}:[a-z0-9]+(-[a-z0-9]+)*$` ; catégorie inconnue dans une correspondance : 404.
+- 15/11/2026 : P1.3. `normalizeBarcode(code, format?)` lève `InvalidBarcodeError` (raison `empty`, `not_digits`, `bad_length`, `bad_check_digit`) ; `tryNormalizeBarcode` renvoie `null`. Le format ne compte que pour un code à 8 chiffres (`upc_e`). Le test est dans `apps/api/test/barcode.spec.ts` pour tourner dans le job CI `test-api` sans nouveau job ; le web importe la même fonction depuis `@inventaire/shared`.
+- 15/11/2026 : P1.4. Recherche : un produit correspond si le texte normalisé de la requête est contenu dans `search_text` ou si `word_similarity` atteint 0,3 ; sous-chaîne d'abord, puis similarité, puis nom. Les écritures du catalogue sont ouvertes aux membres (le cahier fait créer les produits à tout le monde au scan). `POST /products` : catégorie ou lieu habituel inconnu : 404 ; code déjà présent : 409 avec `productId` du produit existant dans le corps. `PATCH` refuse (400) les champs hors nom, marque, catégorie et lieu habituel ; envoyer `categoryId`, même inchangé, confirme la catégorie (`category_guessed=false`). `imageUrl` vaut `/api/images/{fichier}` (route de la tâche 1.5).
+- 15/11/2026 : P1.5. Images : `sharp` ajouté à l'API ; la miniature n'est jamais agrandie (une image de moins de 400 px garde sa largeur) ; entrée limitée à 50 millions de pixels (anti bombe de décompression) ; tout échec de décodage, signature comprise, répond 415 ; champ multipart `image` ; `IMAGES_DIR` des tests dans un dossier temporaire ; `data/` ajouté à `.gitignore`. Le service `ImageStore.saveThumbnail` est réutilisé par la tâche 1.7.
+- 15/11/2026 : P1.11. `POST /stock/move` répond `{from, to, movements}` (`from` nul si toute la ligne est partie) ; `POST /stock/remove` répond la ligne touchée avec produit, lieu et étagère (nom) pour le message et l'annulation ; `GET /products/{id}/movements?cursor=&limit=` (20 par défaut, 100 au plus) trie par identifiant décroissant, le curseur est l'identifiant du dernier mouvement reçu. Les verrous consultatifs du déplacement sont pris par lieu dans l'ordre croissant (pas d'interblocage entre deux déplacements opposés).
+- 15/11/2026 : P1.12. `GET /home` réutilise `StockQuery` (mêmes statuts d'échéance que `/stock`) ; « bientôt périmés » d'un meuble compte les lignes de stock périmées ou à 3 jours ou moins (une vignette = une ligne) ; vignettes triées par nom. Tests API : `hookTimeout` passé de 30 s à 120 s, car `DROP DATABASE` de `seed.spec.ts` dépassait 30 s par intermittence juste après les suites lourdes (quelques dizaines de ms au repos).
+- 15/11/2026 : P1.13. `zxing-wasm` ajouté au web ; `scripts/copy-zxing-wasm.mjs` (appelé par `predev` et `prebuild`, copié dans l'image Docker) place le WASM dans `apps/web/public/zxing/` (ignoré par git, servi par l'application, jamais par un CDN). ZXing renvoie un UPC-A comme un EAN-13 préfixé d'un 0 : le flux de scan normalise, le résultat est le même qu'avec `normalizeBarcode`. `next.config.ts` définit toujours `NEXT_PUBLIC_E2E` (`0` sauf `1`) : webpack supprime alors `fake-engine` de tout autre build (vérifié : aucune occurrence dans `.next`, présent avec `NEXT_PUBLIC_E2E=1`). Les photos sont réduites à 1600 px avant décodage.
+- 15/11/2026 : P1.14. Écran Scanner : `facingMode` est demandé en `ideal` (une webcam de PC démarre aussi) ; la caméra reste éteinte tant qu'on n'a pas touché « Scanner », et elle ne repart pas toute seule au retour sur l'onglet ; `lib/platform.ts` (détection iOS, Android, ordinateur) sert déjà aux consignes de permission, la tâche 1.15 y ajoutera les navigateurs intégrés ; `ScannerView` accepte un emplacement `fallbacks` que 1.15 remplit. La partie « en local sur Chrome, la caméra s'allume et s'éteint » de la tâche n'est pas automatisable : étapes dans le README (« Écran Scanner »), **à valider par Lucas**.
+- 15/11/2026 : P1.15. Les replis (code saisi, photo) livrent un code déjà canonique (`parseCode` : EAN-13 ou EAN-8, un UPC-A saisi devient `0` + 12 chiffres) ; la photo est toujours décodée par ZXing, quel que soit le moteur de la caméra ; un code lu sur photo dont la clé est fausse est traité comme illisible. Navigateurs intégrés reconnus : Instagram, Facebook (`FBAN`, `FBAV`, `FB_IAB`), WhatsApp.
+- 15/11/2026 : P1.16. `AddSheet` ne fait pas l'annulation elle-même : elle remet au parent `{message, undo}` (`onAdded`), qui affiche `UndoToast` (5 s) et appelle `undo` (mouvement `correction` opposé). Le nom d'étagère du message passe en minuscule initiale (« étagère 2 »). Le dernier lieu utilisé est gardé dans `localStorage` (`inv_last_location`). Le fond de la feuille est `indigo` à 40 % (aucune couleur noire n'existe dans les tokens). Les pictogrammes de catégorie viennent d'une table explicite des 39 icônes (`components/ui/CategoryIcon.tsx`), pour ne pas embarquer toute la bibliothèque Lucide.
+- 15/11/2026 : P1.17. Flux de scan : `ScannerView` reçoit `paused` (la caméra reste allumée, la lecture s'arrête) et une `controlRef` pour couper la caméra ; « Ajouter » coupe la caméra (retour à l'écran d'origine, A12), « Ajouter et scanner le suivant » la garde ; le filtre anti-doublon de 2 s survit à une pause, pour que le même code, encore devant l'objectif, ne rouvre pas la fiche. `ScanFlow` laisse l'emplacement `renderUnknown` à la tâche 1.18 (message provisoire « Produit inconnu » d'ici là) et `onRemoveCode` à la tâche 1.20. Choisir une catégorie dans « Catégorie proposée » la confirme tout de suite (`PATCH /products/{id}`). E2E : le build `NEXT_PUBLIC_E2E=1` contourne `getUserMedia` (aucune caméra dans les navigateurs de test) et branche le moteur factice (`window.__e2eScan`) ; `e2e/fixtures/off-server.mjs` simule Open Food Facts (l'API y est pointée par `OFF_BASE_URL`), un produit par navigateur car les deux projets partagent la base. Le build de production ne contient ni le moteur factice ni le contournement (vérifié).
+- 15/11/2026 : P1.18. Formulaire produit : champs nom, catégorie (sans valeur par défaut, pour forcer un choix), marque, lieu habituel, photo ; le format (`sizeLabel`) d'une fiche Open Food Facts incomplète est repris des indices et envoyé sans champ visible. Le produit est créé avec le code canonique, puis la photo est envoyée (`POST /products/{id}/image`) ; si l'envoi échoue le produit reste et l'avis « Photo non envoyée » s'affiche sur l'écran Scanner. Photo refusée côté navigateur au-delà de 8 Mo ou hors JPEG, PNG, WebP. `apiFetch` accepte un `FormData` (pas d'en-tête JSON). E2E : codes dédiés à chaque navigateur pour le « non trouvé » et la « panne » (`off-server.mjs` répond 500 aux codes `5000112637922` et `3212345678906`).
+- 15/11/2026 : P1.19. « Ajouter sans code-barres » est un bouton sous le titre de l'écran Scanner, qui ouvre la recherche par nom (dès 2 caractères, temporisation de 300 ms) ; le produit choisi s'ajoute avec la raison `manual`, et « Créer ce produit » ouvre le formulaire de 1.18 sans code-barres, nom prérempli. Le produit créé n'a pas de `barcode` (e2e : `barcode` nul, premier mouvement `manual`).
+- 15/11/2026 : P1.20. Pour qu'« aucun produit ne soit créé en mode Retirer », `GET /scan/{code}?catalogOnly=true` ne regarde que le catalogue : produit connu, sinon `unknown/not_found`, sans appel à Open Food Facts ni création (test API). L'annulation d'un retrait remet +1 (`correction`) sur la ligne exacte touchée (lieu, étagère, date renvoyés par `POST /stock/remove`). Le message est « Retiré : 1 × Lait, Frigo » (lieu seul, comme dans la tâche) ; le mode Retirer garde la caméra active entre deux lectures. « Passer en mode Ajouter » rouvre le flux d'ajout avec le code lu.
+- 15/11/2026 : P1.21. Vue Liste : les filtres (lieu, catégorie, recherche, tri) sont envoyés à `GET /stock` ; les compteurs « n articles · m unités » portent sur les lignes affichées (articles = produits distincts) ; les onglets de lieu montrent le nombre de produits renvoyé par l'API. − / + est optimiste, la liste est rechargée après succès (compteurs et ordre à jour) et la carte revient à l'ancienne valeur avec un message si le serveur refuse. La bascule Maison / Liste est en place ; l'onglet Maison affiche un texte provisoire jusqu'à la tâche 1.22.
+- 15/11/2026 : P1.22. Vue Maison : c'est l'affichage par défaut de l'onglet Inventaire (Liste reste à un toucher). Chaque carte est un lien vers `/inventaire/{id du lieu}` (page de la tâche 1.23). Les dessins SVG n'utilisent que des classes `fill-*` et `stroke-*` des tokens (lavande, indigo, ambre, blanc) ; le dessin vient de `locations.kind`, jamais du nom (un `other` réservé retombe sur le garde-manger). « Bientôt périmés » compte les lignes (voir P1.12).
+- 15/11/2026 : P1.23. Meuble ouvert : `/inventaire/{id du lieu}` lit `GET /home`. Le scanner « avec ce meuble et cette étagère préchoisis » reçoit son contexte par l'URL (`/?lieu=2&etagere=21`), lu par la page Scanner et transmis à `ScanFlow`, donc à la fiche d'ajout (règle A6) ; l'ouverture est une animation CSS de 250 ms sur `transform` et `opacity`, réduite à 0,01 ms par la règle `prefers-reduced-motion` de `globals.css`. Une étagère `rack` montre quatre montants sous sa planche. Le toucher d'une vignette ne fait rien pour l'instant : le panneau produit arrive en 1.24. Piège de test noté : la recherche par nom est floue (similarité trigramme), deux noms voisins créés par des e2e en parallèle (« Thé vert », « Kiwis verts ») se retrouvent, donc les e2e prennent des noms sans mot commun.
+- 15/11/2026 : P1.24. Panneau produit : s'ouvre au toucher d'une vignette et suit la ligne à chaque rechargement du meuble (il se ferme si la ligne disparaît) ; la date limite est affichée avec sa pastille mais n'est pas modifiable ici (la date fait partie de l'identité de la ligne : la changer revient à créer une autre ligne). « Déplacer vers… » : quantité = toute la ligne par défaut (le sélecteur n'apparaît que s'il y a plus d'une unité), destination identique refusée avant l'envoi, confirmation « Déplacé : 2 × Lait vers Frigo, étagère 2 » affichée 5 s sur la page du meuble. Le lien « Voir la fiche produit » mène à `/produits/{id}` (tâche 1.27).
+- 15/11/2026 : P1.25. Glisser-déposer : `@dnd-kit/core` ; capteurs souris (8 px), tactile (250 ms, 5 px) et clavier, annonces en français ; la flèche saute à la zone de dépôt la plus proche dans cette direction à partir de la zone survolée (`zoneKeyboardCoordinates`), au lieu de bouger de quelques pixels, pour que « Espace, flèche, Espace » soit déterministe. Le déplacement est optimiste (`applyMove`, fonction pure testée) ; en cas d'erreur la page revient à l'état d'avant avec un message. Le bouton de la vignette porte lui-même les attributs de glissement (pas de bouton imbriqué), et le clic qui suit un dépôt est ignoré 400 ms. **Instabilité des e2e traitée à la racine** (8 exécutions complètes de suite sans échec) : (1) `RATE_LIMIT_PER_MINUTE` relevé pour les e2e (une seule IP, beaucoup d'interrogations) ; (2) les e2e attendent l'hydratation de React avant de remplir le formulaire de connexion (`waitForHydration` : sinon l'hydratation effaçait le pseudo) ; (3) le test clavier réessaie la flèche tant que l'annonce dnd-kit ne nomme pas la destination (les zones sont mesurées juste après le début du glissement) ; (4) délai des assertions porté de 5 s à 15 s pour les machines chargées.
+- 15/11/2026 : P1.26. Filtres de la vue Maison : le texte et la catégorie vivent dans l'URL (`?q=lait&cat=3`), c'est ce qui les garde en ouvrant un meuble (le lien de la carte et le lien de retour les reportent) ; recherche insensible à la casse et aux accents, sur le nom et la marque (`GET /home` renvoie désormais la `brand` de chaque vignette) ; une puce de catégorie se rebascule d'un second toucher ; les vignettes hors filtre passent à 30 % d'opacité, les meubles qui contiennent un résultat prennent un anneau ambre.
+- 15/11/2026 : P1.27. Fiche produit : `/produits/{id}` ; enregistrer le formulaire envoie toujours la catégorie (ce qui la confirme) ; le formulaire n'est affiché qu'une fois catégories et lieux chargés (sinon la liste déroulante naît vide) et n'est pas remonté après l'enregistrement (le message de succès reste) ; l'historique charge 20 mouvements par page (curseur).
+- 15/11/2026 : P1.28. À classer : liste des 100 premiers produits en stock dont la catégorie est « Autre » ou devinée ; « Confirmer » envoie la catégorie actuelle ; classer dans « Autre » ne retire pas le produit (par définition, « Autre » reste à classer). Le compteur de l'onglet est un petit magasin partagé (`review-count.ts`) rafraîchi à chaque changement de page.
+- 15/11/2026 : P1.29. API membres : `PATCH /users/{id}` accepte `role`, `password` (révoque les sessions du membre) et `disabled: false` (réactivation) ; la désactivation passe par `DELETE` (idempotent). Verrou consultatif sur l'ensemble des admins pour éviter deux rétrogradations simultanées ; soi-même : 409 sur le rôle, le mot de passe (à changer depuis Compte) et la désactivation.
+- 15/11/2026 : P1.30. Plus : l'entrée « Administration » n'est qu'un confort d'affichage (les routes restent protégées par `@Roles('admin')`) ; la page `/plus/administration` liste les quatre écrans d'administration.
+- 15/11/2026 : P1.31. Administration des membres : le mot de passe temporaire est affiché en clair dans le champ de saisie (l'admin doit pouvoir le communiquer) ; pas de changement de rôle d'un membre existant dans l'interface en V1 (rôle choisi à la création ; l'API le permet).
+- 15/11/2026 : P1.32. Administration des lieux : icône choisie dans la liste fermée des icônes Lucide du cahier (même liste que les catégories) ; réordonner renumérote 0..n-1 et n'envoie que les lignes modifiées.
+- 15/11/2026 : P1.33. Administration des catégories et correspondances : sélecteur d'icônes en groupe de boutons (39 icônes) ; un tag déjà associé est signalé par « Ce tag est déjà associé à une catégorie » ; supprimer une catégorie demande confirmation et rappelle que les produits iront dans Autre, à confirmer dans À classer.
+- 15/11/2026 : P1.34. Fenêtre d'installation : l'événement `beforeinstallprompt` est capté dès la page de connexion (`InstallCapture` dans la racine) mais la feuille n'existe que dans la coquille connectée ; iOS non installé (Safari ou Chrome) : trois étapes ; Firefox Android : instructions du menu ; « Plus tard » 7 jours et « Ne plus afficher » dans `localStorage` (`inventaire.install`) ; le lien de Plus ignore ces choix. Les e2e déposent « Ne plus afficher » avant la connexion pour que la feuille (affichée sur iPhone dès la première connexion) ne couvre pas les écrans testés.
+- 15/11/2026 : P1.35. Audit : `@axe-core/playwright` (WCAG 2 A et AA) sur 13 écrans à 360 px, plus défilement horizontal, zones tactiles de 43,5 px au moins (tolérance d'arrondi), emoji, police Carlito, `prefers-reduced-motion` et marges de zone sûre ; `check-colors` interdit `text-amber` (texte ambre sur blanc), sauf trait `check-colors:allow` sur fond indigo ; un test Vitest interdit tout emoji dans `apps/web`. Les données de l'audit sont créées dans le Garde-manger pour ne pas changer les noms de liens que les autres e2e utilisent.
+- 15/11/2026 : P1.36. Parcours critique : un seul scénario par navigateur, avec ses propres produits (noms éloignés les uns des autres : la recherche floue du catalogue rapproche des noms qui partagent des mots).
+- 15/11/2026 : P1.37. Sauvegardes : `backup-images.sh` lit le volume par le conteneur `api` (pas de nom de volume à deviner) ; `restore-db.sh` considère une base « non vide » dès qu'une table publique contient une ligne, `--force` supprime les schémas `public` et `drizzle` avant de rejouer le dump ; `RESTORE_DB` permet d'essayer une restauration dans une autre base (utilisé par le test).
+- 15/11/2026 : P1.38. README : cron mensuel avec `--no-cache` écrit avec un test `date` (en cron, jour du mois et jour de la semaine ensemble valent « ou ») . (Remplacé par P1.44 pour les commandes certbot et nginx.)
+- 15/11/2026 : P1.39. Revue indépendante, journal : `stock_movements.shelf_id` perd sa clé étrangère (migration `0002`) et la suppression d'une étagère ne réécrit plus le journal (cahier : « jamais modifié »). Une ligne ancienne garde l'identifiant d'une étagère disparue ; l'historique (jointure gauche) n'affiche alors que le lieu. Les identifiants d'identité ne sont jamais réutilisés : aucune ligne ne peut être attribuée à une autre étagère.
+- 15/11/2026 : P1.40. Revue, adresse du client : `PROXY_SECRET` (obligatoire dans Compose, facultatif pour le code) est envoyé par nginx ou Caddy dans `X-Proxy-Secret` ; sans lui l'API supprime `X-Forwarded-*` et ne retient que le pair direct. Raison : sur `easyq_default`, un autre conteneur joint `inventaire-api:3001` et pouvait falsifier `X-Forwarded-For` pour contourner les limites. Le secret nginx est dans `/opt/proxy/conf.d/inventaire.conf`, jamais dans le dépôt.
+- 15/11/2026 : P1.41. Revue, verrou de connexion : en plus de 5 échecs par (pseudo, IP), 30 échecs par pseudo en 15 minutes bloquent le compte quelle que soit l'IP ; les adresses IPv6 comptent par préfixe /64. Conséquence assumée : un attaquant disposant de nombreuses adresses peut bloquer un compte 15 minutes (déni de service) au lieu d'y deviner un mot de passe ; l'administrateur n'est pas dispensé de ce plafond.
+- 15/11/2026 : P1.42. Revue, mineurs corrigés : `GET /scan` refuse `Sec-Fetch-Site: cross-site|same-site` (403) car il peut créer un produit ; `POST /stock/adjust` refuse `scan_add` avec un delta négatif et `scan_remove` avec un delta positif ; en production l'API refuse de démarrer avec des valeurs `change-me` (`SESSION_SECRET`, `ADMIN_PASSWORD`, `PROXY_SECRET`, mot de passe de la base) ; README et `.env.example` demandent un `POSTGRES_PASSWORD` hexadécimal (il entre tel quel dans l'URL).
+- 15/11/2026 : P1.43. Revue, mineur non corrigé : le critère « 3 unités au Frigo, étagère 2, vue Maison avec photo » reste prouvé par des tests séparés (e2e vue Liste, `home.spec.ts` côté API, e2e « meuble ouvert » avec photo) et non par un seul parcours. Raison : chaque maillon est testé et un parcours de plus ralentirait les e2e sans couvrir de risque nouveau.
+- 15/11/2026 : P1.44. README et nginx adaptés au VPS réel : dépôt `/opt/inventaire`, configuration `/opt/proxy/conf.d/inventaire.conf`, conteneur `easyq-nginx-1`, réseau `easyq_default`, certificats dans le volume `easyq_certbot_certs`, défis ACME dans `easyq_certbot_www`, certbot lancé en conteneur sur ces volumes. Les points de montage dans `easyq-nginx-1` (`/etc/letsencrypt`, `/var/www/certbot`) restent une hypothèse : le README donne la commande `docker inspect` pour les vérifier.
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
 

@@ -1,12 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 import { ClockModule } from './common/clock';
+import { ProductsModule } from './products/products.module';
+import { ScanModule } from './scan/scan.module';
+import { StockModule } from './stock/stock.module';
 import { RateLimitModule } from './common/rate-limit.module';
 import { NotFoundModule } from './common/not-found.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { SeedModule } from './database/seed/seed.module';
 import { HealthController } from './health/health.controller';
+import { HomeModule } from './home/home.module';
+import { ImagesModule } from './images/images.module';
+import { LocationsModule } from './locations/locations.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -18,6 +25,13 @@ import { UsersModule } from './users/users.module';
     RateLimitModule,
     AuthModule,
     UsersModule,
+    LocationsModule,
+    CategoriesModule,
+    ProductsModule,
+    ScanModule,
+    StockModule,
+    HomeModule,
+    ImagesModule,
     NotFoundModule,
   ],
   controllers: [HealthController],

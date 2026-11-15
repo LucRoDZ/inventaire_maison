@@ -14,6 +14,7 @@ services:
       - '443:443'
     environment:
       APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      PROXY_SECRET: ${PROXY_SECRET:?PROXY_SECRET manquant dans .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -69,6 +70,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD manquant dans .env}
       OFF_USER_AGENT: ${OFF_USER_AGENT:-InventaireMaison/1.0}
       PUBLIC_ORIGIN: https://${APP_DOMAIN:-localhost}
+      PROXY_SECRET: ${PROXY_SECRET:?PROXY_SECRET manquant dans .env}
       IMAGES_DIR: /data/images
     volumes:
       - images:/data/images

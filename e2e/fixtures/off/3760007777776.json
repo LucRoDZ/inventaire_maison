@@ -1,0 +1,11 @@
+{
+  "code": "3760007777776",
+  "status": 1,
+  "product": {
+    "product_name": "Dry cider",
+    "product_name_fr": "Poiré brut des deux membres",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:ciders"]
+  }
+}

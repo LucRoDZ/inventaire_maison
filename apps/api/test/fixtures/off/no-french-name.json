@@ -1,0 +1,11 @@
+{
+  "code": "5449000000996",
+  "status": 1,
+  "product": {
+    "product_name": "Coca-Cola",
+    "product_name_fr": "",
+    "brands": "Coca-Cola",
+    "quantity": "330 ml",
+    "categories_tags": ["en:beverages"]
+  }
+}

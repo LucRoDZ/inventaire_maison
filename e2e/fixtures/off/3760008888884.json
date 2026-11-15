@@ -1,0 +1,11 @@
+{
+  "code": "3760008888884",
+  "status": 1,
+  "product": {
+    "product_name": "Fromage des classements",
+    "product_name_fr": "Fromage des classements",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:cheeses"]
+  }
+}
