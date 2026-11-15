@@ -18,7 +18,7 @@ import {
   type Place,
 } from '../../lib/add-place';
 import { useOnline } from '../../lib/online';
-import { adjustStock } from '../../lib/stock-api';
+import { adjustStock, updateProductCategory } from '../../lib/stock-api';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
@@ -43,8 +43,9 @@ interface AddSheetProps {
   origin?: { locationId: number; shelfId?: number | null } | null;
   onAdded: (info: AddedInfo, scanNext: boolean) => void;
   onClose: () => void;
-  /** Test seam. */
+  /** Test seams. */
   adjust?: (input: StockAdjustInput) => Promise<StockAdjustResponse>;
+  confirmCategory?: (productId: number, categoryId: number) => Promise<unknown>;
 }
 
 const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
@@ -58,6 +59,7 @@ export function AddSheet({
   onAdded,
   onClose,
   adjust = adjustStock,
+  confirmCategory = updateProductCategory,
 }: AddSheetProps) {
   const titleId = useId();
   const online = useOnline();
@@ -74,7 +76,24 @@ export function AddSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const category = categories.find((c) => c.id === product.categoryId);
+  const [categoryId, setCategoryId] = useState(product.categoryId);
+  const [proposed, setProposed] = useState(product.categoryGuessed);
+  const category = categories.find((c) => c.id === categoryId);
+
+  const changeCategory = async (next: number) => {
+    setError(null);
+    try {
+      await confirmCategory(product.id, next);
+      setCategoryId(next);
+      setProposed(false);
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError && caught.status !== 0
+          ? caught.message
+          : 'Impossible de changer la catégorie.',
+      );
+    }
+  };
   const Glyph = category ? categoryIcon(category.icon) : Package;
 
   const submit = async (scanNext: boolean) => {
@@ -143,6 +162,23 @@ export function AddSheet({
             </p>
           </div>
         </div>
+
+        {proposed ? (
+          <label className="text-label flex flex-col gap-1">
+            Catégorie proposée
+            <select
+              className="tap-target border-line text-ink w-full rounded-xl border bg-white px-3"
+              value={categoryId}
+              onChange={(event) => void changeCategory(Number(event.target.value))}
+            >
+              {categories.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         {!online ? (
           <Callout role="alert" title="Pas de connexion">

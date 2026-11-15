@@ -1,5 +1,4 @@
-import { createFrameScanner } from './frame-scanner';
-import type { Detector, ScanFormat, ScanResult, Scanner } from './types';
+import type { ScanFormat, ScanResult, Scanner } from './types';
 
 declare global {
   interface Window {
@@ -8,20 +7,33 @@ declare global {
   }
 }
 
-/** End-to-end tests only: the camera is replaced by codes pushed with `window.__e2eScan`. */
+const POLL_MS = 50;
+
+/**
+ * End-to-end tests only: there is no camera, codes are pushed with `window.__e2eScan`.
+ * Unlike the real engines it does not wait for a video frame and does not filter duplicates.
+ */
 export function createFakeScanner(): Scanner {
   const queue: ScanResult[] = [];
+  let timer: ReturnType<typeof setInterval> | null = null;
   window.__e2eScan = (code, format = 'ean_13') => {
     queue.push({ code, format });
   };
-  const detector: Detector = {
-    async detect() {
-      const next = queue.shift();
-      return next ? [next] : [];
-    },
-    async detectImage() {
-      return queue.shift() ?? null;
-    },
+  const stop = () => {
+    if (timer !== null) clearInterval(timer);
+    timer = null;
   };
-  return createFrameScanner('fake', detector, { dedupeMs: 0 });
+  return {
+    engine: 'fake',
+    start(_video, onResult) {
+      stop();
+      timer = setInterval(() => {
+        const next = queue.shift();
+        if (next) onResult(next);
+      }, POLL_MS);
+    },
+    stop,
+    // A photo is "read" as the next pushed code.
+    decodeImage: async () => queue.shift() ?? null,
+  };
 }

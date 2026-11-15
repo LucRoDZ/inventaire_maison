@@ -30,7 +30,7 @@ export function createFrameScanner(
   const stop = () => {
     if (timer !== null) clearInterval(timer);
     timer = null;
-    lastSeen.clear();
+    // `lastSeen` is kept: after a pause the same code must not be reported again at once.
   };
 
   return {

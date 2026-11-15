@@ -1,7 +1,15 @@
 'use client';
 
 import { ScanBarcode } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import {
   CameraError,
   listCameras,
@@ -25,8 +33,16 @@ interface ScannerViewProps {
   onModeChange: (mode: ScanMode) => void;
   /** Fallbacks (typed code, photo), always reachable below the viewfinder. */
   fallbacks?: ReactNode;
+  /** While true the camera stays on but no code is read (a sheet or a request is in progress). */
+  paused?: boolean;
+  /** Lets the parent turn the camera off (« Ajouter » returns to the screen the scan started from). */
+  controlRef?: Ref<ScannerControls>;
   /** Test seam. */
   makeScanner?: () => Promise<Scanner>;
+}
+
+export interface ScannerControls {
+  stopCamera: () => void;
 }
 
 type Phase =
@@ -63,6 +79,8 @@ export function ScannerView({
   mode,
   onModeChange,
   fallbacks,
+  paused = false,
+  controlRef,
   makeScanner = createScanner,
 }: ScannerViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -91,6 +109,15 @@ export function ScannerView({
     setPhase((current) => (current.name === 'error' ? current : { name: 'idle' }));
   }, []);
 
+  const startReading = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    scannerRef.current?.start(video, (result) => {
+      feedback();
+      onCodeRef.current(result, modeRef.current);
+    });
+  }, []);
+
   const start = useCallback(
     async (deviceId?: string) => {
       const video = videoRef.current;
@@ -105,10 +132,6 @@ export function ScannerView({
         setCameraId(session.deviceId);
         setCameras(await listCameras());
         scannerRef.current ??= await makeScanner();
-        scannerRef.current.start(video, (result) => {
-          feedback();
-          onCodeRef.current(result, modeRef.current);
-        });
         setPhase({ name: 'running' });
       } catch (error) {
         sessionRef.current?.stop();
@@ -118,6 +141,16 @@ export function ScannerView({
     },
     [makeScanner],
   );
+
+  // The camera stays on while paused; only the reading stops.
+  const running = phase.name === 'running';
+  useEffect(() => {
+    if (!running) return;
+    if (paused) scannerRef.current?.stop();
+    else startReading();
+  }, [paused, running, startReading]);
+
+  useImperativeHandle(controlRef, () => ({ stopCamera: () => stop() }), [stop]);
 
   // The camera is released when the tab is hidden and when leaving the screen.
   useEffect(() => {
@@ -141,8 +174,6 @@ export function ScannerView({
       setTorchSupported(false);
     }
   };
-
-  const running = phase.name === 'running';
 
   return (
     <div className="flex flex-col gap-4">

@@ -34,6 +34,15 @@ export async function startCamera(
   video: HTMLVideoElement,
   options: { deviceId?: string } = {},
 ): Promise<CameraSession> {
+  // End-to-end builds only (dropped from every other build): no camera in the test browsers.
+  if (process.env.NEXT_PUBLIC_E2E === '1') {
+    return {
+      deviceId: null,
+      torchSupported: false,
+      setTorch: async () => undefined,
+      stop: () => undefined,
+    };
+  }
   if (typeof window !== 'undefined' && window.isSecureContext === false) {
     throw new CameraError('insecure');
   }
