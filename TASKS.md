@@ -451,7 +451,7 @@
   - Tests : toute la suite.
   - Fin : la section est remplie et la suite complète est verte.
 
-- [ ] **1.40 PR et arrêt**
+- [x] **1.40 PR et arrêt**
   - Résultat : PR `phase-1-v1` avec CI verte.
   - Fichiers : `TASKS.md`.
   - Comportement : description avec la checklist et les décisions ; marqueur d'arrêt en dernière ligne.
@@ -622,3 +622,5 @@
 
 - (résolu 2026-11-14) 0.4 : WebKit installé par Lucas, e2e verts sur `chromium-mobile` et `webkit-mobile`.
 - (note 2026-11-14) 0.19 : le shell local utilisait Node 20 et `argon2` y faisait un SIGSEGV dans les tests API ; sous Node 24 (`.nvmrc`, `nvm use`) tout passe. Un conteneur local `inv-test-pg` occupe `127.0.0.1:5432` (base de test), ce qui peut gêner `docker-compose.dev.yml`.
+
+STOP: validation requise
