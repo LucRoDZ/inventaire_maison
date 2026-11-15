@@ -321,7 +321,7 @@
   - Tests : composants : pastille aux bornes, carte et retour arrière, sections, état vide. E2E : 3 unités ajoutées au Frigo visibles sous Frigo dans la bonne catégorie ; modification de quantité.
   - Fin : l'e2e « modification de quantité » passe.
 
-- [ ] **1.22 Vue Maison : les quatre meubles**
+- [x] **1.22 Vue Maison : les quatre meubles**
   - Résultat : grille des meubles dessinés.
   - Fichiers : `apps/web/components/home/{HomeView,FurnitureCard}.tsx`, `apps/web/components/home/furniture/{Pantry,Fridge,Freezer,Cellar}.tsx`.
   - Comportement : 2 colonnes sur téléphone, 4 sur ordinateur ; en-tête indigo ; chaque meuble : SVG aux seules couleurs des tokens (intérieur lavande, traits indigo, lumière ambre du frigo), nombre d'articles, pastille ambre « n bientôt périmés » si besoin ; dessin choisi par `locations.kind`.
@@ -599,6 +599,7 @@
 - 15/11/2026 : P1.19. « Ajouter sans code-barres » est un bouton sous le titre de l'écran Scanner, qui ouvre la recherche par nom (dès 2 caractères, temporisation de 300 ms) ; le produit choisi s'ajoute avec la raison `manual`, et « Créer ce produit » ouvre le formulaire de 1.18 sans code-barres, nom prérempli. Le produit créé n'a pas de `barcode` (e2e : `barcode` nul, premier mouvement `manual`).
 - 15/11/2026 : P1.20. Pour qu'« aucun produit ne soit créé en mode Retirer », `GET /scan/{code}?catalogOnly=true` ne regarde que le catalogue : produit connu, sinon `unknown/not_found`, sans appel à Open Food Facts ni création (test API). L'annulation d'un retrait remet +1 (`correction`) sur la ligne exacte touchée (lieu, étagère, date renvoyés par `POST /stock/remove`). Le message est « Retiré : 1 × Lait, Frigo » (lieu seul, comme dans la tâche) ; le mode Retirer garde la caméra active entre deux lectures. « Passer en mode Ajouter » rouvre le flux d'ajout avec le code lu.
 - 15/11/2026 : P1.21. Vue Liste : les filtres (lieu, catégorie, recherche, tri) sont envoyés à `GET /stock` ; les compteurs « n articles · m unités » portent sur les lignes affichées (articles = produits distincts) ; les onglets de lieu montrent le nombre de produits renvoyé par l'API. − / + est optimiste, la liste est rechargée après succès (compteurs et ordre à jour) et la carte revient à l'ancienne valeur avec un message si le serveur refuse. La bascule Maison / Liste est en place ; l'onglet Maison affiche un texte provisoire jusqu'à la tâche 1.22.
+- 15/11/2026 : P1.22. Vue Maison : c'est l'affichage par défaut de l'onglet Inventaire (Liste reste à un toucher). Chaque carte est un lien vers `/inventaire/{id du lieu}` (page de la tâche 1.23). Les dessins SVG n'utilisent que des classes `fill-*` et `stroke-*` des tokens (lavande, indigo, ambre, blanc) ; le dessin vient de `locations.kind`, jamais du nom (un `other` réservé retombe sur le garde-manger). « Bientôt périmés » compte les lignes (voir P1.12).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

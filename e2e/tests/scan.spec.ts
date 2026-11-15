@@ -251,6 +251,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
     .getByRole('navigation', { name: 'Navigation principale' })
     .getByRole('link', { name: 'Inventaire' })
     .click();
+  await page.getByRole('button', { name: 'Liste', exact: true }).click();
   await page.getByRole('tab', { name: /^Frigo/ }).click();
   const section = page.getByRole('button', { name: /^Produits laitiers et œufs/ });
   await expect(section).toBeVisible();
@@ -267,8 +268,26 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
   await expect.poll(quantity).toBe(2);
 
   await page.reload();
+  await page.getByRole('button', { name: 'Liste', exact: true }).click();
   await page.getByRole('tab', { name: /^Frigo/ }).click();
   await expect(
     page.locator('article').filter({ hasText: name }).getByLabel('Quantité', { exact: true }),
   ).toHaveText('2');
+});
+
+test('vue Maison : quatre meubles nommés', async ({ page }) => {
+  await signIn(page);
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Inventaire' })
+    .click();
+  await expect(page.getByRole('button', { name: 'Maison', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  for (const name of ['Garde-manger', 'Frigo', 'Congélateur', 'Cave']) {
+    await expect(page.getByRole('link', { name: new RegExp(`^${name}`) })).toBeVisible();
+    await expect(page.getByRole('img', { name })).toBeVisible();
+  }
+  await expect(page.getByRole('link', { name: /^Frigo/ })).toContainText(/\d+ articles?/);
 });
