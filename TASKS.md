@@ -196,7 +196,7 @@
   - Tests : intégration : recherche avec faute de frappe et sans accent, doublon de code, code invalide, catégorie inconnue, produit sans code-barres, confirmation de catégorie.
   - Fin : `GET /api/products?q=lait+ecreme` retrouve « Lait demi-écrémé ».
 
-- [ ] **1.5 Images : miniatures et envoi de photo**
+- [x] **1.5 Images : miniatures et envoi de photo**
   - Résultat : toute image devient une miniature WebP locale de 400 px.
   - Fichiers : `apps/api/src/images/`.
   - Comportement : `POST /products/{id}/image` (multipart, 8 Mo maximum, JPEG, PNG ou WebP vérifiés par signature) : réencodage sharp, 400 px de large, orientation appliquée puis EXIF retiré, nom aléatoire généré par le serveur, ancienne image supprimée ; 413 si trop lourd, 415 si le type est refusé. `GET /images/{fichier}` : session exigée, motif de nom strict, `Cache-Control: private, max-age=31536000, immutable`, 404 sinon.
@@ -587,6 +587,7 @@
 - 15/11/2026 : P1.2. Catégories : liste fermée d'icônes dans `packages/shared/src/categories.ts` (39 icônes Lucide vérifiées dans `lucide-react`, dont les 15 du seed) ; `GET /categories` ouvert à tous, écritures réservées à l'admin ; `/off-category-map` entièrement réservé à l'admin (outil d'administration) ; format du tag `^[a-z]{2}:[a-z0-9]+(-[a-z0-9]+)*$` ; catégorie inconnue dans une correspondance : 404.
 - 15/11/2026 : P1.3. `normalizeBarcode(code, format?)` lève `InvalidBarcodeError` (raison `empty`, `not_digits`, `bad_length`, `bad_check_digit`) ; `tryNormalizeBarcode` renvoie `null`. Le format ne compte que pour un code à 8 chiffres (`upc_e`). Le test est dans `apps/api/test/barcode.spec.ts` pour tourner dans le job CI `test-api` sans nouveau job ; le web importe la même fonction depuis `@inventaire/shared`.
 - 15/11/2026 : P1.4. Recherche : un produit correspond si le texte normalisé de la requête est contenu dans `search_text` ou si `word_similarity` atteint 0,3 ; sous-chaîne d'abord, puis similarité, puis nom. Les écritures du catalogue sont ouvertes aux membres (le cahier fait créer les produits à tout le monde au scan). `POST /products` : catégorie ou lieu habituel inconnu : 404 ; code déjà présent : 409 avec `productId` du produit existant dans le corps. `PATCH` refuse (400) les champs hors nom, marque, catégorie et lieu habituel ; envoyer `categoryId`, même inchangé, confirme la catégorie (`category_guessed=false`). `imageUrl` vaut `/api/images/{fichier}` (route de la tâche 1.5).
+- 15/11/2026 : P1.5. Images : `sharp` ajouté à l'API ; la miniature n'est jamais agrandie (une image de moins de 400 px garde sa largeur) ; entrée limitée à 50 millions de pixels (anti bombe de décompression) ; tout échec de décodage, signature comprise, répond 415 ; champ multipart `image` ; `IMAGES_DIR` des tests dans un dossier temporaire ; `data/` ajouté à `.gitignore`. Le service `ImageStore.saveThumbnail` est réutilisé par la tâche 1.7.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
