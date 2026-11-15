@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, type OnModuleInit } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
 const OPTIONS: argon2.HashOptions = {
@@ -9,8 +9,18 @@ const OPTIONS: argon2.HashOptions = {
 };
 
 @Injectable()
-export class PasswordService {
+export class PasswordService implements OnModuleInit {
   private dummyHash: Promise<string> | undefined;
+
+  /** Computes the dummy hash at start-up, so that the first unknown username costs no extra hash. */
+  async onModuleInit(): Promise<void> {
+    await this.getDummyHash();
+  }
+
+  private getDummyHash(): Promise<string> {
+    this.dummyHash ??= this.hash('dummy-password-for-timing');
+    return this.dummyHash;
+  }
 
   hash(password: string): Promise<string> {
     return argon2.hash(password, OPTIONS);
@@ -26,7 +36,6 @@ export class PasswordService {
 
   /** Spends the same time as a real check, for unknown or disabled accounts. */
   async verifyDummy(password: string): Promise<void> {
-    this.dummyHash ??= this.hash('dummy-password-for-timing');
-    await this.verify(await this.dummyHash, password);
+    await this.verify(await this.getDummyHash(), password);
   }
 }

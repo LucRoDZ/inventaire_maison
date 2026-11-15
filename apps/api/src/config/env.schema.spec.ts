@@ -42,6 +42,29 @@ describe('parseEnv', () => {
     }
   });
 
+  it('stores the first admin username trimmed and in lowercase', () => {
+    expect(parseEnv({ ...valid, ADMIN_USERNAME: '  Lucas.Z ' }).ADMIN_USERNAME).toBe('lucas.z');
+  });
+
+  it('applies the username rules (3 to 30 of a-z 0-9 _ . -) to ADMIN_USERNAME', () => {
+    for (const username of ['ab', 'lucas zivan', 'lucas@maison', 'x'.repeat(31), 'élodie']) {
+      expect(() => parseEnv({ ...valid, ADMIN_USERNAME: username }), username).toThrow(
+        /ADMIN_USERNAME/,
+      );
+    }
+  });
+
+  it('rejects an ADMIN_PASSWORD longer than 128 characters, which could never sign in', () => {
+    const long = 'p'.repeat(129);
+    try {
+      parseEnv({ ...valid, ADMIN_PASSWORD: long });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as Error).message).toContain('ADMIN_PASSWORD');
+      expect((error as Error).message).not.toContain(long);
+    }
+  });
+
   it('lists every invalid variable once', () => {
     try {
       parseEnv({});

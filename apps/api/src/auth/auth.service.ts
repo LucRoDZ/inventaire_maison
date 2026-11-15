@@ -48,17 +48,24 @@ export class AuthService {
     };
   }
 
-  /** Changes the password of a user and revokes all of their other sessions. */
+  /**
+   * Changes the password of a user and revokes all of their other sessions. A wrong current
+   * password counts as a failed login for the (username, IP) pair.
+   */
   async changePassword(
-    userId: number,
-    currentSessionId: string,
+    user: { id: number; username: string; sessionId: string },
+    ip: string,
     currentPassword: string,
     newPassword: string,
   ): Promise<void> {
+    const userId = user.id;
+    const currentSessionId = user.sessionId;
+    await this.throttle.reserve(user.username, ip);
     const [row] = await this.db.select().from(users).where(eq(users.id, userId));
     if (!row || !(await this.passwords.verify(row.passwordHash, currentPassword))) {
       throw new ForbiddenException(WRONG_CURRENT_PASSWORD_MESSAGE);
     }
+    await this.throttle.clear(user.username, ip);
     const passwordHash = await this.passwords.hash(newPassword);
     await this.db.update(users).set({ passwordHash }).where(eq(users.id, userId));
     await this.sessions.deleteForUser(userId, currentSessionId);

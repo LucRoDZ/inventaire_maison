@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PasswordService } from './password.service';
 
 describe('PasswordService', () => {
@@ -22,6 +22,16 @@ describe('PasswordService', () => {
 
   it('salts every hash', async () => {
     expect(await service.hash('same')).not.toBe(await service.hash('same'));
+  });
+
+  it('computes the dummy hash once, at start-up', async () => {
+    const fresh = new PasswordService();
+    const hash = vi.spyOn(fresh, 'hash');
+    await fresh.onModuleInit();
+    expect(hash).toHaveBeenCalledOnce();
+    await fresh.verifyDummy('anything');
+    await fresh.verifyDummy('anything else');
+    expect(hash).toHaveBeenCalledOnce();
   });
 
   it('runs the dummy check without throwing', async () => {

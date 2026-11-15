@@ -145,6 +145,46 @@ describe('POST /api/auth/password', () => {
     await loginAs('membre');
   });
 
+  it('counts a wrong current password as a failed login: 429 after 5', async () => {
+    const cookie = await loginAs('membre');
+    for (let i = 0; i < 5; i++) {
+      expect(
+        (await change(cookie, { currentPassword: `faux-${i}`, newPassword: 'nouveau-mdp-9' }))
+          .status,
+      ).toBe(403);
+    }
+    const blocked = await change(cookie, {
+      currentPassword: 'motdepasse1',
+      newPassword: 'nouveau-mdp-9',
+    });
+    expect(blocked.status).toBe(429);
+    expect(Number(blocked.headers['retry-after'])).toBeGreaterThan(0);
+    // The same pair is blocked at login too.
+    const login = await request(server())
+      .post('/api/auth/login')
+      .set('Origin', ORIGIN)
+      .send({ username: 'membre', password: 'motdepasse1' });
+    expect(login.status).toBe(429);
+  });
+
+  it('forgets the failures once the current password is right', async () => {
+    const cookie = await loginAs('membre');
+    for (let i = 0; i < 4; i++) {
+      await change(cookie, { currentPassword: `faux-${i}`, newPassword: 'nouveau-mdp-9' });
+    }
+    expect(
+      (await change(cookie, { currentPassword: 'motdepasse1', newPassword: 'nouveau-mdp-9' }))
+        .status,
+    ).toBe(204);
+    for (let i = 0; i < 4; i++) {
+      await change(cookie, { currentPassword: `faux-${i}`, newPassword: 'autre-mdp-99' });
+    }
+    expect(
+      (await change(cookie, { currentPassword: 'nouveau-mdp-9', newPassword: 'autre-mdp-99' }))
+        .status,
+    ).toBe(204);
+  });
+
   it('answers 400 when the new password is too short or too long', async () => {
     const cookie = await loginAs('membre');
     expect(

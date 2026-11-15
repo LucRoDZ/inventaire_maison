@@ -54,7 +54,7 @@ Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`.
 | `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
 | `DATABASE_URL` | Connexion PostgreSQL pour `npm run dev` (Compose construit la sienne) |
 | `SESSION_SECRET` | Clé HMAC des sessions (32 caractères au moins) : la base ne stocke que `HMAC-SHA256(SESSION_SECRET, jeton)`. Changer ce secret déconnecte tout le monde (révocation d'urgence) |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Premier compte administrateur, créé quand la table `users` est vide (mot de passe : 8 caractères au moins) |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Premier compte administrateur, créé quand la table `users` est vide. Pseudo : 3 à 30 caractères parmi `a-z`, `0-9`, `_`, `.`, `-` (mis en minuscules) ; mot de passe : 8 à 128 caractères |
 | `OFF_USER_AGENT` | User-Agent envoyé à Open Food Facts |
 | `COMPOSE_FILE` | Fichiers Compose utilisés (voir les deux modes de proxy) |
 | `COMPOSE_PROFILES` | `proxy` active Caddy embarqué ; vide derrière le nginx partagé |

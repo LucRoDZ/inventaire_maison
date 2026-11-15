@@ -29,6 +29,18 @@ const passwordSchema = z.object({
   newPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
 });
 
+/** Runs an action and adds Retry-After when the login throttle answers 429. */
+async function withRetryAfter<T>(res: Response, action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    if (error instanceof TooManyAttemptsException) {
+      res.setHeader('Retry-After', String(error.retryAfterSeconds));
+    }
+    throw error;
+  }
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -47,21 +59,14 @@ export class AuthController {
   ): Promise<AuthUser> {
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException('Pseudo et mot de passe requis');
-    let result;
-    try {
-      result = await this.auth.login(
+    const { user, session } = await withRetryAfter(res, () =>
+      this.auth.login(
         parsed.data.username,
         parsed.data.password,
         req.get('user-agent'),
         req.ip ?? 'unknown',
-      );
-    } catch (error) {
-      if (error instanceof TooManyAttemptsException) {
-        res.setHeader('Retry-After', String(error.retryAfterSeconds));
-      }
-      throw error;
-    }
-    const { user, session } = result;
+      ),
+    );
     this.cookies.set(res, session.token, session.expiresAt);
     return user;
   }
@@ -81,19 +86,24 @@ export class AuthController {
 
   @Post('password')
   @HttpCode(204)
-  async changePassword(@Body() body: unknown, @Req() req: Request): Promise<void> {
+  async changePassword(
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
     const parsed = passwordSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(
         `Le nouveau mot de passe doit faire entre ${PASSWORD_MIN_LENGTH} et ${PASSWORD_MAX_LENGTH} caractères`,
       );
     }
-    const user = req.user!;
-    await this.auth.changePassword(
-      user.id,
-      user.sessionId,
-      parsed.data.currentPassword,
-      parsed.data.newPassword,
+    await withRetryAfter(res, () =>
+      this.auth.changePassword(
+        req.user!,
+        req.ip ?? 'unknown',
+        parsed.data.currentPassword,
+        parsed.data.newPassword,
+      ),
     );
   }
 }

@@ -577,6 +577,7 @@
 - 14/11/2026 : ORM Drizzle ; tests API Vitest + SWC ; service worker Serwist ; repli de scan `zxing-wasm` ; Node 24 ; images `node:24-slim`.
 - 15/11/2026 : R1. Revue de la Phase 0, anti-force-brute contournable par des connexions simultanées : la tentative est écrite avant la vérification du mot de passe, sous verrou consultatif PostgreSQL (`pg_advisory_xact_lock`) sur le couple pseudo + IP, puis effacée si la connexion réussit.
 - 15/11/2026 : R2. CI, job `audit` : le contrôle des `.env` versionnés (`git ls-files '*.env' '.env.*' '*/.env.*' ':!*.env.example'`) passe en premier, avec `if: always()`, et devient bloquant ; `npm audit` reste un simple avertissement (`::warning`), le job n'a plus `continue-on-error`. Le job `audit` est à ajouter aux vérifications requises de la protection de `main`.
+- 15/11/2026 : R3. Premier admin : `ADMIN_USERNAME` suit la règle M6 (3 à 30 caractères `[a-z0-9_.-]`, espaces retirés, mis en minuscules) et `ADMIN_PASSWORD` fait 8 à 128 caractères, comme à la connexion ; sinon l'API refuse de démarrer en nommant la variable. Un mauvais mot de passe actuel sur `POST /auth/password` compte comme un échec de connexion du couple pseudo + IP (429 et `Retry-After` après 5). Le hachage factice est calculé au démarrage.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

@@ -13,10 +13,12 @@ import {
   setCookieLine,
 } from '../../test/helpers';
 import { createTestApp } from '../../test/create-test-app';
-import { DB, type Database } from '../database/database.module';
+import { parseEnv } from '../config/env.schema';
+import { DB, MigrationRunner, type Database } from '../database/database.module';
 import { sessions, users } from '../database/schema';
 import { BootstrapAdminService } from '../users/bootstrap-admin.service';
 import { SESSION_TTL_MS } from './auth.constants';
+import { PasswordService } from './password.service';
 
 let app: INestApplication;
 let clock: FakeClock;
@@ -207,6 +209,21 @@ describe('first admin', () => {
     const res = await login(process.env['ADMIN_USERNAME']!, process.env['ADMIN_PASSWORD']!);
     expect(res.status).toBe(200);
     expect(res.body.role).toBe('admin');
+  });
+
+  it('stores the first admin username in lowercase', async () => {
+    await resetAuth(app);
+    const config = parseEnv({ ...process.env, ADMIN_USERNAME: ' Lucas.Z ' });
+    const bootstrap = new BootstrapAdminService(
+      db,
+      app.get(PasswordService),
+      config,
+      app.get(MigrationRunner),
+    );
+    expect(await bootstrap.bootstrap()).toBe(true);
+    const [row] = await db.select().from(users);
+    expect(row!.username).toBe('lucas.z');
+    expect((await login('LUCAS.Z', process.env['ADMIN_PASSWORD']!)).status).toBe(200);
   });
 
   it('does nothing when a user already exists', async () => {

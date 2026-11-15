@@ -1,3 +1,4 @@
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, USERNAME_PATTERN } from '@inventaire/shared';
 import { z } from 'zod';
 
 export const envSchema = z.object({
@@ -5,8 +6,9 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   DATABASE_URL: z.string().min(1).startsWith('postgres'),
   SESSION_SECRET: z.string().min(32),
-  ADMIN_USERNAME: z.string().trim().min(1),
-  ADMIN_PASSWORD: z.string().min(8),
+  // Same rules as the accounts created later (M6) and as the login form: usable to sign in.
+  ADMIN_USERNAME: z.string().trim().toLowerCase().regex(USERNAME_PATTERN),
+  ADMIN_PASSWORD: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
   OFF_USER_AGENT: z.string().min(1).default('InventaireMaison/1.0'),
   OFF_BASE_URL: z.string().url().optional(),
   PUBLIC_ORIGIN: z.string().url().default('http://localhost:3000'),
