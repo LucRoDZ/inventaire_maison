@@ -1,5 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { check, date, index, integer, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import {
+  check,
+  date,
+  foreignKey,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+} from 'drizzle-orm/pg-core';
 import { users } from './auth';
 import { products } from './catalog';
 import { locations, shelves } from './places';
@@ -14,8 +24,8 @@ export const stockItems = pgTable(
     locationId: integer('location_id')
       .notNull()
       .references(() => locations.id),
-    /** Null means the "Non rangé" tray of the location. */
-    shelfId: integer('shelf_id').references(() => shelves.id),
+    /** Null means the "Non rangé" tray of the location. Must be a shelf of location_id. */
+    shelfId: integer('shelf_id'),
     quantity: integer().notNull(),
     expiryDate: date('expiry_date', { mode: 'string' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -26,6 +36,12 @@ export const stockItems = pgTable(
       .on(t.productId, t.locationId, t.shelfId, t.expiryDate)
       .nullsNotDistinct(),
     check('stock_items_quantity_check', sql`${t.quantity} > 0`),
+    // The shelf must belong to the location of the line (not checked when shelf_id is null).
+    foreignKey({
+      name: 'stock_items_shelf_location_fk',
+      columns: [t.shelfId, t.locationId],
+      foreignColumns: [shelves.id, shelves.locationId],
+    }),
     index('stock_items_location_shelf_idx').on(t.locationId, t.shelfId),
     index('stock_items_expiry_date_idx').on(t.expiryDate),
   ],

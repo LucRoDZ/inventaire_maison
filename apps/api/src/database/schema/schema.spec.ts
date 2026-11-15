@@ -172,6 +172,29 @@ describe('constraints', () => {
     ).rejects.toThrow();
   });
 
+  it('refuses a stock line whose shelf belongs to another location', async () => {
+    const { product, location, shelf } = await seedBase();
+    const [cellar] = await tmp.db
+      .insert(locations)
+      .values({ name: 'Cave', kind: 'cellar', icon: 'wine' })
+      .returning();
+    // Right shelf of the right location, and the "Non rangé" tray (no shelf) of another one: accepted.
+    await tmp.db
+      .insert(stockItems)
+      .values({ productId: product.id, locationId: location.id, shelfId: shelf.id, quantity: 1 });
+    await tmp.db
+      .insert(stockItems)
+      .values({ productId: product.id, locationId: cellar!.id, shelfId: null, quantity: 1 });
+    // A fridge shelf on a cellar line: refused by stock_items_shelf_location_fk.
+    await expect(
+      tmp.db
+        .insert(stockItems)
+        .values({ productId: product.id, locationId: cellar!.id, shelfId: shelf.id, quantity: 2 }),
+    ).rejects.toMatchObject({
+      cause: { code: '23503', constraint: 'stock_items_shelf_location_fk' },
+    });
+  });
+
   it('allows a single fallback category', async () => {
     await tmp.db.insert(categories).values({ name: 'Autre', icon: 'package', isFallback: true });
     await expect(

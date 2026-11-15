@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, pgTable, text } from 'drizzle-orm/pg-core';
+import { check, index, integer, pgTable, text, unique } from 'drizzle-orm/pg-core';
 
 export const locations = pgTable(
   'locations',
@@ -31,6 +31,8 @@ export const shelves = pgTable(
   },
   (t) => [
     index('shelves_location_id_idx').on(t.locationId),
+    // Target of the composite foreign key of stock_items: a shelf belongs to one location.
+    unique('shelves_id_location_key').on(t.id, t.locationId),
     check('shelves_kind_check', sql`${t.kind} in ('rack', 'plain')`),
   ],
 );
