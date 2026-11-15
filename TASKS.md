@@ -575,6 +575,7 @@
 - 14/11/2026 : M14. Reprise après une porte de validation : Vous supprimez la ligne du marqueur d'arrêt dans `TASKS.md` pour relancer la boucle (procédure écrite dans `TASKS.md`).
 - 14/11/2026 : M15. Critères non automatisables (4G en moins de 3 s, vrais appareils, HTTPS sur le VPS, restauration réelle) : Listés « à valider par Lucas » dans chaque PR, jamais cochés par moi.
 - 14/11/2026 : ORM Drizzle ; tests API Vitest + SWC ; service worker Serwist ; repli de scan `zxing-wasm` ; Node 24 ; images `node:24-slim`.
+- 15/11/2026 : R1. Revue de la Phase 0, anti-force-brute contournable par des connexions simultanées : la tentative est écrite avant la vérification du mot de passe, sous verrou consultatif PostgreSQL (`pg_advisory_xact_lock`) sur le couple pseudo + IP, puis effacée si la connexion réussit.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

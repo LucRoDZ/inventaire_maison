@@ -24,7 +24,8 @@ export class AuthService {
     userAgent: string | undefined,
     ip: string,
   ): Promise<{ user: AuthUser; session: CreatedSession }> {
-    await this.throttle.assertAllowed(username, ip);
+    // Counted as a failure from here on, and forgotten only once the password is right.
+    await this.throttle.reserve(username, ip);
 
     const [row] = await this.db
       .select()
@@ -33,11 +34,9 @@ export class AuthService {
 
     if (!row || row.disabledAt !== null) {
       await this.passwords.verifyDummy(password);
-      await this.throttle.recordFailure(username, ip);
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
     if (!(await this.passwords.verify(row.passwordHash, password))) {
-      await this.throttle.recordFailure(username, ip);
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
     await this.throttle.clear(username, ip);

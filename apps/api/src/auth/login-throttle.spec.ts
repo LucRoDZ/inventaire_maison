@@ -94,6 +94,18 @@ describe('login throttling', () => {
     expect((await login('lucas', 'motdepasse1')).status).toBe(200);
   });
 
+  it('counts at most 5 attempts for 10 simultaneous wrong logins, the others get 429', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, (_, i) => login('lucas', `mauvais-${i}`)),
+    );
+    const statuses = responses.map((res) => res.status);
+    expect(statuses.filter((s) => s === 401)).toHaveLength(5);
+    expect(statuses.filter((s) => s === 429)).toHaveLength(5);
+    const [row] = await app.get<Database>(DB).select({ n: count() }).from(loginAttempts);
+    expect(row!.n).toBeLessThanOrEqual(5);
+    expect((await login('lucas', 'motdepasse1')).status).toBe(429);
+  });
+
   it('purges attempts older than 24 hours', async () => {
     await fail(2);
     clock.advance(25 * HOUR);
