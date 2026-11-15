@@ -203,7 +203,7 @@
   - Tests : unitaires du service (dimensions, format, absence d'EXIF) ; intégration : envoi valide, fichier trop lourd, faux JPEG, tentative de traversée de chemin, accès sans session.
   - Fin : `GET /api/images/..%2F..%2Fetc%2Fpasswd` renvoie 404 ; l'image servie est un WebP de 400 px.
 
-- [ ] **1.6 Client Open Food Facts**
+- [x] **1.6 Client Open Food Facts**
   - Résultat : lecture d'une fiche produit depuis le serveur.
   - Fichiers : `apps/api/src/off/{off.client,off.mapper}.ts`, `apps/api/test/fixtures/off/*.json`.
   - Comportement : `GET {base}/api/v2/product/{code}.json` avec `User-Agent` = `OFF_USER_AGENT` et délai de 4 s ; renvoie nom (`product_name_fr`, sinon `product_name`), marque, `quantity`, `image_front_url`, `categories_tags`, ou un résultat typé `not_found` / `unavailable` (délai, erreur réseau, 5xx, JSON invalide), sans jamais lever d'exception ; `OFF_BASE_URL` ignorée en production.
