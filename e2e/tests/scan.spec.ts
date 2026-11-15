@@ -353,3 +353,72 @@ test('meuble ouvert : ajout depuis une étagère vide, le produit y apparaît av
     .poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth))
     .toBeGreaterThan(0);
 });
+
+const MOVES = {
+  'chromium-mobile': {
+    code: '3760001111118',
+    name: 'Beurre doux du déplacement',
+    from: 'Balconnet',
+    toLocation: 'Frigo',
+    to: 'Bac à légumes 1',
+  },
+  'webkit-mobile': {
+    code: '3760002222226',
+    name: 'Confiture de fraises du déplacement',
+    from: 'Bac à légumes 2',
+    toLocation: 'Garde-manger',
+    to: 'Étagère 1',
+  },
+} as const;
+
+test('« Déplacer vers… » : d’une étagère à une autre par le menu', async ({ page }, testInfo) => {
+  const { code, name, from, toLocation, to } = MOVES[testInfo.project.name as keyof typeof MOVES];
+  await signIn(page);
+  await startScanner(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
+  await sheet.getByLabel('Étagère').selectOption({ label: from });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
+
+  await page.goto('/inventaire');
+  await page.getByRole('link', { name: /^Frigo/ }).click();
+  await page
+    .getByRole('region', { name: from })
+    .getByRole('button', { name: `${name}, quantité 1` })
+    .click();
+  const panel = page.getByRole('dialog', { name });
+  await expect(panel.getByText(`Frigo, ${from}`)).toBeVisible();
+  await panel.getByRole('button', { name: 'Déplacer vers…' }).click();
+  const dialog = page.getByRole('dialog', { name: new RegExp(`^Déplacer ${name}`) });
+  await expect(dialog.getByRole('button', { name: 'Déplacer', exact: true })).toBeDisabled();
+  await dialog.getByLabel('Meuble').selectOption({ label: toLocation });
+  await dialog.getByLabel('Étagère').selectOption({ label: to });
+  await dialog.getByRole('button', { name: 'Déplacer', exact: true }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: `Déplacé : 1 × ${name} vers ${toLocation}` }),
+  ).toBeVisible();
+
+  if (toLocation === 'Frigo') {
+    await expect(
+      page.getByRole('region', { name: to }).getByRole('button', { name: `${name}, quantité 1` }),
+    ).toBeVisible();
+  }
+  await expect(
+    page.getByRole('region', { name: from }).getByRole('button', { name: `${name}, quantité 1` }),
+  ).toHaveCount(0);
+
+  const stock = (await (
+    await page.request.get(`/api/stock?q=${encodeURIComponent(name.split(' ')[0]!.toLowerCase())}`)
+  ).json()) as {
+    items: {
+      product: { name: string };
+      location: { name: string };
+      shelf: { name: string } | null;
+    }[];
+  };
+  const line = stock.items.find((item) => item.product.name === name);
+  expect(line?.location.name).toBe(toLocation);
+  expect(line?.shelf?.name).toBe(to);
+});

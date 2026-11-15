@@ -335,7 +335,7 @@
   - Tests : composants : ordre, étagère vide, plateau, contexte transmis au scanner. E2E : ajout depuis une étagère vide, le produit y apparaît avec sa photo.
   - Fin : l'e2e passe ; le critère « 3 unités au Frigo, étagère 2 » est vérifié dans les deux vues.
 
-- [ ] **1.24 Panneau produit et « Déplacer vers… »**
+- [x] **1.24 Panneau produit et « Déplacer vers… »**
   - Résultat : agir sur une vignette sans glisser.
   - Fichiers : `apps/web/components/home/{ProductSheet,MoveDialog}.tsx`.
   - Comportement : feuille du bas : photo, nom, quantité − / +, date limite, lien vers la fiche produit, « Déplacer vers… » (meuble, étagère ou « Non rangé », quantité = toute la ligne par défaut) ; destination identique impossible ; message de confirmation.
@@ -601,6 +601,7 @@
 - 15/11/2026 : P1.21. Vue Liste : les filtres (lieu, catégorie, recherche, tri) sont envoyés à `GET /stock` ; les compteurs « n articles · m unités » portent sur les lignes affichées (articles = produits distincts) ; les onglets de lieu montrent le nombre de produits renvoyé par l'API. − / + est optimiste, la liste est rechargée après succès (compteurs et ordre à jour) et la carte revient à l'ancienne valeur avec un message si le serveur refuse. La bascule Maison / Liste est en place ; l'onglet Maison affiche un texte provisoire jusqu'à la tâche 1.22.
 - 15/11/2026 : P1.22. Vue Maison : c'est l'affichage par défaut de l'onglet Inventaire (Liste reste à un toucher). Chaque carte est un lien vers `/inventaire/{id du lieu}` (page de la tâche 1.23). Les dessins SVG n'utilisent que des classes `fill-*` et `stroke-*` des tokens (lavande, indigo, ambre, blanc) ; le dessin vient de `locations.kind`, jamais du nom (un `other` réservé retombe sur le garde-manger). « Bientôt périmés » compte les lignes (voir P1.12).
 - 15/11/2026 : P1.23. Meuble ouvert : `/inventaire/{id du lieu}` lit `GET /home`. Le scanner « avec ce meuble et cette étagère préchoisis » reçoit son contexte par l'URL (`/?lieu=2&etagere=21`), lu par la page Scanner et transmis à `ScanFlow`, donc à la fiche d'ajout (règle A6) ; l'ouverture est une animation CSS de 250 ms sur `transform` et `opacity`, réduite à 0,01 ms par la règle `prefers-reduced-motion` de `globals.css`. Une étagère `rack` montre quatre montants sous sa planche. Le toucher d'une vignette ne fait rien pour l'instant : le panneau produit arrive en 1.24. Piège de test noté : la recherche par nom est floue (similarité trigramme), deux noms voisins créés par des e2e en parallèle (« Thé vert », « Kiwis verts ») se retrouvent, donc les e2e prennent des noms sans mot commun.
+- 15/11/2026 : P1.24. Panneau produit : s'ouvre au toucher d'une vignette et suit la ligne à chaque rechargement du meuble (il se ferme si la ligne disparaît) ; la date limite est affichée avec sa pastille mais n'est pas modifiable ici (la date fait partie de l'identité de la ligne : la changer revient à créer une autre ligne). « Déplacer vers… » : quantité = toute la ligne par défaut (le sélecteur n'apparaît que s'il y a plus d'une unité), destination identique refusée avant l'envoi, confirmation « Déplacé : 2 × Lait vers Frigo, étagère 2 » affichée 5 s sur la page du meuble. Le lien « Voir la fiche produit » mène à `/produits/{id}` (tâche 1.27).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

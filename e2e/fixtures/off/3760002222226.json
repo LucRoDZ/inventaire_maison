@@ -1,0 +1,11 @@
+{
+  "code": "3760002222226",
+  "status": 1,
+  "product": {
+    "product_name": "Strawberry jam",
+    "product_name_fr": "Confiture de fraises du déplacement",
+    "brands": "Confiturier",
+    "quantity": "370 g",
+    "categories_tags": ["en:fruit-jams"]
+  }
+}

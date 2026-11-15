@@ -1,0 +1,11 @@
+{
+  "code": "3760001111118",
+  "status": 1,
+  "product": {
+    "product_name": "Butter",
+    "product_name_fr": "Beurre doux du déplacement",
+    "brands": "Laiterie",
+    "quantity": "250 g",
+    "categories_tags": ["en:butters"]
+  }
+}

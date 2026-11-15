@@ -3,6 +3,8 @@ import type {
   StockAdjustInput,
   StockAdjustResponse,
   StockListResponse,
+  StockMoveInput,
+  StockMoveResponse,
   StockRemoveResponse,
   StockSort,
   CategoryDto,
@@ -41,3 +43,6 @@ export function fetchStock(filters: StockFilters = {}): Promise<StockListRespons
   const query = params.toString();
   return apiFetch<StockListResponse>(`/stock${query ? `?${query}` : ''}`);
 }
+
+export const moveStock = (input: StockMoveInput): Promise<StockMoveResponse> =>
+  apiFetch<StockMoveResponse>('/stock/move', { method: 'POST', body: input });
