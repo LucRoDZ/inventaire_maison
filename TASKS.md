@@ -168,7 +168,7 @@
 
 ### Référentiels, catalogue, Open Food Facts
 
-- [ ] **1.1 API lieux et étagères**
+- [x] **1.1 API lieux et étagères**
   - Résultat : lecture pour tous, écriture pour l'admin.
   - Fichiers : `apps/api/src/locations/`, `packages/shared/src/locations.ts`.
   - Comportement : `GET /locations` (étagères incluses, triées) ; `PATCH /locations/{id}` (nom, icône, ordre) ; `POST/PATCH/DELETE /shelves` (nom, type `rack` ou `plain`, ordre, lieu). Supprimer une étagère renvoie son stock au « Non rangé » du meuble, avec fusion des lignes identiques et deux mouvements `move` par ligne, dans une transaction. Nom vide ou de plus de 40 caractères : 400 ; identifiant inconnu : 404 ; membre en écriture : 403.
@@ -582,6 +582,8 @@
 - 15/11/2026 : R3. Premier admin : `ADMIN_USERNAME` suit la règle M6 (3 à 30 caractères `[a-z0-9_.-]`, espaces retirés, mis en minuscules) et `ADMIN_PASSWORD` fait 8 à 128 caractères, comme à la connexion ; sinon l'API refuse de démarrer en nommant la variable. Un mauvais mot de passe actuel sur `POST /auth/password` compte comme un échec de connexion du couple pseudo + IP (429 et `Retry-After` après 5). Le hachage factice est calculé au démarrage.
 - 15/11/2026 : R4. Image de la base : `postgres:16-alpine` (cahier) au lieu de `postgres:16`, dans le compose et la CI. Un volume créé par l'image Debian démarre avec l'avertissement « no actual collation version » (index texte triés sous glibc) : sauvegarde puis restauration dans un volume neuf, procédure dans le README, testée le 15/11/2026 sur une pile jetable. Le VPS n'est pas concerné si sa base est créée avec l'image Alpine.
 - 15/11/2026 : R5. Revue Copilot de la PR #1 (15 commentaires), choix retenus : le blocage dure 15 minutes après l'échec qui complète 5 échecs en 15 minutes (et non 15 minutes après le plus ancien) ; connexion et changement de mot de passe prennent un verrou consultatif sur l'utilisateur, la connexion relit le hachage sous ce verrou avant de créer la session, le changement écrit le hachage et révoque les autres sessions dans une seule transaction ; `deploy.sh` saute `git pull` sur un HEAD détaché (retour arrière) et s'arrête si `docker compose ps` échoue ; `backup-db.sh` échoue si Docker Compose ne répond pas au lieu de sauter la sauvegarde. Le contrôle des `.env` reste dans le job `audit` (rendu bloquant, R2) plutôt que dans `lint-typecheck` comme le proposait Copilot.
+- 15/11/2026 : P1.1a. Suppression d'une étagère et journal : `stock_movements.shelf_id` référence `shelves(id)` sans cascade ; les mouvements qui pointaient vers l'étagère supprimée (dont le premier `move`) passent à `shelf_id` nul dans la même transaction, plutôt que de modifier le schéma. L'historique garde le lieu, la date et le delta, mais plus l'étagère d'origine.
+- 15/11/2026 : P1.1b. `PATCH /shelves/{id}` avec un autre `locationId` : refusé en 409 si l'étagère contient du stock (une ligne de stock est liée au lieu de son étagère) ; une étagère vide change de meuble et passe en fin d'ordre.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
