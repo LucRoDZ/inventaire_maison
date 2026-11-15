@@ -11,6 +11,7 @@
     "e2e"
   ],
   "scripts": {
+    "postinstall": "npm run build -w @inventaire/shared",
     "dev": "concurrently -n web,api -c auto \"npm run dev -w @inventaire/web\" \"npm run dev -w @inventaire/api\"",
     "build": "npm run build -w @inventaire/shared && npm run build -w @inventaire/api && npm run build -w @inventaire/web",
     "lint": "eslint . && node scripts/check-colors.mjs",

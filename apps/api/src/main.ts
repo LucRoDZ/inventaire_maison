@@ -4,9 +4,12 @@ import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
 import { APP_CONFIG } from './config/config.module';
 import { EnvError } from './config/env.schema';
+import { loadLocalEnv } from './config/load-env';
 import type { AppConfig } from './config/env.schema';
 
 async function bootstrap(): Promise<void> {
+  // Local runs read the root .env; Docker passes the variables itself.
+  loadLocalEnv(__dirname);
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
   configureApp(app);

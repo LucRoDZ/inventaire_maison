@@ -29,11 +29,13 @@ Prérequis : Node.js 24 (`.nvmrc`), Docker et Docker Compose.
 ```bash
 nvm use                     # Node 24
 cp .env.example .env        # puis renseigner les valeurs
-npm install
+npm install                 # compile aussi packages/shared (postinstall)
 COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml docker compose up -d db   # base sur 127.0.0.1:5432
-npm run db:migrate
+npm run db:migrate          # facultatif : l'API applique aussi les migrations au démarrage
 npm run dev                 # web sur :3000, api sur :3001
 ```
+
+En local, l'API, `db:migrate` et `db:seed` lisent le `.env` de la racine ; une variable déjà définie dans le shell est prioritaire. En production (Docker) et dans les tests, ce fichier n'est jamais lu.
 
 Toute la pile en conteneurs, avec Caddy embarqué :
 
