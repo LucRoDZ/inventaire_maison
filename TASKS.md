@@ -433,8 +433,8 @@
 - [ ] **1.37 Sauvegardes et restauration**
   - Résultat : sauvegarde complète et restauration prouvée.
   - Fichiers : `scripts/{backup-images.sh,restore-db.sh,test-backup-restore.sh}`.
-  - Comportement : archive datée du volume `images`, 14 conservées ; `restore-db.sh <fichier>` refuse une base non vide sauf `--force` ; test : sauvegarde, restauration sur une base vide, comparaison du nombre de lignes de chaque table.
-  - Tests : `test-backup-restore.sh` dans le job `docker-build` ; `shellcheck`.
+  - Comportement : archive datée du volume `images`, 14 conservées, créée avec `umask 077` (dossier 700, archives 600, comme `backup-db.sh`) ; `restore-db.sh <fichier>` refuse une base non vide sauf `--force` ; test : sauvegarde, restauration sur une base vide, comparaison du nombre de lignes de chaque table.
+  - Tests : `test-backup-restore.sh` dans le job `docker-build`, qui vérifie aussi que chaque archive d'images est en mode 600 ; `shellcheck`.
   - Fin : `./scripts/test-backup-restore.sh` se termine par `OK`.
 
 - [ ] **1.38 README complet**
