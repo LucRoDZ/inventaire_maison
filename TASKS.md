@@ -277,7 +277,7 @@
   - Tests : composants : saisie valide, clé fausse, saisie rapide terminée par Entrée, photo lisible et illisible, détection par agent utilisateur.
   - Fin : tests verts.
 
-- [ ] **1.16 Fiche d'ajout**
+- [x] **1.16 Fiche d'ajout**
   - Résultat : feuille quantité, lieu, étagère, date limite.
   - Fichiers : `apps/web/components/add/{AddSheet,QuantityStepper,LocationPicker,UndoToast}.tsx`.
   - Comportement : photo ou pictogramme, nom, marque, catégorie ; quantité 1 par défaut, minimum 1 ; lieu prérempli selon l'ordre A6 ; étagère facultative (« Non rangé » par défaut) ; date limite facultative ; « Ajouter » et « Ajouter et scanner le suivant » ; message « Ajouté : 2 × Lait demi-écrémé, Frigo, étagère 2 » avec Annuler pendant 5 s (mouvement `correction`) ; hors ligne ou erreur : la feuille reste ouverte avec un message, rien n'est perdu.
@@ -593,6 +593,7 @@
 - 15/11/2026 : P1.13. `zxing-wasm` ajouté au web ; `scripts/copy-zxing-wasm.mjs` (appelé par `predev` et `prebuild`, copié dans l'image Docker) place le WASM dans `apps/web/public/zxing/` (ignoré par git, servi par l'application, jamais par un CDN). ZXing renvoie un UPC-A comme un EAN-13 préfixé d'un 0 : le flux de scan normalise, le résultat est le même qu'avec `normalizeBarcode`. `next.config.ts` définit toujours `NEXT_PUBLIC_E2E` (`0` sauf `1`) : webpack supprime alors `fake-engine` de tout autre build (vérifié : aucune occurrence dans `.next`, présent avec `NEXT_PUBLIC_E2E=1`). Les photos sont réduites à 1600 px avant décodage.
 - 15/11/2026 : P1.14. Écran Scanner : `facingMode` est demandé en `ideal` (une webcam de PC démarre aussi) ; la caméra reste éteinte tant qu'on n'a pas touché « Scanner », et elle ne repart pas toute seule au retour sur l'onglet ; `lib/platform.ts` (détection iOS, Android, ordinateur) sert déjà aux consignes de permission, la tâche 1.15 y ajoutera les navigateurs intégrés ; `ScannerView` accepte un emplacement `fallbacks` que 1.15 remplit. La partie « en local sur Chrome, la caméra s'allume et s'éteint » de la tâche n'est pas automatisable : étapes dans le README (« Écran Scanner »), **à valider par Lucas**.
 - 15/11/2026 : P1.15. Les replis (code saisi, photo) livrent un code déjà canonique (`parseCode` : EAN-13 ou EAN-8, un UPC-A saisi devient `0` + 12 chiffres) ; la photo est toujours décodée par ZXing, quel que soit le moteur de la caméra ; un code lu sur photo dont la clé est fausse est traité comme illisible. Navigateurs intégrés reconnus : Instagram, Facebook (`FBAN`, `FBAV`, `FB_IAB`), WhatsApp.
+- 15/11/2026 : P1.16. `AddSheet` ne fait pas l'annulation elle-même : elle remet au parent `{message, undo}` (`onAdded`), qui affiche `UndoToast` (5 s) et appelle `undo` (mouvement `correction` opposé). Le nom d'étagère du message passe en minuscule initiale (« étagère 2 »). Le dernier lieu utilisé est gardé dans `localStorage` (`inv_last_location`). Le fond de la feuille est `indigo` à 40 % (aucune couleur noire n'existe dans les tokens). Les pictogrammes de catégorie viennent d'une table explicite des 39 icônes (`components/ui/CategoryIcon.tsx`), pour ne pas embarquer toute la bibliothèque Lucide.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
