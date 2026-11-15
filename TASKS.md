@@ -363,7 +363,7 @@
   - Tests : composants : formulaire, libellés des raisons. E2E : deux membres agissent sur un produit, l'historique nomme chacun ; la catégorie modifiée se voit dans la vue Liste.
   - Fin : l'e2e « deux membres, même stock » passe.
 
-- [ ] **1.28 À classer**
+- [x] **1.28 À classer**
   - Résultat : classer en un toucher.
   - Fichiers : `apps/web/app/(app)/a-classer/page.tsx`, `apps/web/components/review/ReviewCard.tsx`.
   - Comportement : produits en stock dont la catégorie est « Autre » ou devinée ; un toucher sur « Confirmer » ou sur une autre catégorie classe le produit et le retire de la liste ; pastille de compteur sur l'onglet ; état vide « Tout est classé ».

@@ -620,3 +620,32 @@ test('une fiche produit inconnue affiche « Produit introuvable »', async ({ pa
   await page.goto('/produits/abc');
   await expect(page.getByRole('heading', { name: 'Produit introuvable' })).toBeVisible();
 });
+
+const REVIEW = {
+  'chromium-mobile': { code: '3760008888884', name: 'Fromage des classements' },
+  'webkit-mobile': { code: '3760009999992', name: 'Pâtes des classements' },
+} as const;
+
+test('À classer : un produit scanné apparaît, est confirmé, disparaît', async ({
+  page,
+}, testInfo) => {
+  const { code, name } = REVIEW[testInfo.project.name as keyof typeof REVIEW];
+  await signIn(page);
+  await startScanner(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByLabel('Lieu').selectOption({ label: 'Garde-manger' });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
+
+  await page.getByRole('link', { name: /À classer/ }).click();
+  const card = page.getByRole('article', { name });
+  await expect(card).toBeVisible();
+  await card.getByRole('button', { name: /^Confirmer/ }).click();
+  await expect(card).toHaveCount(0);
+
+  // Reloading: the product is confirmed for good.
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'À classer', level: 1 })).toBeVisible();
+  await expect(page.getByRole('article', { name })).toHaveCount(0);
+});
