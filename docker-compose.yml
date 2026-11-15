@@ -37,7 +37,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        API_INTERNAL_URL: http://api:3001
+        API_INTERNAL_URL: http://inventaire-api:3001
     restart: unless-stopped
     networks: [edge]
     depends_on:
@@ -64,7 +64,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: '3001'
-      DATABASE_URL: postgres://inventaire:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}@db:5432/inventaire
+      DATABASE_URL: postgres://inventaire:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}@inventaire-db:5432/inventaire
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET manquant dans .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:?ADMIN_USERNAME manquant dans .env}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD manquant dans .env}
@@ -74,7 +74,12 @@ services:
       IMAGES_DIR: /data/images
     volumes:
       - images:/data/images
-    networks: [edge, backend]
+    # Unique aliases: behind the shared nginx the api also joins easyq_default, where the plain
+    # names `api`, `web` and `db` can designate another application's containers.
+    networks:
+      edge:
+        aliases: [inventaire-api]
+      backend:
     depends_on:
       db:
         condition: service_healthy
@@ -101,7 +106,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks: [backend]
+    networks:
+      backend:
+        aliases: [inventaire-db]
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U inventaire -d inventaire']
       interval: 5s
