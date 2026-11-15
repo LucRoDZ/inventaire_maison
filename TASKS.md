@@ -217,7 +217,7 @@
   - Tests : unitaires : tag le plus spécifique prioritaire, aucun tag connu, liste vide ; URL en HTTP, hôte étranger, redirection, fichier trop gros, contenu non image.
   - Fin : tests verts ; une URL `https://exemple.test/x.jpg` n'est jamais appelée.
 
-- [ ] **1.8 Résolution d'un scan**
+- [x] **1.8 Résolution d'un scan**
   - Résultat : `GET /scan/{barcode}` répond `known`, `suggested` ou `unknown`.
   - Fichiers : `apps/api/src/scan/`, `packages/shared/src/scan.ts`.
   - Comportement : code invalide : 400 sans appel réseau. Présent au catalogue : `known` avec le produit et son stock. Trouvé chez Open Food Facts avec un nom : produit créé (`source=off`, `category_guessed=true`, `off_payload`), image téléchargée en tâche de fond, réponse `suggested`. Fiche sans nom : `unknown` raison `poor_data` avec indices. Absent : `unknown/not_found`. Panne : `unknown/off_unavailable`. Deux scans simultanés du même code inconnu ne créent qu'un produit.
