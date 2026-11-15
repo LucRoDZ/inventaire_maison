@@ -291,3 +291,65 @@ test('vue Maison : quatre meubles nommés', async ({ page }) => {
   }
   await expect(page.getByRole('link', { name: /^Frigo/ })).toContainText(/\d+ articles?/);
 });
+
+const SHELVES = {
+  'chromium-mobile': { shelf: 'Étagère 3', product: 'Pommes Golden' },
+  'webkit-mobile': { shelf: 'Étagère 4', product: 'Abricots secs' },
+} as const;
+
+// A 1 x 1 PNG: the server turns any picture into a WebP thumbnail.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+test('meuble ouvert : ajout depuis une étagère vide, le produit y apparaît avec sa photo', async ({
+  page,
+}, testInfo) => {
+  const { shelf, product } = SHELVES[testInfo.project.name as keyof typeof SHELVES];
+  await signIn(page);
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Inventaire' })
+    .click();
+  await page.getByRole('link', { name: /^Frigo/ }).click();
+  await expect(page.getByRole('heading', { name: 'Frigo', level: 1 })).toBeVisible();
+  const emptyShelf = page.getByRole('region', { name: shelf });
+  await expect(emptyShelf.getByText('Vide')).toBeVisible();
+
+  await emptyShelf.getByRole('link', { name: `Ajouter un produit sur ${shelf}` }).click();
+  await expect(page).toHaveURL(/\/\?lieu=\d+&etagere=\d+$/);
+  await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
+  await page.getByLabel('Nom du produit').fill(product);
+  await page.getByRole('button', { name: 'Créer ce produit' }).click();
+  const form = page.getByRole('dialog', { name: 'Nouveau produit' });
+  await form.getByLabel('Catégorie').selectOption({ index: 1 });
+  await form
+    .getByLabel('Ajouter une photo')
+    .setInputFiles({ name: 'fruit.png', mimeType: 'image/png', buffer: PNG });
+  await form.getByRole('button', { name: 'Enregistrer et ajouter' }).click();
+
+  // The sheet opens on the furniture and the shelf the scanner came from.
+  const sheet = page.getByRole('dialog', { name: product });
+  await expect(sheet.getByLabel('Lieu')).toHaveValue(/\d+/);
+  await expect(sheet.getByLabel('Lieu').locator('option:checked')).toHaveText('Frigo');
+  await expect(sheet.getByLabel('Étagère').locator('option:checked')).toHaveText(shelf);
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(
+    page
+      .getByRole('status')
+      .filter({ hasText: `Ajouté : 1 × ${product}, Frigo, ${shelf.toLowerCase()}` }),
+  ).toBeVisible();
+
+  await page.goto('/inventaire');
+  await page.getByRole('link', { name: /^Frigo/ }).click();
+  const filled = page.getByRole('region', { name: shelf });
+  await expect(filled.getByText('Vide')).toHaveCount(0);
+  const tile = filled.getByRole('button', { name: `${product}, quantité 1` });
+  await expect(tile).toBeVisible();
+  const photo = tile.locator('img');
+  await expect(photo).toBeVisible();
+  await expect
+    .poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
+});
