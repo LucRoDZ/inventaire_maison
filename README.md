@@ -146,6 +146,18 @@ La CI ne peut pas tester la caméra. Avant chaque version, vérifier à la main 
 3. Ordinateur (Chrome ou Edge) : installation, saisie manuelle du code-barres.
 4. Refus de la permission caméra : l'application propose la saisie manuelle.
 
+### Écran Scanner (caméra)
+
+Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécurisé) puis sur l'adresse HTTPS réelle :
+
+1. Ouvrir l'onglet Scanner, toucher « Scanner » : la caméra arrière s'allume, un cadre ambre apparaît (le voyant de la caméra est allumé).
+2. Passer à un autre onglet du navigateur : le voyant s'éteint. Revenir : le bouton « Scanner » est de nouveau proposé.
+3. Changer d'onglet de l'application (Inventaire) : le voyant s'éteint aussi.
+4. Si l'appareil a une lampe, « Allumer la lampe » l'allume ; sinon le bouton est absent. S'il y a plusieurs caméras, le sélecteur « Caméra » en change.
+5. Mode Retirer / Ajouter : la bascule en haut garde son choix.
+6. Refuser la permission (réglages du site) : le message donne les étapes de la plateforme et « Saisir le code à la main » met le focus sur la saisie.
+7. Ouvrir l'application en `http://` sur le réseau local (hors `localhost`) : message « HTTPS requis ».
+
 ## Exécution autonome avec Claude Code
 
 Sur une machine vierge dédiée (jamais sur le VPS de production) :
