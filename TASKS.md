@@ -430,7 +430,7 @@
   - Tests : le scénario, sur Chromium et WebKit.
   - Fin : `gh pr checks` : job `e2e` vert en moins de 10 minutes.
 
-- [ ] **1.37 Sauvegardes et restauration**
+- [x] **1.37 Sauvegardes et restauration**
   - Résultat : sauvegarde complète et restauration prouvée.
   - Fichiers : `scripts/{backup-images.sh,restore-db.sh,test-backup-restore.sh}`.
   - Comportement : archive datée du volume `images`, 14 conservées, créée avec `umask 077` (dossier 700, archives 600, comme `backup-db.sh`) ; `restore-db.sh <fichier>` refuse une base non vide sauf `--force` ; test : sauvegarde, restauration sur une base vide, comparaison du nombre de lignes de chaque table.

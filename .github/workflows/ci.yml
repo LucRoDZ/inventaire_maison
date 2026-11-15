@@ -146,6 +146,8 @@ jobs:
           curl -sfk https://localhost/api/health | tee /dev/stderr | grep -q '"status":"ok"'
       - name: Database backup script
         run: scripts/test-backup-db.sh
+      - name: Backup and restore (database, images)
+        run: scripts/test-backup-restore.sh
       - name: Show state on failure
         if: failure()
         run: docker compose ps -a && docker compose logs --tail=80
