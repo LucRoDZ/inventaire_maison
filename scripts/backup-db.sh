@@ -8,6 +8,8 @@
 #
 # Exit 0 without a dump when the db service is not running yet (first deployment).
 set -euo pipefail
+# Dumps contain password hashes: readable by the owner only (directory 700, files 600).
+umask 077
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 

@@ -11,11 +11,13 @@ export BACKUP_DIR="$dir"
 
 fail() { echo "test-backup-db : ÉCHEC : $*" >&2; exit 1; }
 
-# 1. A dump is created, is valid gzip and contains the schema.
+# 1. A dump is created, is valid gzip, readable by its owner only (600) and contains the schema.
 scripts/backup-db.sh
 mapfile -t files < <(find "$dir" -name 'inventaire-*.sql.gz')
 [ "${#files[@]}" -eq 1 ] || fail "1 fichier attendu, ${#files[@]} trouvés"
 gzip -t "${files[0]}" || fail "archive invalide"
+mode="$(stat -c '%a' "${files[0]}")"
+[ "$mode" = "600" ] || fail "droits $mode sur la sauvegarde, 600 attendus"
 zcat "${files[0]}" | grep -q 'CREATE TABLE public.products' || fail "le schéma est absent de la sauvegarde"
 
 # 2. Rotation: with 16 older dumps present, only the 14 newest remain.
