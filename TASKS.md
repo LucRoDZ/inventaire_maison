@@ -487,13 +487,15 @@
 ## Critères de fin de phase
 
 ### Phase 0
-- [ ] Un membre se connecte avec pseudo et mot de passe et reste connecté 30 jours (tests 0.12, e2e 0.16).
-- [ ] Sans compte, aucune donnée n'est accessible et aucun compte ne peut être créé (test 0.12 ; aucune route d'inscription).
-- [ ] Une PR qui casse un test ou le build ne peut pas être mergée (CI 0.7 ; protection de branche : Lucas).
-- [ ] `docker compose up -d` démarre toute la pile depuis zéro (0.21, en local avec `APP_DOMAIN=localhost`).
-- [ ] Hors connexion, la coquille s'ouvre et affiche « Pas de connexion » (e2e 0.18).
-- [ ] Le manifeste est valide et l'application installable (0.17).
-- [ ] Les couleurs et la police de l'écran de connexion viennent des tokens (0.15).
+> État au 15/11/2026, après la revue indépendante et ses corrections. Une case n'est cochée que si le critère est entièrement prouvé ; sinon la ligne dit ce qui reste et à qui.
+
+- [x] Un membre se connecte avec pseudo et mot de passe et reste connecté 30 jours. **Validé (horloge simulée)** : `auth.spec.ts` (cookie de 30 jours, prolongation glissante après 24 h, session expirée supprimée), `session.service.spec.ts`, e2e `auth.spec.ts` (connexion, rechargement toujours connecté, déconnexion) sur Chromium et WebKit. La durée réelle de 30 jours se constate à l'usage (Lucas).
+- [x] Sans compte, aucune donnée n'est accessible et aucun compte ne peut être créé. **Validé** : `auth.spec.ts` « global guard » (401 partout sauf `login` et `health`, routes inconnues comprises) ; aucune route de création de compte dans l'API (seules `login`, `logout`, `password` en `POST`). Anti-force-brute prouvé y compris en parallèle : `login-throttle.spec.ts` (10 connexions simultanées : au plus 5 tentatives comptées, les autres en 429).
+- [ ] Une PR qui casse un test ou le build ne peut pas être mergée. **CI validée** : six jobs, dont `audit` désormais bloquant pour les `.env` versionnés. **À valider par Lucas** : activer la protection de `main` avec les six jobs requis.
+- [x] `docker compose up -d` démarre toute la pile depuis zéro. **Validé** : job CI `docker-build` (Caddy embarqué, volumes neufs, `/api/health` via HTTPS) ; revue du 15/11/2026 sur une pile jetable en mode nginx partagé (aucun port publié, non root, santé 200 puis 503 base arrêtée, cookie `Secure`) ; bloc nginx d'exemple testé contre cette pile.
+- [x] Hors connexion, la coquille s'ouvre et affiche « Pas de connexion ». **Validé sur Chromium** : e2e `offline.spec.ts` ; composants `pwa.spec.tsx`. WebKit n'expose pas le service worker à Playwright : appareils réels à la charge de Lucas (critère de la Phase 1).
+- [ ] Le manifeste est valide et l'application installable. **Manifeste validé** : `manifest.spec.ts` (champs du cahier, `short_name` ≤ 12, icônes 192, 512, 512 maskable et 180 aux bonnes dimensions), e2e `smoke.spec.ts` (manifeste et icônes servis sans session, balises iOS). **À valider par Lucas** : installation réelle (HTTPS du VPS, Chrome Android et Safari iOS).
+- [x] Les couleurs et la police de l'écran de connexion viennent des tokens. **Validé** : `check-colors` dans `npm run lint` et son test sur l'application réelle ; palette Tailwind remplacée par les seuls tokens (`globals.css`) ; Carlito auto-hébergée (`@fontsource/carlito`, 400 et 700). Réserve mineure non corrigée : quelques espacements et rayons Tailwind par défaut (`rounded-xl`, `px-3`) hors échelle du cahier.
 
 ### Phase 1 (critères d'acceptation du MVP)
 - [ ] Produit présent sur Open Food Facts prérempli en moins de 3 secondes en 4G (e2e 1.17 pour le flux ; mesure : Lucas).
