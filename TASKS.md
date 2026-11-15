@@ -437,7 +437,7 @@
   - Tests : `test-backup-restore.sh` dans le job `docker-build`, qui vérifie aussi que chaque archive d'images est en mode 600 ; `shellcheck`.
   - Fin : `./scripts/test-backup-restore.sh` se termine par `OK`.
 
-- [ ] **1.38 README complet**
+- [x] **1.38 README complet**
   - Résultat : documentation d'exploitation.
   - Fichiers : `README.md`.
   - Comportement : installation, variables ; déploiement en production derrière le nginx partagé, pas à pas pour Lucas : certificat certbot en webroot pour `inventaire.lucaszivan.app`, ajout du bloc d'exemple au nginx existant, test puis rechargement de sa configuration, `./deploy.sh`, vérification de `https://inventaire.lucaszivan.app/api/health`, renouvellement du certificat, dépannage (502 tant que les conteneurs ne sont pas sur `easyq_default`) ; variante Caddy embarqué pour un VPS vierge ; cron de sauvegarde (base et images), copie hors du VPS, restauration, reconstruction mensuelle des images (`--no-cache`), recette manuelle sur vrais appareils reprise du cahier (6 points), test manuel du scan.

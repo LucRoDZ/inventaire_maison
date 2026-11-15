@@ -71,7 +71,8 @@ npm test            # API puis web ; l'API exige un PostgreSQL joignable par DAT
                     # (défaut : postgres://test:test@localhost:5432/inventaire_test, comme en CI)
 npm run test:e2e    # Playwright : Chromium (Pixel 7) et WebKit (iPhone 14)
 shellcheck deploy.sh scripts/*.sh
-scripts/test-backup-db.sh   # pile Compose démarrée (`docker compose up -d --wait`)
+scripts/test-backup-db.sh        # pile Compose démarrée (`docker compose up -d --wait`)
+scripts/test-backup-restore.sh   # idem : sauvegarde, restauration, comparaison des tables
 ```
 
 La CI GitHub Actions (`.github/workflows/ci.yml`) lance ces vérifications sur chaque Pull Request. Active la protection de la branche `main` dans les réglages GitHub : merge seulement si `lint-typecheck`, `test-api`, `test-web`, `e2e`, `docker-build` et `audit` sont verts. Dans `audit`, le contrôle des fichiers `.env` versionnés est bloquant ; `npm audit` ne produit qu'un avertissement.
@@ -105,24 +106,129 @@ Caddy publie 80 et 443, obtient les certificats Let's Encrypt automatiquement et
 
 ## Déploiement sur le VPS
 
-Ces étapes sont faites par Lucas, jamais par Claude.
+Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
-Premier déploiement :
+### Premier déploiement, derrière le nginx partagé
 
-1. Sur le VPS, cloner le dépôt avec une clé de déploiement en lecture seule.
-2. Créer `.env` à partir de `.env.example` (mode production ci-dessus, valeurs réelles, jamais committées).
-3. Vérifier que l'enregistrement DNS `inventaire.lucaszivan.app` pointe vers l'IP du VPS.
-4. Ajouter le bloc nginx et recharger nginx.
-5. Lancer `./deploy.sh`.
+1. Cloner le dépôt avec une clé de déploiement en lecture seule, puis créer `.env` :
 
-Mises à jour : `./deploy.sh`. Le script vérifie `.env` et Docker, sauvegarde la base, fait `git pull --ff-only`, reconstruit les images, relance les conteneurs (les migrations s'appliquent au démarrage de l'API), attend les healthchecks puis supprime les images orphelines. Options : `--no-backup`, `--no-cache`. Retour arrière : `git checkout <commit> && ./deploy.sh`.
+   ```bash
+   git clone <url-du-dépôt> inventaire_maison && cd inventaire_maison
+   cp .env.example .env
+   ```
+
+   Renseigner dans `.env` les valeurs réelles (jamais commitées) : `POSTGRES_PASSWORD`, `SESSION_SECRET` (32 caractères au moins, par exemple `openssl rand -hex 32`), `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `OFF_USER_AGENT`, `APP_DOMAIN=inventaire.lucaszivan.app`, et le mode proxy :
+
+   ```bash
+   COMPOSE_FILE=docker-compose.yml:docker-compose.shared-proxy.yml
+   COMPOSE_PROFILES=
+   SHARED_PROXY_NETWORK=easyq_default
+   ```
+
+2. Vérifier que l'enregistrement DNS `inventaire.lucaszivan.app` pointe vers l'IP du VPS :
+
+   ```bash
+   dig +short inventaire.lucaszivan.app
+   ```
+
+3. Obtenir le certificat avec certbot en mode webroot. Le nginx existant sert déjà `/.well-known/acme-challenge/` depuis `/var/www/certbot` dans le bloc du port 80 de l'exemple ; si le certbot du VPS utilise un autre dossier, adapter `-w` et le `root` du bloc :
+
+   ```bash
+   sudo certbot certonly --webroot -w /var/www/certbot -d inventaire.lucaszivan.app
+   ```
+
+   Si le bloc du port 443 n'existe pas encore, ajouter d'abord le seul bloc du port 80 (étape suivante, première partie), recharger nginx, puis lancer certbot.
+
+4. Ajouter au nginx existant le contenu de [`deploy/nginx/inventaire.conf.example`](deploy/nginx/inventaire.conf.example) (là où le conteneur `easyq-nginx-1` lit ses fichiers de site), tester puis recharger sa configuration :
+
+   ```bash
+   docker exec easyq-nginx-1 nginx -t
+   docker exec easyq-nginx-1 nginx -s reload
+   ```
+
+5. Lancer le déploiement (le premier n'a pas de base à sauvegarder : l'étape est sautée) :
+
+   ```bash
+   ./deploy.sh
+   ```
+
+6. Vérifier :
+
+   ```bash
+   curl -s https://inventaire.lucaszivan.app/api/health      # {"status":"ok"}
+   ```
+
+   Puis ouvrir l'application et se connecter avec `ADMIN_USERNAME` et `ADMIN_PASSWORD`.
+
+### Mises à jour
+
+`./deploy.sh`. Le script vérifie `.env` et Docker, sauvegarde la base, fait `git pull --ff-only`, reconstruit les images, relance les conteneurs (les migrations s'appliquent au démarrage de l'API), attend les healthchecks puis supprime les images orphelines. Options : `--no-backup`, `--no-cache`. Retour arrière : `git checkout <commit> && ./deploy.sh`.
+
+### Renouvellement du certificat
+
+certbot renouvelle seul (minuteur système ou cron, selon l'installation du VPS). Après chaque renouvellement, nginx doit relire les certificats :
+
+```bash
+sudo certbot renew --dry-run                 # essai à blanc
+docker exec easyq-nginx-1 nginx -s reload    # à placer dans le hook de renouvellement
+```
+
+### Dépannage
+
+- **502 Bad Gateway** : les conteneurs ne sont pas (encore) sur le réseau `easyq_default`. Vérifier :
+
+  ```bash
+  docker compose ps
+  docker network inspect easyq_default --format '{{range .Containers}}{{.Name}} {{end}}'
+  ```
+
+  `inventaire_maison-web-1` et `inventaire_maison-api-1` doivent y figurer ; sinon contrôler `COMPOSE_FILE` et `SHARED_PROXY_NETWORK` dans `.env`, puis relancer `./deploy.sh`. nginx résout les noms `inventaire-web` et `inventaire-api` à chaque requête : aucun rechargement n'est nécessaire une fois les conteneurs démarrés.
+- **`/api/health` répond 503** : la base ne répond pas. `docker compose logs db api --tail=50`.
+- **Pas de connexion possible après changement de `SESSION_SECRET`** : normal, toutes les sessions sont révoquées ; se reconnecter.
+- **L'API refuse de démarrer** : le message nomme la variable d'environnement manquante ou invalide (sans afficher sa valeur).
+
+### Variante : Caddy embarqué sur un VPS vierge
+
+Sans nginx partagé, Caddy obtient lui-même les certificats. Dans `.env` : `COMPOSE_FILE=docker-compose.yml`, `COMPOSE_PROFILES=proxy`, `APP_DOMAIN=<le domaine>` (DNS déjà pointé, ports 80 et 443 libres), puis `./deploy.sh` et `curl -s https://<le domaine>/api/health`.
 
 ## Sauvegardes
 
-- Base : `scripts/backup-db.sh` (appelé par `deploy.sh`) écrit un `pg_dump` compressé dans `backups/` et garde les 14 derniers. À planifier aussi avec `cron`.
-- Images produits : sauvegarder le volume Docker `images`.
-- Copier le résultat hors du serveur.
-- Les archives sont créées en `600` (dossier en `700`) : elles contiennent les hachages des mots de passe.
+- Base : `scripts/backup-db.sh` (appelé par `deploy.sh`) écrit un `pg_dump` compressé `inventaire-<date>.sql.gz` dans `backups/` et garde les 14 derniers.
+- Images produits : `scripts/backup-images.sh` archive le volume `images` en `images-<date>.tar.gz` dans `backups/` (14 conservées), en lisant le volume par le conteneur `api`.
+- Les archives sont créées en `600` (dossier en `700`) : elles contiennent les hachages des mots de passe. `BACKUP_DIR` et `BACKUP_KEEP` changent le dossier et le nombre conservé.
+
+### Planification (cron)
+
+Sur le VPS, `crontab -e` (adapter le chemin du dépôt) : sauvegarde de la base et des images chaque nuit à 3 h, puis reconstruction complète des images (`--no-cache`, pour récupérer les correctifs de sécurité des images de base) le premier dimanche du mois à 4 h (le test `date` sélectionne le dimanche des jours 1 à 7 : en cron, jour du mois et jour de la semaine ensemble signifient « l'un ou l'autre »).
+
+```cron
+0 3 * * * cd /home/<utilisateur>/inventaire_maison && (scripts/backup-db.sh && scripts/backup-images.sh) >> backups/cron.log 2>&1
+0 4 * * 0 [ "$(date +\%d)" -le 7 ] && cd /home/<utilisateur>/inventaire_maison && ./deploy.sh --no-cache >> backups/cron.log 2>&1
+```
+
+### Copie hors du serveur
+
+Une sauvegarde qui reste sur le VPS ne protège pas d'une panne du VPS. Depuis ton poste (adapter l'utilisateur et l'hôte) :
+
+```bash
+rsync -av --chmod=F600,D700 <utilisateur>@<vps>:inventaire_maison/backups/ ~/sauvegardes-inventaire/
+```
+
+### Restauration
+
+```bash
+docker compose stop api                                   # plus d'écriture pendant la restauration
+scripts/restore-db.sh --force backups/inventaire-<date>.sql.gz
+docker compose start api
+```
+
+Sans `--force`, le script refuse une base qui contient déjà des données. Les images se restaurent dans le volume par le conteneur `api` :
+
+```bash
+docker compose exec -T api tar -xzf - -C /data/images < backups/images-<date>.tar.gz
+```
+
+La preuve que sauvegarde et restauration fonctionnent est rejouée par `scripts/test-backup-restore.sh` (pile démarrée) : sauvegarde, restauration dans une base vide, comparaison du nombre de lignes de chaque table, droits `600` des archives.
 
 ### Base créée avec l'ancienne image `postgres:16` (Debian)
 
@@ -139,12 +245,14 @@ docker compose up -d --wait
 
 ## Test manuel sur vrais appareils
 
-La CI ne peut pas tester la caméra. Avant chaque version, vérifier à la main :
+La CI ne peut pas tester la caméra. Recette du cahier des charges, à cocher avant la mise en service (chaque ligne à faire par Lucas) :
 
-1. iPhone (Safari) : installation sur l'écran d'accueil via le tutoriel, scan d'un code-barres, ajout d'un produit.
-2. Android (Chrome) : fenêtre d'installation, scan, ajout.
-3. Ordinateur (Chrome ou Edge) : installation, saisie manuelle du code-barres.
-4. Refus de la permission caméra : l'application propose la saisie manuelle.
+1. Un iPhone récent : installation sur l'écran d'accueil via le tutoriel, plein écran, scan, refus puis autorisation de la caméra.
+2. Un téléphone Android : installation par la fenêtre native, plein écran, scan, lampe torche.
+3. Un ordinateur : utilisation dans le navigateur, installation (Chrome ou Edge), webcam, lecteur USB si disponible.
+4. Sur chaque appareil, trois codes scannés (EAN-13, EAN-8, UPC-A), dont un en lumière faible.
+5. Sur chaque appareil, un ajout hors connexion refusé avec le message « Pas de connexion ».
+6. Chaque solution de repli testée une fois : saisie manuelle, photo du code, recherche par nom.
 
 ### Écran Scanner (caméra)
 
