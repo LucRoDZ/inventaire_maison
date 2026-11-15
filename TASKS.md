@@ -372,7 +372,7 @@
 
 ### Comptes et administration
 
-- [ ] **1.29 API membres**
+- [x] **1.29 API membres**
   - Résultat : gestion des comptes par l'admin.
   - Fichiers : `apps/api/src/users/`.
   - Comportement : `GET /users` ; `POST /users` (pseudo, mot de passe temporaire, rôle ; 409 si le pseudo existe, même désactivé) ; `PATCH /users/{id}` (rôle, nouveau mot de passe : révoque ses sessions ; réactivation) ; `DELETE /users/{id}` : désactivation et révocation des sessions. Dernier admin et soi-même protégés (409). Tout en 403 pour un membre. Le hachage ne sort jamais dans une réponse.
