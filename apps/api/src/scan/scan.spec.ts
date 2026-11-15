@@ -85,6 +85,15 @@ describe('GET /api/scan/:barcode', () => {
     expect((await request(server()).get(`/api/scan/${NUTELLA}`)).status).toBe(401);
   });
 
+  it('refuses a request started by another site and creates nothing', async () => {
+    for (const site of ['cross-site', 'same-site']) {
+      expect((await scan(NUTELLA).set('Sec-Fetch-Site', site)).status).toBe(403);
+    }
+    expect(fetchProduct).not.toHaveBeenCalled();
+    fetchProduct.mockResolvedValue(found());
+    expect((await scan(NUTELLA).set('Sec-Fetch-Site', 'same-origin')).status).toBe(200);
+  });
+
   it('rejects an invalid code with 400 and no network call', async () => {
     for (const code of ['abc', '3017620422004', '123']) {
       expect((await scan(code)).status).toBe(400);

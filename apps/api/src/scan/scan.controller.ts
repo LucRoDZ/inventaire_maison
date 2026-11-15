@@ -1,4 +1,13 @@
-import { BadRequestException, Controller, Get, Inject, Param, Query, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+  Query,
+  Req,
+} from '@nestjs/common';
 import {
   InvalidBarcodeError,
   normalizeBarcode,
@@ -23,6 +32,13 @@ export class ScanController {
     @Query('catalogOnly') catalogOnly: unknown,
     @Req() req: Request,
   ): Promise<ScanResponse> {
+    // A scan can create a product: a request started by another site (a link followed with the
+    // session cookie, SameSite=Lax) is refused. Browsers always send Sec-Fetch-Site; other clients
+    // (tests, curl) do not and are not affected.
+    const site = req.get('sec-fetch-site');
+    if (site === 'cross-site' || site === 'same-site') {
+      throw new ForbiddenException('Origine non autorisée');
+    }
     const format = formatSchema.safeParse(rawFormat);
     if (!format.success) throw new BadRequestException('Code-barres invalide');
     let barcode: string;

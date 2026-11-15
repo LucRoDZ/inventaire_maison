@@ -126,6 +126,13 @@ describe('POST /api/stock/adjust', () => {
     expect(await lines()).toHaveLength(4);
   });
 
+  it('refuses a reason that contradicts the direction of the movement', async () => {
+    await adjust({ ...base(), delta: 2 });
+    expect((await adjust({ ...base(), delta: -1, reason: 'scan_add' })).status).toBe(400);
+    expect((await adjust({ ...base(), delta: 1, reason: 'scan_remove' })).status).toBe(400);
+    expect((await lines())[0]!.quantity).toBe(2);
+  });
+
   it('deletes the line when it reaches zero', async () => {
     await adjust({ ...base(), delta: 2 });
     const res = await adjust({ ...base(), delta: -2, reason: 'scan_remove' });
