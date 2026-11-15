@@ -1,0 +1,11 @@
+{
+  "code": "5412345678908",
+  "status": 1,
+  "product": {
+    "product_name": "Semi-skimmed milk",
+    "product_name_fr": "Lait demi-écrémé du retrait",
+    "brands": "Laiterie",
+    "quantity": "1 L",
+    "categories_tags": ["en:milks"]
+  }
+}

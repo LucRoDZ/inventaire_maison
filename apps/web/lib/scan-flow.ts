@@ -14,26 +14,35 @@ export type ScanOutcome =
 
 export const OFFLINE_MESSAGE = 'Pas de connexion';
 
-export const fetchScan = (code: string): Promise<ScanResponse> =>
-  apiFetch<ScanResponse>(`/scan/${encodeURIComponent(code)}`);
+/** `catalogOnly` (removal mode): the server neither asks Open Food Facts nor creates anything. */
+export const fetchScan = (
+  code: string,
+  options: { catalogOnly?: boolean } = {},
+): Promise<ScanResponse> =>
+  apiFetch<ScanResponse>(
+    `/scan/${encodeURIComponent(code)}${options.catalogOnly ? '?catalogOnly=true' : ''}`,
+  );
 
 export interface ResolveDeps {
   online: boolean;
-  fetchScan?: (code: string) => Promise<ScanResponse>;
+  fetchScan?: (code: string, options?: { catalogOnly?: boolean }) => Promise<ScanResponse>;
+  catalogOnly?: boolean;
 }
 
 /** Turns a detected or typed code into what the screen must do next. Never throws. */
 export async function resolveScan(
   rawCode: string,
   format: ScanFormat | undefined,
-  { online, fetchScan: fetcher = fetchScan }: ResolveDeps,
+  { online, fetchScan: fetcher = fetchScan, catalogOnly = false }: ResolveDeps,
 ): Promise<ScanOutcome> {
   const parsed = parseCode(rawCode, format);
   if (!parsed.ok) return { kind: 'invalid', message: BARCODE_ERROR_MESSAGES[parsed.reason] };
   if (!online) return { kind: 'offline' };
 
   try {
-    const response = await fetcher(parsed.result.code);
+    const response = catalogOnly
+      ? await fetcher(parsed.result.code, { catalogOnly: true })
+      : await fetcher(parsed.result.code);
     if (response.status === 'unknown') {
       return {
         kind: 'unknown',

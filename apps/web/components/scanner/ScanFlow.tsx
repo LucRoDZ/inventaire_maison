@@ -23,6 +23,7 @@ import { ProductForm } from '../product/ProductForm';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
 import { ManualCodeInput } from './ManualCodeInput';
 import { PhotoCodeButton } from './PhotoCodeButton';
+import { RemoveFlow, type RemoveRequest } from './RemoveFlow';
 import { ScannerView, type ScanMode, type ScannerControls } from './ScannerView';
 
 export interface UnknownContext {
@@ -39,14 +40,13 @@ interface ScanFlowProps {
   origin?: { locationId: number; shelfId?: number | null } | null;
   /** Replaces the creation form for a code Open Food Facts could not describe (tests). */
   renderUnknown?: (context: UnknownContext) => ReactNode;
-  /** Removal mode (task 1.20); without it a code read in that mode is ignored. */
-  onRemoveCode?: (result: ScanResult) => void;
   /** Test seams. */
   api?: {
     fetchScan?: (code: string) => Promise<ScanResponse>;
     fetchLocations?: () => Promise<LocationDto[]>;
     fetchCategories?: () => Promise<CategoryDto[]>;
     searchProducts?: (query: string) => Promise<ProductDto[]>;
+    remove?: React.ComponentProps<typeof RemoveFlow>['api'];
   };
   makeScanner?: React.ComponentProps<typeof ScannerView>['makeScanner'];
 }
@@ -66,13 +66,7 @@ interface References {
 
 const NOTICE_MS = 4000;
 
-export function ScanFlow({
-  origin = null,
-  renderUnknown,
-  onRemoveCode,
-  api = {},
-  makeScanner,
-}: ScanFlowProps) {
+export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }: ScanFlowProps) {
   const online = useOnline();
   const [mode, setMode] = useState<ScanMode>('add');
   const [step, setStep] = useState<Step>({ name: 'scanning' });
@@ -183,9 +177,21 @@ export function ScanFlow({
     [online, openAdd],
   );
 
+  const removeCount = useRef(0);
+  const [removeRequest, setRemoveRequest] = useState<RemoveRequest | null>(null);
+
   const onCode = (result: ScanResult, scanMode: ScanMode) => {
-    if (scanMode === 'remove') onRemoveCode?.(result);
-    else void handleCode(result);
+    if (scanMode === 'remove') {
+      setNotice(null);
+      removeCount.current += 1;
+      setRemoveRequest({ id: removeCount.current, result });
+    } else void handleCode(result);
+  };
+
+  const changeMode = (next: ScanMode) => {
+    setMode(next);
+    setRemoveRequest(null);
+    setNotice(null);
   };
 
   const added = (info: AddedInfo, scanNext: boolean) => {
@@ -218,7 +224,7 @@ export function ScanFlow({
 
       <ScannerView
         mode={mode}
-        onModeChange={setMode}
+        onModeChange={changeMode}
         onCode={onCode}
         paused={step.name !== 'scanning'}
         controlRef={controls}
@@ -231,6 +237,17 @@ export function ScanFlow({
           </div>
         }
       />
+
+      {mode === 'remove' ? (
+        <RemoveFlow
+          request={removeRequest}
+          api={api.remove}
+          onSwitchToAdd={(result) => {
+            changeMode('add');
+            void handleCode(result);
+          }}
+        />
+      ) : null}
 
       {step.name === 'resolving' ? (
         <p role="status" className="text-small">

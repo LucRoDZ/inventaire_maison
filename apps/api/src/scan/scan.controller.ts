@@ -19,6 +19,8 @@ export class ScanController {
   resolve(
     @Param('barcode') raw: string,
     @Query('format') rawFormat: unknown,
+    /** `true`: removal mode, the catalog only (nothing is created, Open Food Facts is not called). */
+    @Query('catalogOnly') catalogOnly: unknown,
     @Req() req: Request,
   ): Promise<ScanResponse> {
     const format = formatSchema.safeParse(rawFormat);
@@ -32,6 +34,6 @@ export class ScanController {
       }
       throw error;
     }
-    return this.scan.resolve(barcode, req.user!.id);
+    return this.scan.resolve(barcode, req.user!.id, { catalogOnly: catalogOnly === 'true' });
   }
 }

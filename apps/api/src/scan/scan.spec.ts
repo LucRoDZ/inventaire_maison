@@ -119,6 +119,17 @@ describe('GET /api/scan/:barcode', () => {
     expect(fetchProduct).toHaveBeenCalledTimes(1);
   });
 
+  it('catalogOnly never calls Open Food Facts nor creates a product', async () => {
+    const res = await scan(`${NUTELLA}?catalogOnly=true`);
+    expect(res.body).toEqual({ status: 'unknown', reason: 'not_found' });
+    expect(fetchProduct).not.toHaveBeenCalled();
+    expect(await db().select().from(products)).toHaveLength(0);
+
+    await scan(NUTELLA); // creates it the normal way
+    const known = await scan(`${NUTELLA}?catalogOnly=true`);
+    expect(known.body).toMatchObject({ status: 'known', product: { barcode: NUTELLA } });
+  });
+
   it('falls back to "Autre" when no tag is mapped', async () => {
     fetchProduct.mockResolvedValue(found({ categoriesTags: ['en:nothing'] }));
     const res = await scan(NUTELLA);

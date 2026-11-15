@@ -1,0 +1,11 @@
+{
+  "code": "8009876543217",
+  "status": 1,
+  "product": {
+    "product_name": "Orange juice",
+    "product_name_fr": "Jus d’orange du retrait",
+    "brands": "Fruiterie",
+    "quantity": "1 L",
+    "categories_tags": ["en:orange-juices"]
+  }
+}

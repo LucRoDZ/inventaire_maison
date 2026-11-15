@@ -26,13 +26,18 @@ export class ScanService {
     @Inject(RemoteImageService) private readonly remoteImages: RemoteImageService,
   ) {}
 
-  /** `barcode` is already normalized. */
-  async resolve(barcode: string, userId: number): Promise<ScanResponse> {
+  /** `barcode` is already normalized. `catalogOnly`: never asks Open Food Facts, never creates. */
+  async resolve(
+    barcode: string,
+    userId: number,
+    options: { catalogOnly?: boolean } = {},
+  ): Promise<ScanResponse> {
     const [existing] = await this.db
       .select({ id: products.id })
       .from(products)
       .where(eq(products.barcode, barcode));
     if (existing) return { status: 'known', product: await this.catalog.get(existing.id) };
+    if (options.catalogOnly) return { status: 'unknown', reason: 'not_found' };
 
     let pending = this.inFlight.get(barcode);
     if (!pending) {

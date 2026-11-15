@@ -2,6 +2,7 @@ import type {
   LocationDto,
   StockAdjustInput,
   StockAdjustResponse,
+  StockRemoveResponse,
   CategoryDto,
   ProductDto,
 } from '@inventaire/shared';
@@ -17,3 +18,7 @@ export const fetchCategories = (): Promise<CategoryDto[]> => apiFetch<CategoryDt
 /** Choosing a category, even the proposed one, confirms it (`category_guessed` becomes false). */
 export const updateProductCategory = (productId: number, categoryId: number): Promise<ProductDto> =>
   apiFetch<ProductDto>(`/products/${productId}`, { method: 'PATCH', body: { categoryId } });
+
+/** Removes one unit of the product (nearest expiry date first). 404 « Pas en stock » when empty. */
+export const removeOne = (productId: number): Promise<StockRemoveResponse> =>
+  apiFetch<StockRemoveResponse>('/stock/remove', { method: 'POST', body: { productId } });
