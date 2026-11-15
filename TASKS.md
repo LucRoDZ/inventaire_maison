@@ -226,7 +226,7 @@
 
 ### Stock
 
-- [ ] **1.9 Ajustement du stock et journal**
+- [x] **1.9 Ajustement du stock et journal**
   - Résultat : `POST /stock/adjust` modifie le stock et écrit le journal dans la même transaction.
   - Fichiers : `apps/api/src/stock/{stock.controller,stock.service}.ts`, `packages/shared/src/stock.ts`.
   - Comportement : entrée `{productId, locationId, shelfId?, expiryDate?, delta, reason}` avec `reason` parmi `scan_add`, `scan_remove`, `manual`, `correction`. Delta positif : crée la ligne ou additionne. Delta négatif : décrémente, supprime la ligne à 0, 409 « Stock insuffisant » au-delà. Delta 0, étagère d'un autre lieu, date invalide : 400. Fixe le lieu habituel du produit s'il est vide. Réponse : la ligne à jour (ou `null`) et le mouvement.
