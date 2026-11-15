@@ -43,7 +43,12 @@ else
 fi
 
 step "3/7 Mise à jour du code"
-git pull --ff-only
+if git symbolic-ref -q HEAD >/dev/null; then
+  git pull --ff-only
+else
+  # Rollback (git checkout <commit>): no branch to pull, deploy the checked-out commit as is.
+  echo "HEAD détaché sur $(git rev-parse --short HEAD) : retour arrière, pas de git pull."
+fi
 
 step "4/7 Construction des images"
 docker compose build ${build_args[@]+"${build_args[@]}"}
