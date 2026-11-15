@@ -83,3 +83,52 @@ export interface StockListResponse {
   /** One entry per location, empty ones included; filters on location and shelf are ignored. */
   counts: LocationCountDto[];
 }
+
+export interface StockMoveInput {
+  stockItemId: number;
+  toLocationId: number;
+  /** Omitted or null: the "Non rangé" tray of the destination. */
+  toShelfId?: number | null;
+  /** Units to move, between 1 and the quantity of the line. */
+  quantity: number;
+}
+
+export interface StockMoveResponse {
+  /** The source line after the move, or null when everything was moved. */
+  from: StockLineDto | null;
+  /** The destination line after the merge. */
+  to: StockLineDto;
+  /** The two `move` movements: first the removal, then the addition. */
+  movements: [StockMovementDto, StockMovementDto];
+}
+
+export interface StockRemoveInput {
+  productId: number;
+}
+
+export interface StockRemoveResponse {
+  /** The line that was touched, after the change, or null when it reached zero. */
+  item: StockLineDto | null;
+  movement: StockMovementDto;
+  product: { id: number; name: string };
+  location: { id: number; name: string };
+  shelf: { id: number; name: string } | null;
+}
+
+export interface MovementHistoryItemDto {
+  id: number;
+  delta: number;
+  reason: MovementReason;
+  expiryDate: string | null;
+  createdAt: string;
+  /** Kept even when the account is disabled. */
+  user: { id: number; username: string };
+  location: { id: number; name: string };
+  shelf: { id: number; name: string } | null;
+}
+
+export interface MovementHistoryResponse {
+  items: MovementHistoryItemDto[];
+  /** Pass it as `cursor` to get the next (older) page; null on the last page. */
+  nextCursor: string | null;
+}

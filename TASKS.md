@@ -240,7 +240,7 @@
   - Tests : intégration sur un jeu de données : chaque filtre, chaque tri, bornes J-3, aujourd'hui, hier, compteurs.
   - Fin : `GET /api/stock?location={frigo}&sort=expiry` renvoie les lignes du frigo, la plus proche de l'échéance en premier.
 
-- [ ] **1.11 Déplacement, retrait automatique, historique**
+- [x] **1.11 Déplacement, retrait automatique, historique**
   - Résultat : `POST /stock/move`, `POST /stock/remove`, `GET /products/{id}/movements`.
   - Fichiers : `apps/api/src/stock/{stock-move.service,stock-remove.service}.ts`.
   - Comportement : `move` `{stockItemId, toLocationId, toShelfId?, quantity}` : deux mouvements `move` (moins et plus) en une transaction, fusion à la destination, 400 si origine = destination, 409 si quantité supérieure au stock. `remove` `{productId}` : décrémente de 1 la ligne à la date limite la plus proche, sinon la plus ancienne ; 404 « Pas en stock » ; réponse : la ligne touchée, pour le message et l'annulation. `movements` : du plus récent au plus ancien, avec pseudo, lieu, étagère, delta, raison ; pagination par curseur.
@@ -588,6 +588,7 @@
 - 15/11/2026 : P1.3. `normalizeBarcode(code, format?)` lève `InvalidBarcodeError` (raison `empty`, `not_digits`, `bad_length`, `bad_check_digit`) ; `tryNormalizeBarcode` renvoie `null`. Le format ne compte que pour un code à 8 chiffres (`upc_e`). Le test est dans `apps/api/test/barcode.spec.ts` pour tourner dans le job CI `test-api` sans nouveau job ; le web importe la même fonction depuis `@inventaire/shared`.
 - 15/11/2026 : P1.4. Recherche : un produit correspond si le texte normalisé de la requête est contenu dans `search_text` ou si `word_similarity` atteint 0,3 ; sous-chaîne d'abord, puis similarité, puis nom. Les écritures du catalogue sont ouvertes aux membres (le cahier fait créer les produits à tout le monde au scan). `POST /products` : catégorie ou lieu habituel inconnu : 404 ; code déjà présent : 409 avec `productId` du produit existant dans le corps. `PATCH` refuse (400) les champs hors nom, marque, catégorie et lieu habituel ; envoyer `categoryId`, même inchangé, confirme la catégorie (`category_guessed=false`). `imageUrl` vaut `/api/images/{fichier}` (route de la tâche 1.5).
 - 15/11/2026 : P1.5. Images : `sharp` ajouté à l'API ; la miniature n'est jamais agrandie (une image de moins de 400 px garde sa largeur) ; entrée limitée à 50 millions de pixels (anti bombe de décompression) ; tout échec de décodage, signature comprise, répond 415 ; champ multipart `image` ; `IMAGES_DIR` des tests dans un dossier temporaire ; `data/` ajouté à `.gitignore`. Le service `ImageStore.saveThumbnail` est réutilisé par la tâche 1.7.
+- 15/11/2026 : P1.11. `POST /stock/move` répond `{from, to, movements}` (`from` nul si toute la ligne est partie) ; `POST /stock/remove` répond la ligne touchée avec produit, lieu et étagère (nom) pour le message et l'annulation ; `GET /products/{id}/movements?cursor=&limit=` (20 par défaut, 100 au plus) trie par identifiant décroissant, le curseur est l'identifiant du dernier mouvement reçu. Les verrous consultatifs du déplacement sont pris par lieu dans l'ordre croissant (pas d'interblocage entre deux déplacements opposés).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
