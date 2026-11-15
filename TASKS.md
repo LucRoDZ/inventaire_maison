@@ -423,7 +423,7 @@
   - Tests : e2e axe sur chaque écran à 360 px ; test qui échoue sur un caractère emoji dans `apps/web` ; `check-colors`.
   - Fin : `npm run test:e2e` et `npm run lint` passent.
 
-- [ ] **1.36 Consolidation du parcours critique e2e**
+- [x] **1.36 Consolidation du parcours critique e2e**
   - Résultat : un scénario unique de bout en bout, en plus des e2e de chaque tâche.
   - Fichiers : `e2e/tests/critical-path.spec.ts`.
   - Comportement : connexion, ajout manuel, scan simulé, modification de quantité, vue Maison, déplacement, retrait jusqu'à 0, second membre qui voit le même stock ; durée du job e2e sous 10 minutes.
