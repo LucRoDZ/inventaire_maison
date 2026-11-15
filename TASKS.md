@@ -233,7 +233,7 @@
   - Tests : intégration : création, addition sur la même clé, date différente = autre ligne, passage à 0, dépassement, étagère incohérente, auteur du mouvement, deux décréments concurrents, somme du journal égale au stock.
   - Fin : deux `adjust` de +2 puis −4 renvoient 409 et laissent la quantité à 4.
 
-- [ ] **1.10 Lecture du stock et compteurs**
+- [x] **1.10 Lecture du stock et compteurs**
   - Résultat : `GET /stock` alimente la vue Liste.
   - Fichiers : `apps/api/src/stock/stock.query.ts`.
   - Comportement : filtres `location`, `shelf`, `category`, `q` (nom ou marque) ; tri `name`, `added`, `expiry` (sans date en dernier) ; chaque ligne porte produit, catégorie, lieu, étagère, quantité, date limite et statut d'échéance (`expired`, `soon` avec nombre de jours, ou aucun) calculé en Europe/Paris ; compteurs par lieu : produits distincts et unités.

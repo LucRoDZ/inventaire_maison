@@ -1,8 +1,24 @@
-import { Body, Controller, HttpCode, Inject, Post, Req } from '@nestjs/common';
-import { ADJUST_REASONS, type StockAdjustResponse } from '@inventaire/shared';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
+import {
+  ADJUST_REASONS,
+  STOCK_SORTS,
+  type StockAdjustResponse,
+  type StockListResponse,
+} from '@inventaire/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { parseBody } from '../common/validation';
+import { StockQuery } from './stock.query';
 import { StockService } from './stock.service';
 
 const id = z.number().int().min(1).max(2_147_483_647);
@@ -25,9 +41,27 @@ const adjustSchema = z
   })
   .strict();
 
+const listSchema = z.object({
+  location: z.coerce.number().int().min(1).max(2_147_483_647).optional(),
+  shelf: z.coerce.number().int().min(1).max(2_147_483_647).optional(),
+  category: z.coerce.number().int().min(1).max(2_147_483_647).optional(),
+  q: z.string().max(100).optional(),
+  sort: z.enum(STOCK_SORTS).default('name'),
+});
+
 @Controller('stock')
 export class StockController {
-  constructor(@Inject(StockService) private readonly stock: StockService) {}
+  constructor(
+    @Inject(StockService) private readonly stock: StockService,
+    @Inject(StockQuery) private readonly query: StockQuery,
+  ) {}
+
+  @Get()
+  list(@Query() query: Record<string, unknown>): Promise<StockListResponse> {
+    const parsed = listSchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException('Filtres invalides');
+    return this.query.list(parsed.data);
+  }
 
   @Post('adjust')
   @HttpCode(200)

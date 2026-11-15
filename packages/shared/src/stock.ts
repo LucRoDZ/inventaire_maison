@@ -42,3 +42,44 @@ export interface StockAdjustResponse {
   item: StockLineDto | null;
   movement: StockMovementDto;
 }
+
+export const STOCK_SORTS = ['name', 'added', 'expiry'] as const;
+export type StockSort = (typeof STOCK_SORTS)[number];
+
+/** Days (inclusive) before the expiry date from which a line is flagged as "soon". */
+export const EXPIRY_SOON_DAYS = 3;
+
+/** Absent when the line has no date or it is still far away. */
+export type ExpiryStatus = { status: 'expired' } | { status: 'soon'; days: number };
+
+export interface StockListItemDto {
+  id: number;
+  quantity: number;
+  expiryDate: string | null;
+  expiry: ExpiryStatus | null;
+  createdAt: string;
+  product: {
+    id: number;
+    name: string;
+    brand: string | null;
+    sizeLabel: string | null;
+    imageUrl: string | null;
+    categoryGuessed: boolean;
+  };
+  category: { id: number; name: string; icon: string };
+  location: { id: number; name: string };
+  shelf: { id: number; name: string } | null;
+}
+
+export interface LocationCountDto {
+  locationId: number;
+  /** Distinct products in stock. */
+  products: number;
+  units: number;
+}
+
+export interface StockListResponse {
+  items: StockListItemDto[];
+  /** One entry per location, empty ones included; filters on location and shelf are ignored. */
+  counts: LocationCountDto[];
+}
