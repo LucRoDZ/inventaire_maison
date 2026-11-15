@@ -1,0 +1,11 @@
+{
+  "code": "3760006543211",
+  "status": 1,
+  "product": {
+    "product_name": "Fresh cheese",
+    "product_name_fr": "Fromage frais de l’inventaire",
+    "brands": "Fromagerie",
+    "quantity": "500 g",
+    "categories_tags": ["en:cheeses"]
+  }
+}

@@ -314,7 +314,7 @@
 
 ### Inventaire
 
-- [ ] **1.21 Vue Liste**
+- [x] **1.21 Vue Liste**
   - Résultat : inventaire par lieu et catégorie.
   - Fichiers : `apps/web/app/(app)/inventaire/page.tsx`, `apps/web/components/list/{ListView,LocationTabs,CategorySection,StockCard,ExpiryBadge,ListToolbar}.tsx`.
   - Comportement : bascule Maison / Liste ; onglets Tout puis lieux ; sections repliables par catégorie ; carte : photo ou pictogramme, nom, marque, quantité, − / + (raison `manual`, mise à jour optimiste, retour arrière en cas d'erreur, la carte disparaît à 0) ; recherche, filtre de catégorie, tri ; pastille ambre « J-3 » ou « Aujourd'hui », rouge « Périmé », toujours avec le mot ; compteurs d'articles et d'unités ; état vide avec bouton vers le scanner.
@@ -598,6 +598,7 @@
 - 15/11/2026 : P1.18. Formulaire produit : champs nom, catégorie (sans valeur par défaut, pour forcer un choix), marque, lieu habituel, photo ; le format (`sizeLabel`) d'une fiche Open Food Facts incomplète est repris des indices et envoyé sans champ visible. Le produit est créé avec le code canonique, puis la photo est envoyée (`POST /products/{id}/image`) ; si l'envoi échoue le produit reste et l'avis « Photo non envoyée » s'affiche sur l'écran Scanner. Photo refusée côté navigateur au-delà de 8 Mo ou hors JPEG, PNG, WebP. `apiFetch` accepte un `FormData` (pas d'en-tête JSON). E2E : codes dédiés à chaque navigateur pour le « non trouvé » et la « panne » (`off-server.mjs` répond 500 aux codes `5000112637922` et `3212345678906`).
 - 15/11/2026 : P1.19. « Ajouter sans code-barres » est un bouton sous le titre de l'écran Scanner, qui ouvre la recherche par nom (dès 2 caractères, temporisation de 300 ms) ; le produit choisi s'ajoute avec la raison `manual`, et « Créer ce produit » ouvre le formulaire de 1.18 sans code-barres, nom prérempli. Le produit créé n'a pas de `barcode` (e2e : `barcode` nul, premier mouvement `manual`).
 - 15/11/2026 : P1.20. Pour qu'« aucun produit ne soit créé en mode Retirer », `GET /scan/{code}?catalogOnly=true` ne regarde que le catalogue : produit connu, sinon `unknown/not_found`, sans appel à Open Food Facts ni création (test API). L'annulation d'un retrait remet +1 (`correction`) sur la ligne exacte touchée (lieu, étagère, date renvoyés par `POST /stock/remove`). Le message est « Retiré : 1 × Lait, Frigo » (lieu seul, comme dans la tâche) ; le mode Retirer garde la caméra active entre deux lectures. « Passer en mode Ajouter » rouvre le flux d'ajout avec le code lu.
+- 15/11/2026 : P1.21. Vue Liste : les filtres (lieu, catégorie, recherche, tri) sont envoyés à `GET /stock` ; les compteurs « n articles · m unités » portent sur les lignes affichées (articles = produits distincts) ; les onglets de lieu montrent le nombre de produits renvoyé par l'API. − / + est optimiste, la liste est rechargée après succès (compteurs et ordre à jour) et la carte revient à l'ancienne valeur avec un message si le serveur refuse. La bascule Maison / Liste est en place ; l'onglet Maison affiche un texte provisoire jusqu'à la tâche 1.22.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

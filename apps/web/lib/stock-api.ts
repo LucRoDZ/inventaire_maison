@@ -2,7 +2,9 @@ import type {
   LocationDto,
   StockAdjustInput,
   StockAdjustResponse,
+  StockListResponse,
   StockRemoveResponse,
+  StockSort,
   CategoryDto,
   ProductDto,
 } from '@inventaire/shared';
@@ -22,3 +24,20 @@ export const updateProductCategory = (productId: number, categoryId: number): Pr
 /** Removes one unit of the product (nearest expiry date first). 404 « Pas en stock » when empty. */
 export const removeOne = (productId: number): Promise<StockRemoveResponse> =>
   apiFetch<StockRemoveResponse>('/stock/remove', { method: 'POST', body: { productId } });
+
+export interface StockFilters {
+  location?: number;
+  shelf?: number;
+  category?: number;
+  q?: string;
+  sort?: StockSort;
+}
+
+export function fetchStock(filters: StockFilters = {}): Promise<StockListResponse> {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== '') params.set(key, String(value));
+  }
+  const query = params.toString();
+  return apiFetch<StockListResponse>(`/stock${query ? `?${query}` : ''}`);
+}

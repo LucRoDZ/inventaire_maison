@@ -210,3 +210,65 @@ test('mode Retirer : stock 2, deux retraits, l’article disparaît du stock', a
   await pushCode(page, code);
   await expect(page.getByRole('alert').filter({ hasText: 'Pas en stock' })).toBeVisible();
 });
+
+const LISTED = {
+  'chromium-mobile': {
+    code: '3760001234565',
+    name: 'Yaourt nature de l’inventaire',
+    search: 'yaourt nature de',
+  },
+  'webkit-mobile': {
+    code: '3760006543211',
+    name: 'Fromage frais de l’inventaire',
+    search: 'fromage frais de',
+  },
+} as const;
+
+test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de quantité', async ({
+  page,
+}, testInfo) => {
+  const { code, name, search } = LISTED[testInfo.project.name as keyof typeof LISTED];
+  const quantity = async () => {
+    const body = (await (
+      await page.request.get(`/api/stock?q=${encodeURIComponent(search)}`)
+    ).json()) as {
+      items: { quantity: number }[];
+    };
+    return body.items.reduce((sum, item) => sum + item.quantity, 0);
+  };
+  await signIn(page);
+  await startScanner(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
+  await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
+  await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
+  await sheet.getByLabel('Étagère').selectOption({ label: 'Étagère 2' });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect.poll(quantity).toBe(3);
+
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Inventaire' })
+    .click();
+  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  const section = page.getByRole('button', { name: /^Produits laitiers et œufs/ });
+  await expect(section).toBeVisible();
+  const card = page.locator('article').filter({ hasText: name });
+  await expect(card).toContainText('Frigo, Étagère 2');
+  await expect(card.getByLabel('Quantité', { exact: true })).toHaveText('3');
+
+  await card.getByRole('button', { name: `Ajouter une unité de ${name}` }).click();
+  await expect(card.getByLabel('Quantité', { exact: true })).toHaveText('4');
+  await expect.poll(quantity).toBe(4);
+  await card.getByRole('button', { name: `Retirer une unité de ${name}` }).click();
+  await card.getByRole('button', { name: `Retirer une unité de ${name}` }).click();
+  await expect(card.getByLabel('Quantité', { exact: true })).toHaveText('2');
+  await expect.poll(quantity).toBe(2);
+
+  await page.reload();
+  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  await expect(
+    page.locator('article').filter({ hasText: name }).getByLabel('Quantité', { exact: true }),
+  ).toHaveText('2');
+});

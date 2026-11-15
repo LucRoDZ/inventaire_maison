@@ -1,0 +1,11 @@
+{
+  "code": "3760001234565",
+  "status": 1,
+  "product": {
+    "product_name": "Plain yogurt",
+    "product_name_fr": "Yaourt nature de l’inventaire",
+    "brands": "Ferme",
+    "quantity": "4 x 125 g",
+    "categories_tags": ["en:milks"]
+  }
+}
