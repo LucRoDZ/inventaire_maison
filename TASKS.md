@@ -189,7 +189,7 @@
   - Tests : unitaires sur une table de cas : codes réels valides, clé fausse, UPC-A, UPC-E, espaces, chaîne vide, 14 chiffres.
   - Fin : `npm test` passe ; `normalizeBarcode("3 017620 422003")` renvoie `3017620422003`.
 
-- [ ] **1.4 API catalogue**
+- [x] **1.4 API catalogue**
   - Résultat : création, lecture, recherche floue et modification des produits.
   - Fichiers : `apps/api/src/products/`, `packages/shared/src/products.ts`.
   - Comportement : `GET /products?q=&needsReview=&limit=` (similarité trigramme sur `search_text`, sans accents, 20 résultats par défaut ; `needsReview=true` : produits en stock dont la catégorie est « Autre » ou devinée) ; `GET /products/{id}` (avec stock par lieu) ; `POST /products` (nom et catégorie obligatoires ; marque, format, lieu habituel, code-barres facultatifs ; code normalisé, 409 si déjà présent ; `source=manual`, `created_by`) ; `PATCH /products/{id}` (nom, marque, catégorie, lieu habituel ; toute modification de catégorie remet `category_guessed` à faux).
@@ -586,6 +586,7 @@
 - 15/11/2026 : P1.1b. `PATCH /shelves/{id}` avec un autre `locationId` : refusé en 409 si l'étagère contient du stock (une ligne de stock est liée au lieu de son étagère) ; une étagère vide change de meuble et passe en fin d'ordre.
 - 15/11/2026 : P1.2. Catégories : liste fermée d'icônes dans `packages/shared/src/categories.ts` (39 icônes Lucide vérifiées dans `lucide-react`, dont les 15 du seed) ; `GET /categories` ouvert à tous, écritures réservées à l'admin ; `/off-category-map` entièrement réservé à l'admin (outil d'administration) ; format du tag `^[a-z]{2}:[a-z0-9]+(-[a-z0-9]+)*$` ; catégorie inconnue dans une correspondance : 404.
 - 15/11/2026 : P1.3. `normalizeBarcode(code, format?)` lève `InvalidBarcodeError` (raison `empty`, `not_digits`, `bad_length`, `bad_check_digit`) ; `tryNormalizeBarcode` renvoie `null`. Le format ne compte que pour un code à 8 chiffres (`upc_e`). Le test est dans `apps/api/test/barcode.spec.ts` pour tourner dans le job CI `test-api` sans nouveau job ; le web importe la même fonction depuis `@inventaire/shared`.
+- 15/11/2026 : P1.4. Recherche : un produit correspond si le texte normalisé de la requête est contenu dans `search_text` ou si `word_similarity` atteint 0,3 ; sous-chaîne d'abord, puis similarité, puis nom. Les écritures du catalogue sont ouvertes aux membres (le cahier fait créer les produits à tout le monde au scan). `POST /products` : catégorie ou lieu habituel inconnu : 404 ; code déjà présent : 409 avec `productId` du produit existant dans le corps. `PATCH` refuse (400) les champs hors nom, marque, catégorie et lieu habituel ; envoyer `categoryId`, même inchangé, confirme la catégorie (`category_guessed=false`). `imageUrl` vaut `/api/images/{fichier}` (route de la tâche 1.5).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
