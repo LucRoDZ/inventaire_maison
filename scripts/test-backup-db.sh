@@ -19,7 +19,8 @@ mapfile -t files < <(find "$dir" -name 'inventaire-*.sql.gz')
 gzip -t "${files[0]}" || fail "archive invalide"
 mode="$(stat -c '%a' "${files[0]}")"
 [ "$mode" = "600" ] || fail "droits $mode sur la sauvegarde, 600 attendus"
-zcat "${files[0]}" | grep -q 'CREATE TABLE public.products' || fail "le schéma est absent de la sauvegarde"
+# No grep -q: it would close the pipe early and zcat could die of SIGPIPE (pipefail) on a big dump.
+zcat "${files[0]}" | grep 'CREATE TABLE public.products' >/dev/null || fail "le schéma est absent de la sauvegarde"
 
 # 2. Rotation: with 16 older dumps present, only the 14 newest remain.
 rm -f "${files[0]}"
