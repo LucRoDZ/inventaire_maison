@@ -6,6 +6,7 @@ const apiInternalUrl = process.env['API_INTERNAL_URL'] ?? 'http://localhost:3001
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  poweredByHeader: false,
   outputFileTracingRoot: path.join(import.meta.dirname, '../..'),
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` }];
@@ -25,6 +26,8 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
           { key: 'Permissions-Policy', value: 'camera=(self)' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'same-origin' },
         ],
       },
     ];

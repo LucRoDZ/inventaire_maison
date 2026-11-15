@@ -19,7 +19,7 @@ test('le manifeste et les icônes sont servis sans session', async ({ request })
   expect((await request.get('/icons/apple-touch-icon.png')).status()).toBe(200);
 });
 
-test('robots.txt interdit tout et les en-têtes de confidentialité sont présents', async ({
+test('robots.txt interdit tout et les en-têtes de confidentialité et de sécurité sont présents', async ({
   request,
 }) => {
   const robots = await request.get('/robots.txt');
@@ -29,6 +29,9 @@ test('robots.txt interdit tout et les en-têtes de confidentialité sont présen
   const login = await request.get('/connexion');
   expect(login.headers()['x-robots-tag']).toContain('noindex');
   expect(login.headers()['permissions-policy']).toBe('camera=(self)');
+  expect(login.headers()['x-content-type-options']).toBe('nosniff');
+  expect(login.headers()['referrer-policy']).toBe('same-origin');
+  expect(login.headers()['x-powered-by']).toBeUndefined();
 });
 
 test('la page expose les balises iOS et viewport-fit=cover', async ({ page }) => {
