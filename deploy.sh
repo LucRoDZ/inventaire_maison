@@ -59,13 +59,19 @@ docker compose up -d --remove-orphans
 step "6/7 Attente des healthchecks (${HEALTH_TIMEOUT} s au maximum)"
 deadline=$(( SECONDS + HEALTH_TIMEOUT ))
 while true; do
+  # Captured first: inside a process substitution its failure would be lost, and an empty
+  # listing would look like "every service is healthy".
+  if ! states="$(docker compose ps -a --format '{{.Service}}|{{.State}}|{{.Health}}')"; then
+    die "impossible de lire l'état des services (docker compose ps)."
+  fi
   pending=0
+  [ -n "$states" ] || pending=1
   while IFS='|' read -r service state health; do
     [ -n "$service" ] || continue
     if [ "$state" != "running" ] || { [ -n "$health" ] && [ "$health" != "healthy" ]; }; then
       pending=1
     fi
-  done < <(docker compose ps -a --format '{{.Service}}|{{.State}}|{{.Health}}')
+  done <<<"$states"
   [ "$pending" -eq 0 ] && break
   if (( SECONDS >= deadline )); then
     docker compose ps -a
