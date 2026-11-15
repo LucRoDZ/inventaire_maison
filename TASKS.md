@@ -256,7 +256,7 @@
 
 ### Scanner et ajout
 
-- [ ] **1.13 Moteurs de scan**
+- [x] **1.13 Moteurs de scan**
   - Résultat : une interface `Scanner` qui cache `BarcodeDetector` et `zxing-wasm`.
   - Fichiers : `apps/web/lib/scanner/{types,native-engine,zxing-engine,create-scanner,fake-engine}.ts`, WASM copié dans `apps/web/public/`.
   - Comportement : choix du moteur natif s'il gère EAN-13, EAN-8, UPC-A et UPC-E, sinon ZXing ; environ 10 lectures par seconde ; résultat `{code, format}` ; même code ignoré pendant 2 s ; `decodeImage(blob)` pour la photo ; WASM chargé depuis l'application, jamais depuis un CDN ; moteur factice seulement si `NEXT_PUBLIC_E2E=1`.
@@ -590,6 +590,7 @@
 - 15/11/2026 : P1.5. Images : `sharp` ajouté à l'API ; la miniature n'est jamais agrandie (une image de moins de 400 px garde sa largeur) ; entrée limitée à 50 millions de pixels (anti bombe de décompression) ; tout échec de décodage, signature comprise, répond 415 ; champ multipart `image` ; `IMAGES_DIR` des tests dans un dossier temporaire ; `data/` ajouté à `.gitignore`. Le service `ImageStore.saveThumbnail` est réutilisé par la tâche 1.7.
 - 15/11/2026 : P1.11. `POST /stock/move` répond `{from, to, movements}` (`from` nul si toute la ligne est partie) ; `POST /stock/remove` répond la ligne touchée avec produit, lieu et étagère (nom) pour le message et l'annulation ; `GET /products/{id}/movements?cursor=&limit=` (20 par défaut, 100 au plus) trie par identifiant décroissant, le curseur est l'identifiant du dernier mouvement reçu. Les verrous consultatifs du déplacement sont pris par lieu dans l'ordre croissant (pas d'interblocage entre deux déplacements opposés).
 - 15/11/2026 : P1.12. `GET /home` réutilise `StockQuery` (mêmes statuts d'échéance que `/stock`) ; « bientôt périmés » d'un meuble compte les lignes de stock périmées ou à 3 jours ou moins (une vignette = une ligne) ; vignettes triées par nom. Tests API : `hookTimeout` passé de 30 s à 120 s, car `DROP DATABASE` de `seed.spec.ts` dépassait 30 s par intermittence juste après les suites lourdes (quelques dizaines de ms au repos).
+- 15/11/2026 : P1.13. `zxing-wasm` ajouté au web ; `scripts/copy-zxing-wasm.mjs` (appelé par `predev` et `prebuild`, copié dans l'image Docker) place le WASM dans `apps/web/public/zxing/` (ignoré par git, servi par l'application, jamais par un CDN). ZXing renvoie un UPC-A comme un EAN-13 préfixé d'un 0 : le flux de scan normalise, le résultat est le même qu'avec `normalizeBarcode`. `next.config.ts` définit toujours `NEXT_PUBLIC_E2E` (`0` sauf `1`) : webpack supprime alors `fake-engine` de tout autre build (vérifié : aucune occurrence dans `.next`, présent avec `NEXT_PUBLIC_E2E=1`). Les photos sont réduites à 1600 px avant décodage.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

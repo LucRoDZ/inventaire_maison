@@ -7,7 +7,9 @@
     "build": "next build --webpack",
     "start": "next start -p 3000",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "predev": "node ../../scripts/copy-zxing-wasm.mjs",
+    "prebuild": "node ../../scripts/copy-zxing-wasm.mjs"
   },
   "dependencies": {
     "@fontsource/carlito": "^5.3.0",
@@ -16,7 +18,8 @@
     "lucide-react": "^1.73.0",
     "next": "^16.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zxing-wasm": "^3.1.6"
   },
   "devDependencies": {
     "@serwist/next": "^9.5.13",
