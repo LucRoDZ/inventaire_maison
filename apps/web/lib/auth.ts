@@ -32,3 +32,21 @@ export function loginErrorMessage(error: unknown): string {
   }
   return 'Une erreur est survenue. Réessayez.';
 }
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiFetch('/auth/password', {
+    method: 'POST',
+    body: { currentPassword, newPassword },
+  });
+}
+
+/** French message for a failed password change. */
+export function passwordErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 403) return 'Le mot de passe actuel est incorrect';
+    if (error.status === 429) return 'Trop de tentatives, réessayez dans 15 minutes';
+    if (error.status === 400) return 'Le nouveau mot de passe doit faire de 8 à 128 caractères';
+    if (error.status === 0) return 'Impossible de joindre le serveur. Vérifiez votre connexion.';
+  }
+  return 'Une erreur est survenue. Réessayez.';
+}

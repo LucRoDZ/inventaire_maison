@@ -649,3 +649,41 @@ test('À classer : un produit scanné apparaît, est confirmé, disparaît', asy
   await expect(page.getByRole('heading', { name: 'À classer', level: 1 })).toBeVisible();
   await expect(page.getByRole('article', { name })).toHaveCount(0);
 });
+
+const PASSWORD_CHANGE = { 'chromium-mobile': 'sophie', 'webkit-mobile': 'julien' } as const;
+
+test('mot de passe : changement depuis Compte, puis reconnexion', async ({ page }, testInfo) => {
+  const member = PASSWORD_CHANGE[testInfo.project.name as keyof typeof PASSWORD_CHANGE];
+  await createMember(member, 'ancien-mot-de-passe');
+  await signIn(page, member, 'ancien-mot-de-passe');
+
+  await page.getByRole('navigation').getByRole('link', { name: 'Plus', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Administration' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Compte' }).click();
+  await expect(page.getByText(member, { exact: true })).toBeVisible();
+
+  await page.getByLabel('Mot de passe actuel').fill('mauvais-mot-de-passe');
+  await page.getByLabel('Nouveau mot de passe', { exact: true }).fill('nouveau-mot-de-passe');
+  await page.getByLabel('Confirmer le nouveau mot de passe').fill('nouveau-mot-de-passe');
+  await page.getByRole('button', { name: 'Changer le mot de passe' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Le mot de passe actuel est incorrect' }),
+  ).toBeVisible();
+
+  await page.getByLabel('Mot de passe actuel').fill('ancien-mot-de-passe');
+  await page.getByRole('button', { name: 'Changer le mot de passe' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Mot de passe modifié' })).toBeVisible();
+
+  await page.getByRole('navigation').getByRole('link', { name: 'Plus', exact: true }).click();
+  await page.getByRole('button', { name: 'Se déconnecter' }).click();
+  await expect(page).toHaveURL(/\/connexion/);
+
+  // The old password no longer works, the new one does.
+  await page.getByLabel('Pseudo').fill(member);
+  await page.getByLabel('Mot de passe').fill('ancien-mot-de-passe');
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Pseudo ou mot de passe incorrect' }),
+  ).toBeVisible();
+  await signIn(page, member, 'nouveau-mot-de-passe');
+});

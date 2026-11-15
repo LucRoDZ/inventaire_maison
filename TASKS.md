@@ -379,7 +379,7 @@
   - Tests : intégration de chaque route et de chaque garde-fou ; compte désactivé incapable de se connecter et session coupée.
   - Fin : `POST /api/users` par un membre renvoie 403 ; `POST /api/users` sans session renvoie 401.
 
-- [ ] **1.30 Écrans Plus et Compte**
+- [x] **1.30 Écrans Plus et Compte**
   - Résultat : compte personnel et accès à l'administration.
   - Fichiers : `apps/web/app/(app)/plus/page.tsx`, `apps/web/app/(app)/plus/compte/page.tsx`.
   - Comportement : Plus : Compte, Administration (visible pour l'admin seulement), Installer l'application (emplacement prévu pour 1.34), Se déconnecter. Compte : pseudo, rôle, changement de mot de passe avec messages d'erreur clairs.
