@@ -122,6 +122,20 @@ Mises à jour : `./deploy.sh`. Le script vérifie `.env` et Docker, sauvegarde l
 - Base : `scripts/backup-db.sh` (appelé par `deploy.sh`) écrit un `pg_dump` compressé dans `backups/` et garde les 14 derniers. À planifier aussi avec `cron`.
 - Images produits : sauvegarder le volume Docker `images`.
 - Copier le résultat hors du serveur.
+- Les archives sont créées en `600` (dossier en `700`) : elles contiennent les hachages des mots de passe.
+
+### Base créée avec l'ancienne image `postgres:16` (Debian)
+
+L'image est désormais `postgres:16-alpine`. Un volume `pgdata` créé par l'image Debian démarre, mais PostgreSQL signale « database has no actual collation version » : les index sur du texte ont été triés avec la locale glibc et doivent être reconstruits. Un VPS dont la base est créée directement avec l'image Alpine n'est pas concerné. Sinon, sauvegarder puis restaurer dans un volume neuf :
+
+```bash
+scripts/backup-db.sh                       # archive dans backups/
+docker compose down
+docker volume rm <projet>_pgdata           # nom affiché par `docker volume ls`
+docker compose up -d db --wait
+zcat backups/inventaire-<date>.sql.gz | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U inventaire -d inventaire
+docker compose up -d --wait
+```
 
 ## Test manuel sur vrais appareils
 
