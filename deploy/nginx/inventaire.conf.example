@@ -1,7 +1,7 @@
 # Block to add (by Lucas) to the existing nginx container (easyq-nginx-1).
 # Web and api join the Docker network of that nginx with the aliases inventaire-web and inventaire-api.
-
-resolver 127.0.0.11 valid=10s ipv6=off;
+# The resolver is declared inside the server block, so it cannot clash with the http-level
+# configuration of the existing nginx.
 
 server {
     listen 80;
@@ -24,6 +24,10 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/inventaire.lucaszivan.app/privkey.pem;
 
     client_max_body_size 10m;
+
+    # Docker's embedded DNS: the upstream names are resolved at request time (variables below),
+    # so nginx starts even while the application containers are down.
+    resolver 127.0.0.11 valid=10s ipv6=off;
 
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Robots-Tag "noindex, nofollow" always;
