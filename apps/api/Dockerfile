@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build context: repository root.
-FROM node:24-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
@@ -15,7 +15,7 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 RUN npm run build -w @inventaire/shared && npm run build -w @inventaire/api
 
-FROM node:24-slim AS prod-deps
+FROM node:26-slim AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
@@ -25,7 +25,7 @@ COPY e2e/package.json e2e/
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev --ignore-scripts -w @inventaire/api -w @inventaire/shared
 
-FROM node:24-slim AS runtime
+FROM node:26-slim AS runtime
 ENV NODE_ENV=production PORT=3001
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules node_modules
