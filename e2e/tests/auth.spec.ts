@@ -1,10 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForHydration } from './helpers';
 
 const USERNAME = 'admin';
 const PASSWORD = 'e2e-admin-password';
 
 async function signIn(page: Page, username = USERNAME, password = PASSWORD) {
   await page.goto('/connexion');
+  await waitForHydration(page);
   await page.getByLabel('Pseudo').fill(username);
   await page.getByLabel('Mot de passe').fill(password);
   await page.getByRole('button', { name: 'Se connecter' }).click();

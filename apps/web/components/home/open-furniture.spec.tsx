@@ -1,9 +1,15 @@
 import type { HomeLocationDto, HomeShelfDto, HomeTileDto } from '@inventaire/shared';
-import { render, screen, within } from '@testing-library/react';
+import { DndContext } from '@dnd-kit/core';
+import { render as baseRender, screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { OpenFurniture } from './OpenFurniture';
 import { scanHref } from './ShelfRow';
+
+/** The tiles are draggable: like on the page, they live inside a drag-and-drop context. */
+// No sensors: a plain click must not start a drag here.
+const render = (ui: ReactElement) => baseRender(<DndContext sensors={[]}>{ui}</DndContext>);
 
 const tile = (
   id: number,

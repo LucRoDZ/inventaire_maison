@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForHydration } from './helpers';
 
 // The service worker is exercised on Chromium only.
 test.skip(({ browserName }) => browserName !== 'chromium', 'Chromium uniquement');
@@ -8,6 +9,7 @@ test('hors connexion, la coquille s’ouvre et l’encadré « Pas de connexion 
   context,
 }) => {
   await page.goto('/connexion');
+  await waitForHydration(page);
   await page.getByLabel('Pseudo').fill('admin');
   await page.getByLabel('Mot de passe').fill('e2e-admin-password');
   await page.getByRole('button', { name: 'Se connecter' }).click();

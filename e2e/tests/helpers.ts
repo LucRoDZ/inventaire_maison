@@ -5,8 +5,20 @@ type E2EWindow = { __e2eScan?: (code: string) => void };
 export const USERNAME = 'admin';
 export const PASSWORD = 'e2e-admin-password';
 
+/**
+ * Waits until React has hydrated the page. A field filled before that is wiped by the hydration
+ * (the server-rendered form is replaced by the controlled one), which made logins flaky.
+ */
+export async function waitForHydration(page: Page) {
+  await page.waitForFunction(() => {
+    const field = document.querySelector('input, button');
+    return !!field && Object.keys(field).some((key) => key.startsWith('__reactProps'));
+  });
+}
+
 export async function signIn(page: Page) {
   await page.goto('/connexion');
+  await waitForHydration(page);
   await page.getByLabel('Pseudo').fill(USERNAME);
   await page.getByLabel('Mot de passe').fill(PASSWORD);
   await page.getByRole('button', { name: 'Se connecter' }).click();

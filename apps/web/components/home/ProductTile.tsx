@@ -1,18 +1,24 @@
 import type { HomeTileDto } from '@inventaire/shared';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 import { categoryIcon } from '../ui/CategoryIcon';
 
 interface ProductTileProps {
   tile: HomeTileDto;
   /** Opens the product panel. */
   onSelect?: (tile: HomeTileDto) => void;
+  /** Set by the drag-and-drop wrapper: the button itself is the draggable element. */
+  dragRef?: Ref<HTMLButtonElement>;
+  dragProps?: ButtonHTMLAttributes<HTMLButtonElement>;
 }
 
 /** Square thumbnail: the photo or the category glyph, with an amber quantity badge. */
-export function ProductTile({ tile, onSelect }: ProductTileProps) {
+export function ProductTile({ tile, onSelect, dragRef, dragProps }: ProductTileProps) {
   const Glyph = categoryIcon(tile.category.icon);
   return (
     <button
+      ref={dragRef}
       type="button"
+      {...dragProps}
       onClick={() => onSelect?.(tile)}
       aria-label={`${tile.name}, quantité ${tile.quantity}`}
       className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white"

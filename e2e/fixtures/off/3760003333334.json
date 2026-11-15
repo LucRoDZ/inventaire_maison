@@ -1,0 +1,11 @@
+{
+  "code": "3760003333334",
+  "status": 1,
+  "product": {
+    "product_name": "Ice cream",
+    "product_name_fr": "Glace vanille du clavier",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:ice-creams"]
+  }
+}

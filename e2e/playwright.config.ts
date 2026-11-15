@@ -15,6 +15,8 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : 'list',
+  // A login or a page can take over 5 s when the browsers and the API share a loaded machine.
+  expect: { timeout: 15_000 },
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium-mobile', use: { ...devices['Pixel 7'] } },
@@ -41,6 +43,9 @@ export default defineConfig({
         ADMIN_USERNAME,
         ADMIN_PASSWORD,
         OFF_USER_AGENT: 'InventaireMaison-E2E/1.0',
+        // Every test comes from the same IP and polls the API: the production limit (300 a minute)
+        // would answer 429 to a login in the middle of the run.
+        RATE_LIMIT_PER_MINUTE: '100000',
         OFF_BASE_URL: `http://127.0.0.1:${offPort}`,
         // Replaces the camera by codes pushed with window.__e2eScan (never set in production builds).
         NEXT_PUBLIC_E2E: '1',

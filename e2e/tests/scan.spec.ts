@@ -422,3 +422,118 @@ test('« Déplacer vers… » : d’une étagère à une autre par le menu', asy
   expect(line?.location.name).toBe(toLocation);
   expect(line?.shelf?.name).toBe(to);
 });
+
+const DRAGS = {
+  'chromium-mobile': {
+    keyboard: {
+      code: '3760003333334',
+      name: 'Glace vanille du clavier',
+      place: 'Congélateur',
+      from: 'Tiroir 1',
+      to: 'Tiroir 2',
+    },
+    mouse: {
+      code: '3760004444442',
+      name: 'Vin rouge de la souris',
+      place: 'Cave',
+      from: 'Rangée 1',
+      to: 'Rangée 2',
+    },
+  },
+  'webkit-mobile': {
+    keyboard: {
+      code: '3760005555550',
+      name: 'Bière brune du clavier',
+      place: 'Cave',
+      from: 'Rangée 3',
+      to: 'Rangée 2',
+    },
+  },
+} as const;
+
+type Drag = { code: string; name: string; place: string; from: string; to: string };
+
+async function putOnShelf(page: Page, { code, name, place, from }: Drag) {
+  await startScanner(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByLabel('Lieu').selectOption({ label: place });
+  await sheet.getByLabel('Étagère').selectOption({ label: from });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
+  await page.goto('/inventaire');
+  await page.getByRole('link', { name: new RegExp(`^${place}`) }).click();
+  await expect(
+    page.getByRole('region', { name: from }).getByRole('button', { name: `${name}, quantité 1` }),
+  ).toBeVisible();
+}
+
+async function expectMoved(page: Page, { name, to, from }: Drag) {
+  await expect(
+    page.getByRole('region', { name: to }).getByRole('button', { name: `${name}, quantité 1` }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: from }).getByRole('button', { name: `${name}, quantité 1` }),
+  ).toHaveCount(0);
+  const products = (await (
+    await page.request.get(`/api/products?q=${encodeURIComponent(name)}&limit=1`)
+  ).json()) as { id: number }[];
+  await expect
+    .poll(async () => {
+      const history = (await (
+        await page.request.get(`/api/products/${products[0]!.id}/movements`)
+      ).json()) as {
+        items: { reason: string; delta: number }[];
+      };
+      return history.items
+        .filter((item) => item.reason === 'move')
+        .map((item) => item.delta)
+        .sort();
+    })
+    .toEqual([-1, 1]);
+}
+
+test('glisser-déposer au clavier : Espace, flèche, Espace', async ({ page }, testInfo) => {
+  const drag = DRAGS[testInfo.project.name as keyof typeof DRAGS].keyboard;
+  await signIn(page);
+  await putOnShelf(page, drag);
+
+  const tile = page
+    .getByRole('region', { name: drag.from })
+    .getByRole('button', { name: `${drag.name}, quantité 1` });
+  await tile.focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('navigation', { name: 'Déposer dans un meuble' })).toBeVisible();
+  const key = drag.from > drag.to ? 'ArrowUp' : 'ArrowDown';
+  // dnd-kit measures the drop zones just after the drag starts: an arrow pressed in that instant
+  // does nothing. Press again until the announcement names the destination (never after).
+  const live = page.locator('[id^="DndLiveRegion"]');
+  const destination = `au-dessus de : ${drag.place}, ${drag.to}`;
+  await expect(async () => {
+    if (!(await live.textContent())?.includes(destination)) await page.keyboard.press(key);
+    await expect(live).toContainText(destination, { timeout: 500 });
+  }).toPass({ timeout: 8000 });
+  await page.keyboard.press('Space');
+  await expectMoved(page, drag);
+});
+
+test('glisser-déposer à la souris', async ({ page, browserName }, testInfo) => {
+  test.skip(browserName !== 'chromium', 'Souris : Chromium uniquement');
+  const drag = DRAGS['chromium-mobile'].mouse;
+  void testInfo;
+  await signIn(page);
+  await putOnShelf(page, drag);
+
+  const tile = page
+    .getByRole('region', { name: drag.from })
+    .getByRole('button', { name: `${drag.name}, quantité 1` });
+  const target = page.getByRole('region', { name: drag.to });
+  const from = (await tile.boundingBox())!;
+  const to = (await target.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 20, { steps: 4 });
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
+  await page.mouse.up();
+  await expectMoved(page, drag);
+});
