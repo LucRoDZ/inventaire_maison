@@ -13,6 +13,7 @@ describe('parseEnv', () => {
     const config = parseEnv(valid);
     expect(config.PORT).toBe(3001);
     expect(config.OFF_USER_AGENT).toBeTruthy();
+    expect(config.RATE_LIMIT_PER_MINUTE).toBe(300);
   });
 
   it('names a missing variable', () => {

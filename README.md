@@ -59,6 +59,7 @@ Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`.
 | `COMPOSE_FILE` | Fichiers Compose utilisés (voir les deux modes de proxy) |
 | `COMPOSE_PROFILES` | `proxy` active Caddy embarqué ; vide derrière le nginx partagé |
 | `SHARED_PROXY_NETWORK` | Réseau Docker externe du nginx partagé (mode production uniquement) |
+| `RATE_LIMIT_PER_MINUTE` | Facultative : limite globale de requêtes par minute et par IP (300 par défaut ; `/api/health` n'est jamais limité) |
 
 ## Tests et qualité
 

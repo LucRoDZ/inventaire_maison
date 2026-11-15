@@ -116,15 +116,18 @@ describe('login throttling', () => {
 });
 
 describe('global rate limit', () => {
-  it('answers 429 beyond 300 requests per minute and per IP', async () => {
-    const limited = await createTestApp();
+  it('answers 429 beyond the limit per minute and per IP, but never on /api/health', async () => {
+    const limited = await createTestApp({ rateLimitPerMinute: 5 });
     try {
       const statuses: number[] = [];
-      for (let i = 0; i < 302; i++) {
-        statuses.push((await request(limited.getHttpServer()).get('/api/health')).status);
+      for (let i = 0; i < 6; i++) {
+        statuses.push((await request(limited.getHttpServer()).get('/api/auth/me')).status);
       }
-      expect(statuses.slice(0, 300).every((s) => s === 200)).toBe(true);
-      expect(statuses[300]).toBe(429);
+      expect(statuses.slice(0, 5).every((s) => s === 401)).toBe(true);
+      expect(statuses[5]).toBe(429);
+      for (let i = 0; i < 20; i++) {
+        expect((await request(limited.getHttpServer()).get('/api/health')).status).toBe(200);
+      }
     } finally {
       await limited.close();
     }

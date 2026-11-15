@@ -11,6 +11,8 @@ export const envSchema = z.object({
   OFF_BASE_URL: z.string().url().optional(),
   PUBLIC_ORIGIN: z.string().url().default('http://localhost:3000'),
   IMAGES_DIR: z.string().min(1).default('./data/images'),
+  /** Global limit per IP; the tests raise it so that their many requests from 127.0.0.1 pass. */
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(300),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
