@@ -11,9 +11,12 @@ export function login(username: string, password: string): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch('/auth/logout', { method: 'POST' });
-  // Private data must not stay on the device after sign-out.
-  await clearAppCaches();
+  try {
+    await apiFetch('/auth/logout', { method: 'POST' });
+  } finally {
+    // Private data must not stay on the device, even when the call fails (offline, expired session).
+    await clearAppCaches();
+  }
 }
 
 export function fetchMe(): Promise<AuthUser> {

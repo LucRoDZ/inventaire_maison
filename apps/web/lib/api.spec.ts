@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, apiFetch } from './api';
+import { RUNTIME_CACHES } from './cache-names';
 
 const fetchMock = vi.fn();
 const assign = vi.fn();
@@ -28,10 +29,25 @@ describe('apiFetch', () => {
     expect(await apiFetch('/auth/logout', { method: 'POST' })).toBeUndefined();
   });
 
-  it('sends the login page on 401', async () => {
+  it('empties the caches, then sends the login page on 401', async () => {
+    const deleted: string[] = [];
+    vi.stubGlobal('caches', {
+      delete: async (name: string) => {
+        deleted.push(name);
+        return true;
+      },
+    });
     fetchMock.mockResolvedValue(json(401, { message: 'Authentification requise' }));
     await expect(apiFetch('/stock')).rejects.toMatchObject({ status: 401 });
-    expect(assign).toHaveBeenCalledWith('/connexion');
+    await vi.waitFor(() => expect(assign).toHaveBeenCalledWith('/connexion'));
+    expect([...deleted].sort()).toEqual([...RUNTIME_CACHES].sort());
+  });
+
+  it('still sends the login page on 401 when the caches cannot be emptied', async () => {
+    vi.stubGlobal('caches', { delete: () => Promise.reject(new Error('quota')) });
+    fetchMock.mockResolvedValue(json(401, { message: 'x' }));
+    await expect(apiFetch('/stock')).rejects.toMatchObject({ status: 401 });
+    await vi.waitFor(() => expect(assign).toHaveBeenCalledWith('/connexion'));
   });
 
   it('does not redirect on 401 when asked not to', async () => {

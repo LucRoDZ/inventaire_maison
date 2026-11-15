@@ -1,3 +1,5 @@
+import { clearAppCaches } from './clear-caches';
+
 export class ApiError extends Error {
   constructor(
     /** HTTP status, or 0 when the server could not be reached. */
@@ -13,10 +15,12 @@ export class ApiError extends Error {
 
 export const LOGIN_PATH = '/connexion';
 
+/** The session is gone: empty the caches (private data), then go to the login page. */
 export function redirectToLogin(): void {
-  if (typeof window !== 'undefined' && window.location.pathname !== LOGIN_PATH) {
-    window.location.assign(LOGIN_PATH);
-  }
+  if (typeof window === 'undefined' || window.location.pathname === LOGIN_PATH) return;
+  void clearAppCaches()
+    .catch(() => undefined)
+    .finally(() => window.location.assign(LOGIN_PATH));
 }
 
 interface ApiOptions extends Omit<RequestInit, 'body'> {
