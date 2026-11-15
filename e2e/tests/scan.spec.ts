@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pushCode, signIn, startScanner } from './helpers';
+import { createMember, pushCode, signIn, startScanner } from './helpers';
 
 // Both browser projects share one database: each one scans its own product.
 const FIXTURES = {
@@ -536,4 +536,87 @@ test('glisser-déposer à la souris', async ({ page, browserName }, testInfo) =>
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
   await page.mouse.up();
   await expectMoved(page, drag);
+});
+
+const TWO_MEMBERS = {
+  'chromium-mobile': {
+    code: '3760006666668',
+    name: 'Brioche des deux membres',
+    member: 'marie',
+  },
+  'webkit-mobile': { code: '3760007777776', name: 'Poiré brut des deux membres', member: 'paul' },
+} as const;
+
+test('deux membres, même stock : l’historique nomme chacun, la catégorie modifiée se voit dans la Liste', async ({
+  page,
+  browser,
+}, testInfo) => {
+  const { code, name, member } = TWO_MEMBERS[testInfo.project.name as keyof typeof TWO_MEMBERS];
+  await createMember(member, 'mot-de-passe-membre');
+
+  // The admin adds two units to the fridge.
+  await signIn(page);
+  await startScanner(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
+  await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: `Ajouté : 2 × ${name}` })).toBeVisible();
+
+  // The member, in another session, sees it as known and adds one more.
+  const baseURL = testInfo.project.use.baseURL;
+  const other = await browser.newContext({ baseURL });
+  const memberPage = await other.newPage();
+  await signIn(memberPage, member, 'mot-de-passe-membre');
+  await startScanner(memberPage);
+  await pushCode(memberPage, code);
+  const memberSheet = memberPage.getByRole('dialog', { name });
+  await memberSheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
+  await memberSheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(
+    memberPage.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` }),
+  ).toBeVisible();
+  await other.close();
+
+  // The product page: one stock, one history that names both.
+  const products = (await (
+    await page.request.get(`/api/products?q=${encodeURIComponent(name)}&limit=1`)
+  ).json()) as {
+    id: number;
+  }[];
+  await page.goto(`/produits/${products[0]!.id}`);
+  await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+  await expect(page.getByText('Frigo : 3 unités')).toBeVisible();
+  await expect(page.getByText(/admin a ajouté 2 unités dans Frigo, non rangé/)).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`${member} a ajouté 1 unité dans Frigo, non rangé`)),
+  ).toBeVisible();
+  await expect(page.getByText(/Ajout par scan · /).first()).toBeVisible();
+
+  // The category chosen here shows in the list view.
+  const category = page.getByRole('combobox', { name: 'Catégorie', exact: true });
+  await expect(category).toBeVisible();
+  const options = await category.locator('option').allTextContents();
+  const current = await category.evaluate(
+    (el) => (el as HTMLSelectElement).selectedOptions[0]?.textContent ?? null,
+  );
+  const target = options.find((option) => option !== current && option !== 'Autre')!;
+  await category.selectOption({ label: target });
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await expect(page.getByText('Produit enregistré.')).toBeVisible();
+
+  await page.goto('/inventaire');
+  await page.getByRole('button', { name: 'Liste', exact: true }).click();
+  const section = page.getByRole('button', { name: new RegExp(`^${target}`) });
+  await expect(section).toBeVisible();
+  await expect(page.locator('article').filter({ hasText: name }).first()).toBeVisible();
+});
+
+test('une fiche produit inconnue affiche « Produit introuvable »', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/produits/99999999');
+  await expect(page.getByRole('heading', { name: 'Produit introuvable' })).toBeVisible();
+  await page.goto('/produits/abc');
+  await expect(page.getByRole('heading', { name: 'Produit introuvable' })).toBeVisible();
 });

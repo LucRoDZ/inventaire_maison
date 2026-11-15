@@ -1,4 +1,4 @@
-import type { ProductDto } from '@inventaire/shared';
+import type { MovementHistoryResponse, ProductDetailDto, ProductDto } from '@inventaire/shared';
 import { apiFetch } from './api';
 
 export interface NewProductInput {
@@ -22,3 +22,25 @@ export function uploadProductImage(productId: number, photo: File): Promise<Prod
 
 export const searchProducts = (q: string, limit = 20): Promise<ProductDto[]> =>
   apiFetch<ProductDto[]>(`/products?q=${encodeURIComponent(q)}&limit=${limit}`);
+
+export const getProduct = (id: number): Promise<ProductDetailDto> =>
+  apiFetch<ProductDetailDto>(`/products/${id}`);
+
+export interface ProductPatch {
+  name?: string;
+  brand?: string | null;
+  /** Sending it, even unchanged, confirms the category (`category_guessed` becomes false). */
+  categoryId?: number;
+  defaultLocationId?: number | null;
+}
+
+export const updateProduct = (id: number, patch: ProductPatch): Promise<ProductDto> =>
+  apiFetch<ProductDto>(`/products/${id}`, { method: 'PATCH', body: patch });
+
+export const fetchMovements = (
+  id: number,
+  { cursor, limit = 20 }: { cursor?: string | null; limit?: number } = {},
+): Promise<MovementHistoryResponse> =>
+  apiFetch<MovementHistoryResponse>(
+    `/products/${id}/movements?limit=${limit}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
+  );

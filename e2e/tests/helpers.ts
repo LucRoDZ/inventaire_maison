@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import * as argon2 from 'argon2';
+import pg from 'pg';
 
 type E2EWindow = { __e2eScan?: (code: string) => void };
 
@@ -16,11 +18,11 @@ export async function waitForHydration(page: Page) {
   });
 }
 
-export async function signIn(page: Page) {
+export async function signIn(page: Page, username = USERNAME, password = PASSWORD) {
   await page.goto('/connexion');
   await waitForHydration(page);
-  await page.getByLabel('Pseudo').fill(USERNAME);
-  await page.getByLabel('Mot de passe').fill(PASSWORD);
+  await page.getByLabel('Pseudo').fill(username);
+  await page.getByLabel('Mot de passe').fill(password);
   await page.getByRole('button', { name: 'Se connecter' }).click();
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
 }
@@ -33,4 +35,29 @@ export async function startScanner(page: Page) {
 
 export async function pushCode(page: Page, code: string) {
   await page.evaluate((value) => (window as E2EWindow).__e2eScan?.(value), code);
+}
+
+/**
+ * Inserts a member straight into the e2e database (same Argon2id parameters as the API). Used
+ * until the tests can create one through the administration screen.
+ */
+export async function createMember(username: string, password: string): Promise<void> {
+  const url =
+    process.env['E2E_DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_e2e';
+  const hash = await argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
+  const client = new pg.Client({ connectionString: url });
+  await client.connect();
+  try {
+    await client.query(
+      "insert into users (username, password_hash, role) values ($1, $2, 'member') on conflict do nothing",
+      [username, hash],
+    );
+  } finally {
+    await client.end();
+  }
 }

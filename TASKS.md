@@ -356,7 +356,7 @@
   - Tests : composants : filtrage par texte et par catégorie, meuble entouré.
   - Fin : tests verts.
 
-- [ ] **1.27 Fiche produit**
+- [x] **1.27 Fiche produit**
   - Résultat : modifier un produit et lire son historique.
   - Fichiers : `apps/web/app/(app)/produits/[id]/page.tsx`, `apps/web/components/product/{ProductEdit,StockByLocation,MovementList}.tsx`.
   - Comportement : modifier nom, marque, catégorie, lieu habituel, photo ; stock par lieu et étagère ; historique « qui, quand, combien, où, pourquoi » en français, chargé par pages ; produit inconnu : page « Produit introuvable ».
