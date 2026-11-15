@@ -540,7 +540,7 @@
 - 14/11/2026 : C8. Ordre des lieux : « Garde-manger, Frigo, Cave, Congélateur » (onglets) contre « Garde-manger, Frigo, Congélateur, Cave » (vue Maison) : `sort_order` initial de la vue Maison ; les onglets suivent `sort_order`.
 - 14/11/2026 : C9. Fiche d'ajout : addition si « même lieu, même date » ; contrainte d'unicité : lieu, étagère, date : Le modèle fait foi : même lieu, même étagère, même date.
 - 14/11/2026 : C10. `quantity ≥ 0` mais une ligne à 0 est supprimée : `CHECK (quantity > 0)`.
-- 14/11/2026 : C11. `SESSION_SECRET` « de signature » alors que le jeton est opaque et haché en base : `sessions.id = HMAC-SHA256(SESSION_SECRET, jeton)`. Changer le secret révoque toutes les sessions.
+- 14/11/2026 : C11. `SESSION_SECRET` « de signature » alors que le jeton est opaque et haché en base : `sessions.id = HMAC-SHA256(SESSION_SECRET, jeton)`. Changer le secret révoque toutes les sessions. (15/11/2026, revue : la Phase 0 utilisait un SHA-256 sans secret ; corrigé dans `session.service.ts`, test de rotation du secret.)
 - 14/11/2026 : C12. Ancien TASKS : job `docker-build` de la CI (0.5) avant les Dockerfiles (0.8) ; PR ouverte en fin de phase alors que `gh pr checks` est exigé après chaque push : Dockerfiles et compose avant la CI ; PR ouverte en brouillon dès la CI.
 - 14/11/2026 : C13. Ancien TASKS 0.2 « copier cahier et tokens » : déjà fait : Remplacé par l'alignement de `tokens.css` (T6).
 - 14/11/2026 : C14. `run-loop.sh` : « si tu es bloqué, passe à la tâche suivante », alors que les tâches dépendent les unes des autres : Règle ajoutée dans `TASKS.md` : une tâche bloquée dont dépend la suite arrête la phase (marqueur d'arrêt + section Problèmes bloquants). Le script n'est pas modifié sans votre accord.

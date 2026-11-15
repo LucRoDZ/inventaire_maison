@@ -51,7 +51,7 @@ Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`.
 | `APP_DOMAIN` | Domaine public (`localhost` en local) ; l'origine autorisée de l'API en est dérivée |
 | `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
 | `DATABASE_URL` | Connexion PostgreSQL pour `npm run dev` (Compose construit la sienne) |
-| `SESSION_SECRET` | Secret des sessions, 32 caractères au moins |
+| `SESSION_SECRET` | Clé HMAC des sessions (32 caractères au moins) : la base ne stocke que `HMAC-SHA256(SESSION_SECRET, jeton)`. Changer ce secret déconnecte tout le monde (révocation d'urgence) |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Premier compte administrateur, créé quand la table `users` est vide (mot de passe : 8 caractères au moins) |
 | `OFF_USER_AGENT` | User-Agent envoyé à Open Food Facts |
 | `COMPOSE_FILE` | Fichiers Compose utilisés (voir les deux modes de proxy) |

@@ -1,7 +1,9 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, ne } from 'drizzle-orm';
 import { CLOCK, type Clock } from '../common/clock';
+import { APP_CONFIG } from '../config/config.module';
+import type { AppConfig } from '../config/env.schema';
 import { DB, type Database } from '../database/database.module';
 import { sessions, users } from '../database/schema';
 import { SESSION_REFRESH_AFTER_MS, SESSION_TTL_MS } from './auth.constants';
@@ -18,8 +20,12 @@ export interface ValidatedSession {
   refreshedExpiresAt?: Date;
 }
 
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+/**
+ * Database id of a session: HMAC-SHA256 of the opaque token, keyed with SESSION_SECRET.
+ * The token itself is never stored; changing the secret invalidates every session.
+ */
+export function sessionId(secret: string, token: string): string {
+  return createHmac('sha256', secret).update(token).digest('hex');
 }
 
 @Injectable()
@@ -27,14 +33,19 @@ export class SessionService {
   constructor(
     @Inject(DB) private readonly db: Database,
     @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(APP_CONFIG) private readonly config: Pick<AppConfig, 'SESSION_SECRET'>,
   ) {}
+
+  private idOf(token: string): string {
+    return sessionId(this.config.SESSION_SECRET, token);
+  }
 
   async create(userId: number, userAgent: string | undefined): Promise<CreatedSession> {
     const token = randomBytes(32).toString('base64url');
     const now = this.clock.now();
     const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
     await this.db.insert(sessions).values({
-      id: hashToken(token),
+      id: this.idOf(token),
       userId,
       expiresAt,
       createdAt: now,
@@ -45,7 +56,7 @@ export class SessionService {
   }
 
   async validate(token: string): Promise<ValidatedSession | null> {
-    const id = hashToken(token);
+    const id = this.idOf(token);
     const [row] = await this.db
       .select({
         expiresAt: sessions.expiresAt,

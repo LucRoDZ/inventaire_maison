@@ -21,7 +21,7 @@ export const users = pgTable(
 export const sessions = pgTable(
   'sessions',
   {
-    /** SHA-256 of the session token. */
+    /** HMAC-SHA256 of the session token, keyed with SESSION_SECRET. */
     id: text().primaryKey(),
     userId: integer('user_id')
       .notNull()
