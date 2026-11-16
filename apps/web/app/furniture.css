@@ -373,10 +373,12 @@
 .fx-card[data-match='true'] .fx-card-door {
   --fx-ajar: 12deg;
 }
-.fx-card:active .fx-card-door {
+.fx-card:active .fx-card-door,
+.fx-card[data-pressed='true'] .fx-card-door {
   --fx-ajar: 20deg;
 }
 .fx-card:active .fx-card-light,
+.fx-card[data-pressed='true'] .fx-card-light,
 .fx-card[data-match='true'] .fx-card-light {
   opacity: 0.85;
 }

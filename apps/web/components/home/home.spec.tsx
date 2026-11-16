@@ -1,5 +1,5 @@
 import type { HomeLocationDto, HomeResponse } from '@inventaire/shared';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -150,6 +150,20 @@ describe('FurnitureCard', () => {
       { hinge: 'right', left: '49.95%', width: '41.65%', face: 2 },
     ]);
     expect(doors('other')).toEqual(doors('pantry'));
+  });
+
+  it('marks the card as pressed from the pointer, and releases it', () => {
+    render(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4)} />);
+    const link = screen.getByRole('link');
+    expect(link).not.toHaveAttribute('data-pressed');
+    for (const release of [fireEvent.pointerUp, fireEvent.pointerCancel, fireEvent.pointerLeave]) {
+      fireEvent.pointerDown(link);
+      expect(link).toHaveAttribute('data-pressed', 'true');
+      release(link);
+      expect(link).not.toHaveAttribute('data-pressed');
+    }
+    // Feedback only: the link and its target are untouched.
+    expect(link).toHaveAttribute('href', '/inventaire/1');
   });
 
   it('leaves the door ajar (data-match) only when the search finds something inside', () => {

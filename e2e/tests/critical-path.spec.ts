@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { createMember, pushCode, signIn, startScanner } from './helpers';
+import {
+  createMember,
+  furnitureScenery,
+  furnitureSettled,
+  pushCode,
+  signIn,
+  startScanner,
+} from './helpers';
 
 // Both browser projects share one database: each one runs the path with its own products.
 const PATH = {
@@ -69,13 +76,28 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   await expect(card.getByLabel('Quantité', { exact: true })).toHaveText('3');
   await expect.poll(() => quantity(scanned.name)).toBe(3);
 
-  // 5. Home view: the fridge shows the product on its shelf.
+  // 5. Home view: the fridge is closed on its card; entering it swings the door open, turns the
+  // light on, and shows the product on its shelf.
   await page.getByRole('button', { name: 'Maison', exact: true }).click();
-  await page.getByRole('link', { name: /^Frigo/ }).click();
+  const fridge = page.getByRole('link', { name: /^Frigo/ });
+  await expect(fridge.locator('.fx-card-door')).toHaveCount(1);
+  await fridge.click();
+  await expect(page.getByRole('heading', { name: 'Frigo', level: 1 })).toBeVisible();
   const tile = page
     .getByRole('region', { name: 'Étagère 1' })
     .getByRole('button', { name: `${scanned.name}, quantité 3` });
   await expect(tile).toBeVisible();
+  await furnitureSettled(page);
+  const open = await furnitureScenery(page);
+  expect(open.kind).toBe('fridge');
+  // The door stands beside the shelves (never over them), its back showing; the light is on.
+  expect(open.overlap).toHaveLength(1);
+  expect(open.overlap[0]).toBeLessThanOrEqual(1);
+  expect(open.back).toEqual([1]);
+  expect(open.light).toEqual([0.85]);
+  // No « Ouvrir » or « Fermer » button: the way back is the « Maison » link.
+  await expect(page.getByRole('button', { name: /^(ouvrir|fermer)$/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Maison' })).toBeVisible();
 
   // 6. Move the whole line to the pantry.
   await tile.click();

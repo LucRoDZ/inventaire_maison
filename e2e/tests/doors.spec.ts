@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signIn } from './helpers';
+import { furnitureScenery, furnitureSettled, signIn } from './helpers';
 
 // Both browser projects share one database: each one stocks its own products, on shelves that no
 // other test reads (pantry « Étagère 2 », freezer « Tiroir 3 »).
 const STOCK = {
-  'chromium-mobile': { pantry: 'Riz long des portes', freezer: 'Sorbet citron des portes' },
-  'webkit-mobile': { pantry: 'Semoule fine des portes', freezer: 'Épinards hachés des portes' },
+  'chromium-mobile': { pantry: 'Quinoa des portes', freezer: 'Sorbet des portes' },
+  'webkit-mobile': { pantry: 'Boulgour des portes', freezer: 'Épinards des portes' },
 } as const;
 
 interface Place {
@@ -62,54 +62,10 @@ async function openPlace(page: Page, name: string) {
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 }
 
-/** Waits until the doors, the light and the drawers have reached their final state. */
-async function settled(page: Page) {
-  await expect(page.locator('.fx-scene .fx-door').first()).toBeAttached();
-  await page.waitForFunction(() =>
-    document.getAnimations().every((animation) => animation.playState === 'finished'),
-  );
-}
-
-/** What the scenery of the open furniture looks like right now, measured in the page. */
-async function scenery(page: Page) {
-  return page.evaluate(() => {
-    const scene = document.querySelector('.fx-scene')!;
-    const body = scene.querySelector('.fx-body')!.getBoundingClientRect();
-    const animations = document
-      .getAnimations()
-      .filter((animation) => scene.contains((animation.effect as KeyframeEffect).target));
-    const opacity = (selector: string) =>
-      [...scene.querySelectorAll(selector)].map((el) => Number(getComputedStyle(el).opacity));
-    return {
-      kind: scene.getAttribute('data-kind'),
-      animations: animations.length,
-      finished: animations.every((animation) => animation.playState === 'finished'),
-      // Delay and duration together, in ms: the longest wait before the final state.
-      longest: Math.max(
-        ...animations.map((animation) => Number(animation.effect!.getComputedTiming().endTime)),
-      ),
-      // How far each open door reaches over the body, in px (0 or less: it stays in its band).
-      overlap: [...scene.querySelectorAll('.fx-door')].map((door) => {
-        const rect = door.getBoundingClientRect();
-        return Math.round(
-          door.getAttribute('data-hinge') === 'left'
-            ? rect.right - body.left
-            : body.right - rect.left,
-        );
-      }),
-      doorWidths: [...scene.querySelectorAll('.fx-door')].map((door) =>
-        Math.round(door.getBoundingClientRect().width),
-      ),
-      bodyWidth: Math.round(body.width),
-      back: opacity('.fx-door-back'),
-      light: opacity('.fx-light'),
-      spots: opacity('.fx-spot'),
-      drawers: opacity('.fx-drawer'),
-    };
-  });
-}
-
 const DOORS = { Frigo: 1, Congélateur: 1, 'Garde-manger': 2, Cave: 2 } as const;
+
+// One worker for this file: every test stocks the same products first, which must happen once.
+test.describe.configure({ mode: 'default' });
 
 test.describe('portes de la Vue Maison', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -125,7 +81,7 @@ test.describe('portes de la Vue Maison', () => {
   }, testInfo) => {
     const { pantry } = STOCK[testInfo.project.name as keyof typeof STOCK];
     await openPlace(page, 'Garde-manger');
-    await settled(page);
+    await furnitureSettled(page);
     const shelf = page.getByRole('region', { name: 'Étagère 2' });
     const tile = shelf.getByRole('button', { name: `${pantry}, quantité 6` });
     await expect(tile).toBeVisible();
@@ -174,7 +130,7 @@ test.describe('portes de la Vue Maison', () => {
   }, testInfo) => {
     const { freezer } = STOCK[testInfo.project.name as keyof typeof STOCK];
     await openPlace(page, 'Congélateur');
-    await settled(page);
+    await furnitureSettled(page);
     const drawers = page.locator('section.fx-drawer');
     await expect(drawers).toHaveCount(3);
     expect(
@@ -204,6 +160,107 @@ test.describe('portes de la Vue Maison', () => {
     await expect(page.getByRole('dialog', { name: freezer })).toBeVisible();
   });
 
+  for (const width of [360, 430]) {
+    test(`meubles ouverts à ${width} px : portes dans leur bande, lumière allumée, page sans défilement horizontal`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: width === 360 ? 740 : 932 });
+      for (const [name, doors] of Object.entries(DOORS)) {
+        await openPlace(page, name);
+        await expect(page.locator('.fx-scene .fx-door')).toHaveCount(doors);
+        await furnitureSettled(page);
+        const state = await furnitureScenery(page);
+        const label = `${name} à ${width} px`;
+        // The sequence of the framing document: the door in 600 ms, nothing longer.
+        expect(state.longest, label).toBe(600);
+        // Open, each door stands beside the body: it never covers a shelf, and it is still seen.
+        for (const overlap of state.overlap) expect(overlap, label).toBeLessThanOrEqual(1);
+        for (const doorWidth of state.doorWidths) {
+          expect(doorWidth, label).toBeGreaterThanOrEqual(8);
+          expect(doorWidth, label).toBeLessThan(state.bodyWidth / 3);
+        }
+        expect(state.back, label).toEqual(Array.from({ length: doors }, () => 1));
+        // One blurred halo, lit; a spot above each shelf of the cupboards only.
+        expect(state.light, label).toEqual([0.85]);
+        expect(state.spots.length > 0, label).toBe(doors === 2);
+        for (const spot of state.spots) expect(spot, label).toBe(0.85);
+        // Room for at least two tiles side by side in the body.
+        expect(state.bodyWidth, label).toBeGreaterThanOrEqual(240);
+
+        const whole = await page.evaluate(() => ({
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          // Scenery only: no door, light or frost can take a tap or the focus.
+          tappable: [
+            ...document.querySelectorAll('.fx-door, .fx-light, .fx-frost, .fx-spot'),
+          ].filter(
+            (el) =>
+              getComputedStyle(el).pointerEvents !== 'none' ||
+              el.closest('[aria-hidden="true"]') === null ||
+              el.matches('a, button, [tabindex]'),
+          ).length,
+        }));
+        expect(whole.scroll, label).toBeLessThanOrEqual(whole.client);
+        expect(whole.tappable, label).toBe(0);
+      }
+    });
+  }
+
+  test('écran Maison : portes fermées, entrouvertes et allumées sur un résultat de recherche, penchées à l’appui', async ({
+    page,
+  }, testInfo) => {
+    const { pantry } = STOCK[testInfo.project.name as keyof typeof STOCK];
+    await page.goto('/inventaire');
+    const card = (name: string) => page.getByRole('link', { name: new RegExp(`^${name}`) });
+    await expect(card('Garde-manger')).toBeVisible();
+    /** Cosine of the angle of each door of a card (1: closed), and the opacity of its light. */
+    const look = (name: string) =>
+      card(name).evaluate((link) => ({
+        doors: [...link.querySelectorAll('.fx-card-door')].map(
+          (door) =>
+            Math.round(new DOMMatrixReadOnly(getComputedStyle(door).transform).m11 * 1000) / 1000,
+        ),
+        light: Number(getComputedStyle(link.querySelector('.fx-card-light')!).opacity),
+        match: link.getAttribute('data-match'),
+        ring: link.classList.contains('ring-amber'),
+      }));
+    const closed = (doors: number) => ({
+      doors: Array.from({ length: doors }, () => 1),
+      light: 0,
+      match: null,
+      ring: false,
+    });
+
+    // Closed: one door on the fridge and the freezer, two on the pantry and the cellar.
+    expect(await look('Frigo')).toEqual(closed(1));
+    expect(await look('Congélateur')).toEqual(closed(1));
+    expect(await look('Garde-manger')).toEqual(closed(2));
+    expect(await look('Cave')).toEqual(closed(2));
+
+    // Search: the furniture holding a result keeps its amber ring, doors ajar at 12°, light on.
+    const search = page.getByRole('searchbox', { name: 'Rechercher dans la maison' });
+    await search.fill(pantry);
+    const ajar = Math.round(Math.cos((12 * Math.PI) / 180) * 1000) / 1000;
+    await expect
+      .poll(() => look('Garde-manger'))
+      .toEqual({ doors: [ajar, ajar], light: 0.85, match: 'true', ring: true });
+    expect(await look('Cave')).toEqual(closed(2));
+    await search.fill('');
+    await expect.poll(() => look('Garde-manger')).toEqual(closed(2));
+
+    // Press: the door tilts to 20° with the halo, as feedback; the pointer leaves, nothing opens.
+    // (The fridge is on the first row: never under the bottom bar, whatever the phone.)
+    const box = (await card('Frigo').boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    const pressed = Math.round(Math.cos((20 * Math.PI) / 180) * 1000) / 1000;
+    await expect.poll(() => look('Frigo')).toMatchObject({ doors: [pressed], light: 0.85 });
+    await page.mouse.move(2, 2);
+    await page.mouse.up();
+    await expect(page).toHaveURL(/\/inventaire$/);
+    await expect.poll(() => look('Frigo')).toEqual(closed(1));
+  });
+
   test('mouvement réduit : le meuble apparaît ouvert et allumé, sans transition ni retard', async ({
     page,
   }) => {
@@ -218,7 +275,7 @@ test.describe('portes de la Vue Maison', () => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
           ),
       );
-      const state = await scenery(page);
+      const state = await furnitureScenery(page);
       expect(state.animations, name).toBeGreaterThan(doors);
       expect(state.finished, name).toBe(true);
       // 0.01 ms by the global rule, and no delay left (it was 200 ms for the light).

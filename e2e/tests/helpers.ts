@@ -75,3 +75,50 @@ export async function createMember(username: string, password: string): Promise<
     await client.end();
   }
 }
+
+/** Waits until the doors, the light and the drawers have reached their final state. */
+export async function furnitureSettled(page: Page) {
+  await expect(page.locator('.fx-scene .fx-door').first()).toBeAttached();
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animation) => animation.playState === 'finished'),
+  );
+}
+
+/** What the scenery of the open furniture looks like right now, measured in the page. */
+export async function furnitureScenery(page: Page) {
+  return page.evaluate(() => {
+    const scene = document.querySelector('.fx-scene')!;
+    const body = scene.querySelector('.fx-body')!.getBoundingClientRect();
+    const animations = document
+      .getAnimations()
+      .filter((animation) => scene.contains((animation.effect as KeyframeEffect).target));
+    const opacity = (selector: string) =>
+      [...scene.querySelectorAll(selector)].map((el) => Number(getComputedStyle(el).opacity));
+    return {
+      kind: scene.getAttribute('data-kind'),
+      animations: animations.length,
+      finished: animations.every((animation) => animation.playState === 'finished'),
+      // Delay and duration together, in ms: the longest wait before the final state.
+      longest: Math.max(
+        ...animations.map((animation) => Number(animation.effect!.getComputedTiming().endTime)),
+      ),
+      // How far each open door reaches over the body, in px (0 or less: it stays in its band).
+      overlap: [...scene.querySelectorAll('.fx-door')].map((door) => {
+        const rect = door.getBoundingClientRect();
+        return Math.round(
+          door.getAttribute('data-hinge') === 'left'
+            ? rect.right - body.left
+            : body.right - rect.left,
+        );
+      }),
+      doorWidths: [...scene.querySelectorAll('.fx-door')].map((door) =>
+        Math.round(door.getBoundingClientRect().width),
+      ),
+      bodyWidth: Math.round(body.width),
+      back: opacity('.fx-door-back'),
+      light: opacity('.fx-light'),
+      spots: opacity('.fx-spot'),
+      drawers: opacity('.fx-drawer'),
+    };
+  });
+}

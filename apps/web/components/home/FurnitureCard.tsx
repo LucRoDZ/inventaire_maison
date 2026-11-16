@@ -2,7 +2,7 @@
 
 import type { HomeLocationDto, LocationKind } from '@inventaire/shared';
 import Link from 'next/link';
-import type { ComponentType, CSSProperties } from 'react';
+import { useState, type ComponentType, type CSSProperties } from 'react';
 import { Cellar } from './furniture/Cellar';
 import { Freezer } from './furniture/Freezer';
 import { Fridge } from './furniture/Fridge';
@@ -46,9 +46,6 @@ export const CARD_DOORS: Record<LocationKind, CardDoor[]> = {
   other: pair(11.7, 5.7, 76.7, 88.6),
 };
 
-/** iOS Safari only applies `:active` to an element that listens to touches. */
-const listenToTouches = () => undefined;
-
 interface FurnitureCardProps {
   location: HomeLocationDto;
   /** Surrounds the card in amber: it holds a result of the current search. */
@@ -64,11 +61,19 @@ interface FurnitureCardProps {
 export function FurnitureCard({ location, highlighted = false, query = '' }: FurnitureCardProps) {
   const Drawing = DRAWINGS[location.kind];
   const { products, expiringSoon } = location.counts;
+  // `:active` is not applied to a touch by every browser (Safari on iOS): the pressed state is
+  // also kept here, from the pointer.
+  const [pressed, setPressed] = useState(false);
+  const release = () => setPressed(false);
   return (
     <Link
       href={`/inventaire/${location.id}${query}`}
       data-match={highlighted ? 'true' : undefined}
-      onTouchStart={listenToTouches}
+      data-pressed={pressed ? 'true' : undefined}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onPointerLeave={release}
       className={`fx-card border-line rounded-card shadow-card relative flex flex-col items-center gap-2 border bg-white p-3 ${
         highlighted ? 'ring-amber ring-4' : ''
       }`}
