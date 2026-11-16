@@ -1,0 +1,11 @@
+{
+  "code": "3760017777773",
+  "status": 1,
+  "product": {
+    "product_name": "Biscuits ajoutés directement",
+    "product_name_fr": "Biscuits ajoutés directement",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:cheeses"]
+  }
+}

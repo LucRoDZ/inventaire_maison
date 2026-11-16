@@ -1,5 +1,5 @@
 import type { CategoryDto, LocationDto, ProductDto } from '@inventaire/shared';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LAST_LOCATION_KEY, pickInitialPlace } from '../../lib/add-place';
@@ -31,6 +31,8 @@ const locations: LocationDto[] = [
 ];
 const categories: CategoryDto[] = [
   { id: 5, name: 'Produits laitiers et œufs', icon: 'milk', sortOrder: 1, isFallback: false },
+  { id: 6, name: 'Boissons', icon: 'cup-soda', sortOrder: 2, isFallback: false },
+  { id: 9, name: 'Autre', icon: 'package', sortOrder: 3, isFallback: true },
 ];
 const product: ProductDto = {
   id: 7,
@@ -248,6 +250,93 @@ describe('AddSheet', () => {
     const { onClose } = renderSheet();
     await userEvent.click(screen.getByRole('button', { name: 'Fermer' }));
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('AddSheet category', () => {
+  const guessed: ProductDto = { ...product, categoryId: 9, categoryGuessed: true };
+
+  it('shows the picker for a guessed category: proposed one selected and tagged', () => {
+    renderSheet({ product: guessed });
+    const group = screen.getByRole('radiogroup', { name: 'Catégorie proposée' });
+    expect(within(group).getAllByRole('radio')).toHaveLength(3);
+    expect(within(group).getByRole('radio', { name: /Autre/ })).toBeChecked();
+    expect(within(group).getByText('Proposée')).toBeInTheDocument();
+  });
+
+  it('confirms the proposed category when the product is added, before the stock', async () => {
+    const confirmCategory = vi.fn(async () => ({}));
+    const { adjust } = renderSheet({ product: guessed, confirmCategory });
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(adjust).toHaveBeenCalled());
+    expect(confirmCategory).toHaveBeenCalledWith(7, 9);
+    expect(confirmCategory.mock.invocationCallOrder[0]!).toBeLessThan(
+      adjust.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it('saves the category picked instead of the proposed one, in a single request', async () => {
+    const confirmCategory = vi.fn(async () => ({}));
+    renderSheet({ product: guessed, confirmCategory });
+    await userEvent.click(screen.getByRole('radio', { name: /Boissons/ }));
+    expect(confirmCategory).not.toHaveBeenCalled();
+    expect(screen.getByRole('radio', { name: /Boissons/ })).toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(confirmCategory).toHaveBeenCalledTimes(1));
+    expect(confirmCategory).toHaveBeenCalledWith(7, 6);
+  });
+
+  it('does not add the stock when the category cannot be saved', async () => {
+    const confirmCategory = vi.fn(async () => {
+      throw new ApiError(500, 'Erreur du serveur');
+    });
+    const { adjust, onAdded } = renderSheet({ product: guessed, confirmCategory });
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Erreur du serveur');
+    expect(adjust).not.toHaveBeenCalled();
+    expect(onAdded).not.toHaveBeenCalled();
+  });
+
+  it('shows a worthwhile proposal as one line, and opens the grid from « Changer la catégorie »', async () => {
+    const confirmCategory = vi.fn(async () => ({}));
+    const proposal: ProductDto = { ...product, categoryId: 6, categoryGuessed: true };
+    const { adjust } = renderSheet({ product: proposal, confirmCategory });
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.getByText(/Catégorie proposée :/)).toHaveTextContent('Boissons');
+    // Added as is: the proposal shown is confirmed.
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(adjust).toHaveBeenCalled());
+    expect(confirmCategory).toHaveBeenCalledWith(7, 6);
+  });
+
+  it('opens the grid on the proposal, still tagged, from « Changer la catégorie »', async () => {
+    const proposal: ProductDto = { ...product, categoryId: 6, categoryGuessed: true };
+    renderSheet({ product: proposal });
+    await userEvent.click(screen.getByRole('button', { name: 'Changer la catégorie' }));
+    const group = screen.getByRole('radiogroup', { name: 'Catégorie proposée' });
+    expect(within(group).getByRole('radio', { name: /Boissons/ })).toBeChecked();
+    expect(within(group).getByText('Proposée')).toBeInTheDocument();
+  });
+
+  it('keeps a confirmed category quiet, with a button to change it', async () => {
+    const confirmCategory = vi.fn(async () => ({}));
+    const { adjust } = renderSheet({ confirmCategory });
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    // Added as is: no category request.
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(adjust).toHaveBeenCalled());
+    expect(confirmCategory).not.toHaveBeenCalled();
+  });
+
+  it('opens the picker from « Changer la catégorie » and saves the new category', async () => {
+    const confirmCategory = vi.fn(async () => ({}));
+    renderSheet({ confirmCategory });
+    await userEvent.click(screen.getByRole('button', { name: 'Changer la catégorie' }));
+    const group = screen.getByRole('radiogroup', { name: 'Catégorie' });
+    expect(within(group).queryByText('Proposée')).toBeNull();
+    await userEvent.click(within(group).getByRole('radio', { name: /Boissons/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(confirmCategory).toHaveBeenCalledWith(7, 6));
   });
 });
 

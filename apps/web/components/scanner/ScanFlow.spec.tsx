@@ -155,17 +155,22 @@ describe('ScanFlow', () => {
     await typeCode('3017620422003');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Pâte à tartiner Nutella' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Catégorie proposée')).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: 'Catégorie proposée' })).toBeNull();
   });
 
-  it('opens the add sheet with « Catégorie proposée » for a suggested product, editable in place', async () => {
+  it('opens the add sheet with the proposed category, saved when the product is added', async () => {
     renderFlow({ status: 'suggested', product });
     await typeCode('3017620422003');
-    const select = await screen.findByLabelText('Catégorie proposée');
-    await userEvent.selectOptions(select, '5');
+    const group = await screen.findByRole('radiogroup', { name: 'Catégorie proposée' });
+    expect(within(group).getByRole('radio', { name: /Autre/ })).toBeChecked();
+    await userEvent.click(within(group).getByRole('radio', { name: /Épicerie sucrée/ }));
+    // Picking is local: nothing is saved before the product is added.
+    expect(stockApi.updateProductCategory).not.toHaveBeenCalled();
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Ajouter' }),
+    );
     await waitFor(() => expect(stockApi.updateProductCategory).toHaveBeenCalledWith(7, 5));
-    // Once chosen, the category is confirmed and no longer « proposée ».
-    await waitFor(() => expect(screen.queryByLabelText('Catégorie proposée')).toBeNull());
+    await waitFor(() => expect(stockApi.adjustStock).toHaveBeenCalled());
   });
 
   it('shows the unknown-product slot with the context of the scan', async () => {

@@ -1,0 +1,11 @@
+{
+  "code": "3760018888881",
+  "status": 1,
+  "product": {
+    "product_name": "Jus ajouté directement",
+    "product_name_fr": "Jus ajouté directement",
+    "brands": "Test",
+    "quantity": "1 u",
+    "categories_tags": ["en:cheeses"]
+  }
+}
