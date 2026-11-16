@@ -26,7 +26,7 @@
 .fx-scene {
   --fx-band-left: 7%;
   --fx-band-right: 7%;
-  --fx-doors: 2;
+  --fx-doors: 2; /* posé par la coque selon le type de meuble */
   --fx-eye: 50%;
   --fx-top: 16px;
   --fx-bottom: 12px;
@@ -40,13 +40,11 @@
 .fx-scene[data-kind='fridge'] {
   --fx-band-left: 19%;
   --fx-band-right: 6px;
-  --fx-doors: 1;
   --fx-eye: 137%;
 }
 .fx-scene[data-kind='freezer'] {
   --fx-band-left: 12%;
   --fx-band-right: 6px;
-  --fx-doors: 1;
   --fx-eye: 60%;
 }
 

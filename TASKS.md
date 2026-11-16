@@ -471,7 +471,7 @@
   - Tests : recherche de motifs dans le fichier : valeur hexadécimale, `rgb()`, `rgba()`, `hsl()`, dégradé, animation infinie ; le test échoue aussi sur un extrait fautif.
   - Fin : aucune valeur hexadécimale ni `rgb(a)` ni dégradé dans le fichier (test qui échoue sinon, par recherche de motifs).
 
-- [ ] **1.5.2 Coque de meuble**
+- [x] **1.5.2 Coque de meuble**
   - Résultat : un composant commun (corps, porte ou portes, lumière) paramétré par `kind`.
   - Fichiers : `apps/web/components/home/FurnitureShell.tsx`, `apps/web/components/home/furniture-shell.spec.tsx`.
   - Comportement : structure de l'annexe B ; frigo : une porte à gauche, −78° ; congélateur : une porte à gauche, −86°, givre sur le corps ; garde-manger, cave et autre : deux portes battantes, −88° et +88° ; décor en `aria-hidden` et `pointer-events: none`, seul le contenu est lu et focusable.
