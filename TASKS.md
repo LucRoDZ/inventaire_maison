@@ -513,7 +513,7 @@
   - Tests : un congélateur de trois tiroirs (classe, rang, nombre d'articles, contenu visible) ; un frigo n'a pas de tiroir.
   - Fin : tests sur un congélateur de trois tiroirs.
 
-- [ ] **1.5.8 Mouvement réduit**
+- [x] **1.5.8 Mouvement réduit**
   - Résultat : avec `prefers-reduced-motion`, le meuble apparaît ouvert et allumé, sans transition.
   - Fichiers : `apps/web/app/furniture.css`, `e2e/tests/doors.spec.ts`.
   - Comportement : durées à 0,01 ms (règle globale), retards annulés, `animation-fill-mode: both`.

@@ -70,6 +70,47 @@ async function settled(page: Page) {
   );
 }
 
+/** What the scenery of the open furniture looks like right now, measured in the page. */
+async function scenery(page: Page) {
+  return page.evaluate(() => {
+    const scene = document.querySelector('.fx-scene')!;
+    const body = scene.querySelector('.fx-body')!.getBoundingClientRect();
+    const animations = document
+      .getAnimations()
+      .filter((animation) => scene.contains((animation.effect as KeyframeEffect).target));
+    const opacity = (selector: string) =>
+      [...scene.querySelectorAll(selector)].map((el) => Number(getComputedStyle(el).opacity));
+    return {
+      kind: scene.getAttribute('data-kind'),
+      animations: animations.length,
+      finished: animations.every((animation) => animation.playState === 'finished'),
+      // Delay and duration together, in ms: the longest wait before the final state.
+      longest: Math.max(
+        ...animations.map((animation) => Number(animation.effect!.getComputedTiming().endTime)),
+      ),
+      // How far each open door reaches over the body, in px (0 or less: it stays in its band).
+      overlap: [...scene.querySelectorAll('.fx-door')].map((door) => {
+        const rect = door.getBoundingClientRect();
+        return Math.round(
+          door.getAttribute('data-hinge') === 'left'
+            ? rect.right - body.left
+            : body.right - rect.left,
+        );
+      }),
+      doorWidths: [...scene.querySelectorAll('.fx-door')].map((door) =>
+        Math.round(door.getBoundingClientRect().width),
+      ),
+      bodyWidth: Math.round(body.width),
+      back: opacity('.fx-door-back'),
+      light: opacity('.fx-light'),
+      spots: opacity('.fx-spot'),
+      drawers: opacity('.fx-drawer'),
+    };
+  });
+}
+
+const DOORS = { Frigo: 1, Congélateur: 1, 'Garde-manger': 2, Cave: 2 } as const;
+
 test.describe('portes de la Vue Maison', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const mine = STOCK[testInfo.project.name as keyof typeof STOCK];
@@ -161,5 +202,34 @@ test.describe('portes de la Vue Maison', () => {
     await expect(tile).toBeVisible();
     await tile.click();
     await expect(page.getByRole('dialog', { name: freezer })).toBeVisible();
+  });
+
+  test('mouvement réduit : le meuble apparaît ouvert et allumé, sans transition ni retard', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    for (const [name, doors] of Object.entries(DOORS)) {
+      await openPlace(page, name);
+      await expect(page.locator('.fx-scene .fx-door')).toHaveCount(doors);
+      // Two frames, not a wait for the animations: the final state must be there at once.
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      const state = await scenery(page);
+      expect(state.animations, name).toBeGreaterThan(doors);
+      expect(state.finished, name).toBe(true);
+      // 0.01 ms by the global rule, and no delay left (it was 200 ms for the light).
+      expect(state.longest, name).toBeLessThan(1);
+      // Doors open: each one stands in its band, beside the body, showing its back.
+      for (const overlap of state.overlap) expect(overlap, name).toBeLessThanOrEqual(1);
+      for (const width of state.doorWidths) expect(width, name).toBeLessThan(state.bodyWidth / 3);
+      expect(state.back, name).toEqual(Array.from({ length: doors }, () => 1));
+      expect(state.light, name).toEqual([0.85]);
+      for (const spot of state.spots) expect(spot, name).toBe(0.85);
+      for (const drawer of state.drawers) expect(drawer, name).toBe(1);
+    }
   });
 });
