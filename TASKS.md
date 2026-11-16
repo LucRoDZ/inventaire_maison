@@ -534,9 +534,9 @@
   - Tests : sans objet.
   - Fin : rapport chiffré dans la PR ; aucune nouvelle dépendance.
 
-- [ ] **1.5.11 Documentation**
+- [x] **1.5.11 Documentation**
   - Résultat : cahier des charges à jour pour la Vue Maison.
-  - Fichiers : `docs/cahier-des-charges.md`, `CLAUDE.md` si besoin, `TASKS.md`.
+  - Fichiers : `docs/cahier-des-charges.md`, `README.md`, `TASKS.md` (`CLAUDE.md` inchangé, décision P1.5.13).
   - Comportement : porte réalisée, halo flouté sans dégradé, comportement par type de meuble.
   - Tests : sans objet.
   - Fin : texte cohérent avec le code.
@@ -597,6 +597,23 @@
 - [ ] `docker compose up -d` sur un VPS vierge met l'application en ligne en HTTPS. **Validé en CI** : job `docker-build` (Caddy, `/api/health` en HTTPS) ; **à valider par Lucas** : VPS vierge réel, et en ligne derrière le nginx partagé via `docker-compose.shared-proxy.yml` (pas à pas dans le README).
 - [x] Une sauvegarde `pg_dump` se restaure sur une base vide. **Validé** : `scripts/test-backup-restore.sh` (job `docker-build`) compare le nombre de lignes de chaque table après restauration, vérifie les droits `600` et le refus d'écraser une base non vide. Essai réel sur les données de production avant la mise en service : Lucas.
 - [ ] Recette sur appareils réels du cahier, 6 points. **À valider par Lucas** (liste dans le README, section « Test manuel sur vrais appareils »).
+
+### Phase 1.5 (portes et lumière de la Vue Maison)
+> État au 16/11/2026. Critères « Fin » du cadrage `docs/vue-maison-portes.md`. Suite complète sur la branche : lint, format, typecheck, tests API et web, e2e sur `chromium-mobile` et `webkit-mobile` (101 passés, 3 ignorés : les exclusions WebKit déjà présentes avant la phase).
+
+- [x] 1. Styles de base : aucune valeur hexadécimale, ni `rgb(a)`, ni dégradé. **Validé** : `furniture-css.spec.ts` (motifs interdits, variables hors `tokens.css`, propriétés animées autres que `transform` et `opacity`, animation en boucle) ; constaté rouge en ajoutant un dégradé au fichier.
+- [x] 2. Coque de meuble : rendu des cinq types, aucun élément focusable ajouté. **Validé** : `furniture-shell.spec.tsx`.
+- [x] 3. Cartes de l'écran Maison : le lien garde son nom accessible, `getByRole('link', { name: /^Frigo/ })` passe. **Validé** : `home.spec.tsx` (avec et sans pastille) ; e2e « vue Maison : quatre meubles nommés » et « écran Maison : portes fermées, entrouvertes… » sur les deux navigateurs.
+- [x] 4. Meuble ouvert : ordre des `h3` et `data-shelf-kind` inchangés. **Validé** : tests existants d'`open-furniture.spec.tsx`, verts sans modification ; e2e « meuble ouvert » sur les deux navigateurs.
+- [x] 5. Étagères : tests de glisser-déposer existants verts. **Validé** : `move.spec.tsx`, `drop.spec.ts` ; e2e glisser-déposer au clavier (deux navigateurs) et à la souris (Chromium), « Déplacer vers… » (deux navigateurs), sans modification de ces tests.
+- [x] 6. Vignettes : `aria-label` et taille 80 × 80 du bouton inchangés. **Validé** : e2e « vignette : bouton de 80 × 80 au même nom… » (taille mesurée dans le navigateur, pile hors du bouton, jamais rognée, le bouton ouvre toujours le panneau).
+- [x] 7. Congélateur : tests sur un congélateur de trois tiroirs. **Validé** : `open-furniture.spec.tsx` (six tests) et e2e « congélateur : trois tiroirs… ».
+- [x] 8. Mouvement réduit : test avec `prefers-reduced-motion`. **Validé** : e2e « mouvement réduit… » sur les quatre meubles et les deux navigateurs ; le test existant « animations coupées » reste vert.
+- [x] 9. E2e verts sur les deux navigateurs, zéro violation axe, pas de défilement horizontal de la page. **Validé** : suite complète ; audit axe à 360 px étendu au frigo, au congélateur et à la cave ouverts ; captures `chromium-mobile` et `webkit-mobile` à 360 et 430 px examinées (rendu identique sur les deux moteurs).
+- [x] 10. Mesures : rapport chiffré dans la PR, aucune nouvelle dépendance. **Validé** : décision P1.5.15 ; `package.json` et `package-lock.json` identiques à `main`.
+- [x] 11. Documentation cohérente avec le code. **Validé** : section Vue Maison du cahier des charges, test manuel dans le README.
+- [ ] Rendu et fluidité sur de vrais téléphones, Safari sur iPhone en priorité (porte en perspective, halo, appui sur une carte). **À valider par Lucas** : les navigateurs de test tournent sans écran ni carte graphique ; liste dans le README, section « Vue Maison (portes et lumière) ».
+- [ ] Choix visuels pris pendant la phase, à confirmer ou à corriger. **À valider par Lucas** : bande de 19 % pour la porte du frigo (P1.5.2), reflet lavande (P1.5.6), vignettes blanches à pastille et plateau « Non rangé » blanc (P1.5.7), ombres allégées (P1.5.15).
 
 ### Phase 2
 - [ ] Un produit sous le seuil apparaît dans « Bientôt périmés » et, si l'appareil est abonné, dans le résumé quotidien.

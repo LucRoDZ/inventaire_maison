@@ -97,28 +97,33 @@ L'inventaire s'ouvre sur la maison : quatre meubles dessinés, chacun avec ses �
 
 | Meuble | Dessin | Étagères par défaut |
 | --- | --- | --- |
-| Garde-manger | Placard ouvert, quatre étagères pleines | 4 étagères |
-| Frigo | Frigo porte ouverte, intérieur éclairé en ambre | 4 étagères, 2 bacs à légumes, balconnet de porte |
-| Congélateur | Meuble à tiroirs | 3 tiroirs |
-| Cave | Casier à bouteilles couchées, avec une étagère pour les caisses | 3 rangées de casier, 1 étagère « Caisses et packs » |
+| Garde-manger | Placard à deux portes battantes ; ouvert : étagères indigo, un spot ambre au-dessus de chacune | 4 étagères |
+| Frigo | Frigo à une porte ; ouvert : porte restée sur le côté, intérieur éclairé en ambre, étagères en verre | 4 étagères, 2 bacs à légumes, balconnet de porte |
+| Congélateur | Meuble à une porte ; ouvert : un tiroir par étagère, liseré de givre | 3 tiroirs |
+| Cave | Meuble à deux portes battantes ; ouvert : rangées de casier à montants et une étagère pour les caisses, un spot ambre au-dessus de chacune | 3 rangées de casier, 1 étagère « Caisses et packs » |
+
+Un meuble est un vrai meuble vu de face : sa porte s'ouvre quand on y entre, et la lumière ambre signifie toujours « c'est ici ». Le dessin dépend du type du meuble et du type de l'étagère, jamais de leur nom : toutes les étagères du frigo se dessinent de la même manière, bacs à légumes et balconnet compris, et chaque étagère du congélateur est un tiroir.
 
 Les étagères sont des données, pas du dessin : l'admin peut les renommer, les réordonner, en ajouter ou en retirer. Chaque étagère a un type, casier (bouteilles couchées) ou étagère (produits posés), qui décide de son dessin. La cave a ainsi trois rangées de casier pour le vin et une étagère « Caisses et packs » pour les packs de soda et d'eau. Un produit peut de toute façon aller dans n'importe quel meuble : la catégorie ne contraint pas le lieu. Tout produit non placé sur une étagère va dans un plateau « Non rangé » propre à chaque meuble.
 
 **Comportement**
 
-1. **Écran Maison** : les meubles en grille (2 colonnes sur téléphone, 4 en ligne sur ordinateur). Chaque meuble affiche son nombre d'articles et une pastille ambre « n bientôt périmés » quand c'est le cas.
-2. **Ouvrir un meuble** : un toucher le fait s'ouvrir (zoom de 250 ms, porte du frigo qui pivote) et il occupe l'écran. Les étagères sont empilées, chaque produit est une vignette carrée avec sa photo, ou le pictogramme de sa catégorie, et une pastille ambre de quantité. Une étagère trop pleine défile horizontalement.
+1. **Écran Maison** : les meubles en grille (2 colonnes sur téléphone, 4 en ligne sur ordinateur), dessinés fermés : porte(s) blanche(s) avec poignée et reflet. Chaque meuble affiche son nombre d'articles et une pastille ambre « n bientôt périmés » quand c'est le cas. À l'appui, la porte s'entrouvre (20°, 120 ms) et un halo ambre apparaît : c'est un retour tactile, la navigation part immédiatement.
+2. **Ouvrir un meuble** : un toucher l'ouvre et il occupe l'écran. Ses portes pivotent en 600 ms puis restent ouvertes sur le côté, sans recouvrir les étagères : une porte articulée à gauche pour le frigo (−78°) et le congélateur (−86°), deux battants pour le garde-manger, la cave et tout autre meuble (−88° et +88°). La lumière ambre s'allume à l'intérieur (260 ms, après 200 ms) et les tiroirs du congélateur coulissent l'un après l'autre (320 ms, 60 ms de décalage), puis restent ouverts : leur contenu est toujours visible. Il n'y a pas de bouton « Ouvrir » ou « Fermer » : le retour se fait par le lien « Maison ». Les étagères sont empilées, chaque produit est une vignette carrée avec sa photo, ou le pictogramme de sa catégorie, et une pastille ambre de quantité ; une pile décorative derrière la vignette grandit avec la quantité (jusqu'à 4 cartes à partir de 5 unités). Une étagère trop pleine défile horizontalement.
 3. **Toucher un produit** : un panneau remonte du bas avec la photo, le nom, la quantité (− / +), la date limite, un bouton **Déplacer vers…** (autre étagère ou autre meuble) et un lien vers la fiche produit.
-4. **Glisser-déposer** : appui long puis glisser une vignette vers une autre étagère. Pendant le glissement, une barre de meubles reste visible en haut pour déposer dans un autre meuble. Le bouton **Déplacer vers…** reste l'alternative sans glisser.
-5. **Recherche et filtres** : une recherche et des puces de catégorie en haut. Les produits qui ne correspondent pas s'estompent et les meubles qui en contiennent un s'entourent d'ambre.
+4. **Glisser-déposer** : appui long puis glisser une vignette vers une autre étagère. L'étagère survolée s'entoure d'un anneau et d'un halo ambre. Pendant le glissement, une barre de meubles reste visible en haut pour déposer dans un autre meuble. Le bouton **Déplacer vers…** reste l'alternative sans glisser.
+5. **Recherche et filtres** : une recherche et des puces de catégorie en haut. Les produits qui ne correspondent pas s'estompent et les meubles qui en contiennent un s'entourent d'ambre, porte entrouverte (12°) et lumière allumée ; les autres restent fermés.
 6. **Étagère vide** : contour pointillé couleur `lavender-line`, mention « Vide » et un bouton + qui ouvre le scanner avec ce meuble et cette étagère déjà choisis.
 7. **Scanner depuis un meuble** : le meuble et l'étagère ouverts deviennent les valeurs par défaut de la fiche d'ajout.
 8. **Déplacer** un produit écrit un mouvement `move` dans le journal.
 
 **Mise en œuvre**
 
-- Chaque meuble est un composant React qui dessine un SVG avec des emplacements (slots) pour les étagères ; les vignettes sont des éléments HTML positionnés dans ces slots.
-- Glisser-déposer avec `@dnd-kit/core`, accessible au clavier ; transitions CSS sur `transform` et `opacity` uniquement, désactivées par `prefers-reduced-motion`.
+- Sur l'écran Maison, chaque meuble est un dessin SVG recouvert de ses portes. Ouvert, le meuble est une coque HTML commune (corps, porte ou portes, lumière) paramétrée par le type du meuble, qui contient les étagères et le plateau « Non rangé » ; les vignettes sont des boutons HTML. Les styles sont dans `apps/web/app/furniture.css`.
+- La profondeur vient d'ombres légères et d'un reflet, jamais d'un dégradé. Hors l'ombre de carte du corps et la lueur des spots, les ombres du meuble sont sans flou : une ombre floutée coûte cher à chaque image dès que quelque chose bouge ou défile. La lumière est une ellipse ambre floutée (`filter: blur`) dont seule l'opacité est animée, une seule par écran ; les spots des étagères sont une lampe ambre et sa lueur (`box-shadow`), sans `filter`. Aucune couleur écrite en dur : variables de `tokens.css` et `color-mix()`.
+- La perspective est écrite dans la transformation de chaque porte (`perspective()`), et le verso de la porte apparaît par opacité : ni `perspective` héritée d'un parent, ni `preserve-3d`, ni `backface-visibility`, que WebKit ne rend pas partout de la même façon.
+- Portes, halos, givre, reflets, piles et dessins SVG sont du décor : `aria-hidden`, `pointer-events: none`, aucun élément focusable. La lumière ne porte jamais seule une information (le résultat de recherche a son anneau, les péremptions ont leur pastille). La vue Liste reste l'alternative accessible.
+- Glisser-déposer avec `@dnd-kit/core`, accessible au clavier ; animations et transitions CSS sur `transform` et `opacity` uniquement, jamais en boucle. Avec `prefers-reduced-motion`, le meuble apparaît directement ouvert, lumière allumée, sans transition ni retard.
 - Les vignettes utilisent les miniatures WebP locales de 400 px.
 - Les dessins n'emploient que les couleurs Indigo Ambre ci-dessous ; ce sont les seules illustrations de l'application.
 
