@@ -492,7 +492,7 @@
   - Tests : tests existants d'`OpenFurniture` ; coque du bon type autour des étagères.
   - Fin : l'ordre des `h3` et les `data-shelf-kind` sont inchangés (tests existants verts).
 
-- [ ] **1.5.5 Étagères**
+- [x] **1.5.5 Étagères**
   - Résultat : planche de verre au frigo et au congélateur, planche indigo ailleurs, halo ambre sur l'étagère survolée pendant un glisser-déposer.
   - Fichiers : `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/dnd/DroppableShelf.tsx`, specs associées.
   - Comportement : le dessin dépend de `location.kind` et de `shelf.kind`, jamais du nom ; spot ambre au-dessus de chaque étagère du garde-manger et de la cave ; les `rack` gardent leurs montants ; le halo de survol s'ajoute à l'anneau ; nom accessible de l'étagère inchangé.

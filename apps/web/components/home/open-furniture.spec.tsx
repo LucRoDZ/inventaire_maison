@@ -149,6 +149,57 @@ describe('OpenFurniture', () => {
     expect(document.querySelectorAll('.fx-door')).toHaveLength(2);
   });
 
+  it('draws every shelf of the fridge on the same glass board, whatever its name', () => {
+    const location = fridge({
+      shelves: [
+        shelf(21, 'Étagère 1', 'plain'),
+        shelf(23, 'Bac à légumes 1', 'plain'),
+        shelf(24, 'Balconnet', 'plain'),
+        shelf(25, 'Tiroir du bas', 'plain'),
+      ],
+    });
+    const { container } = render(<OpenFurniture location={location} />);
+    const boards = [...container.querySelectorAll('[data-shelf-kind] > div:first-child')];
+    expect(boards).toHaveLength(4);
+    for (const board of boards) expect(board.className).toBe('fx-glass-edge');
+    expect(container.querySelectorAll('.fx-spot, .fx-drawer')).toHaveLength(0);
+  });
+
+  it('keeps the posts of a rack under a glass board', () => {
+    const { container } = render(<OpenFurniture location={fridge()} />);
+    const rack = container.querySelector('[data-shelf-kind="rack"]')!;
+    expect(rack.querySelector('.fx-glass-edge')).not.toBeNull();
+    expect(rack.querySelectorAll('span')).toHaveLength(4);
+    expect(rack).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps the indigo board in the pantry, the cellar and any other furniture, under a spot', () => {
+    for (const kind of ['pantry', 'cellar', 'other'] as const) {
+      const { container, unmount } = render(<OpenFurniture location={fridge({ kind })} />);
+      const boards = [...container.querySelectorAll('[data-shelf-kind] > div:first-child')];
+      expect(boards).toHaveLength(3);
+      for (const board of boards) expect(board).toHaveClass('bg-indigo', 'h-2');
+      expect(
+        container.querySelector('[data-shelf-kind="rack"]')!.querySelectorAll('span'),
+      ).toHaveLength(4);
+      // One amber spot above each shelf, none on the tray; scenery only.
+      const spots = container.querySelectorAll('.fx-spot');
+      expect(spots).toHaveLength(3);
+      for (const spot of spots) expect(spot).toHaveAttribute('aria-hidden', 'true');
+      expect(
+        screen.getByRole('region', { name: 'Non rangé' }).querySelector('.fx-spot'),
+      ).toBeNull();
+      expect(container.querySelector('.fx-glass-edge')).toBeNull();
+      unmount();
+    }
+  });
+
+  it('uses the glass board in the freezer too', () => {
+    const { container } = render(<OpenFurniture location={fridge({ kind: 'freezer' })} />);
+    expect(container.querySelectorAll('.fx-glass-edge')).toHaveLength(3);
+    expect(container.querySelector('.fx-spot')).toBeNull();
+  });
+
   it('has no « Ouvrir » or « Fermer » button: the door is a transition, not a control', () => {
     render(<OpenFurniture location={fridge()} />);
     expect(screen.queryByRole('button', { name: /ouvrir|fermer/i })).toBeNull();
