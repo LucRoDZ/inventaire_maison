@@ -485,7 +485,7 @@
   - Tests : nom accessible du lien, avec et sans pastille ; portes par type ; `data-match` ; SVG masqués aux lecteurs d'écran.
   - Fin : le lien garde son nom accessible ; `getByRole('link', { name: /^Frigo/ })` passe.
 
-- [ ] **1.5.4 Meuble ouvert**
+- [x] **1.5.4 Meuble ouvert**
   - Résultat : `OpenFurniture` vit dans la coque et la séquence d'ouverture se joue à l'arrivée.
   - Fichiers : `apps/web/components/home/OpenFurniture.tsx`, `apps/web/components/home/UnshelvedTray.tsx`, `apps/web/app/globals.css`, `apps/web/components/home/open-furniture.spec.tsx`.
   - Comportement : porte en 600 ms, lumière en 260 ms après 200 ms ; le zoom de 250 ms est remplacé, pas additionné ; pas de bouton « Ouvrir / Fermer ».

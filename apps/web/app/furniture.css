@@ -15,8 +15,8 @@
 
 /* ---------- Meuble ouvert ---------- */
 
-/* Le cadre sert d'étalon : la perspective suit la largeur du meuble, le dessin est donc le même
-   à 360 px, à 430 px et sur ordinateur. */
+/* Le cadre sert d'étalon : la profondeur de la perspective suit la largeur du meuble, le dessin
+   est donc le même à 360 px, à 430 px et sur ordinateur. */
 .fx-frame {
   container-type: inline-size;
 }
@@ -27,25 +27,26 @@
   --fx-band-left: 7%;
   --fx-band-right: 7%;
   --fx-doors: 2; /* posé par la coque selon le type de meuble */
-  --fx-eye: 50%;
+  --fx-depth: 1100px;
   --fx-top: 16px;
   --fx-bottom: 12px;
   position: relative;
+  isolation: isolate; /* les z-index du décor ne sortent pas du meuble (barre du bas, panneaux) */
   padding: var(--fx-top) var(--fx-band-right) var(--fx-bottom) var(--fx-band-left);
   overflow: hidden;
-  perspective: 1100px;
-  perspective: 310cqw;
-  perspective-origin: var(--fx-eye) 56px;
+}
+@supports (width: 1cqw) {
+  .fx-scene {
+    --fx-depth: 310cqw;
+  }
 }
 .fx-scene[data-kind='fridge'] {
   --fx-band-left: 19%;
   --fx-band-right: 6px;
-  --fx-eye: 137%;
 }
 .fx-scene[data-kind='freezer'] {
   --fx-band-left: 12%;
   --fx-band-right: 6px;
-  --fx-eye: 60%;
 }
 
 /* Corps du meuble ouvert. Le contenu réel (étagères) est dedans, au-dessus de la lumière. */
@@ -101,31 +102,53 @@
 }
 
 /* Porte : décor pur, posée sur le corps. --fx-angle vaut -78deg (frigo), -86deg (congélateur),
-   -88deg / 88deg (battants). Ouverte, elle montre son verso dans la bande réservée. */
+   -88deg / 88deg (battants). Ouverte, elle montre son verso dans la bande réservée.
+
+   La perspective est écrite dans la transformation de la porte elle-même, jamais sur un parent, et
+   le verso apparaît par opacité : ni `perspective` héritée, ni `preserve-3d`, ni
+   `backface-visibility`, que WebKit ne rend pas partout de la même façon.
+   L'œil est à --fx-eye-x de la charnière (en largeurs de porte, vers l'intérieur du meuble) et à
+   --fx-eye-y sous le haut de la porte. La porte se présente par la tranche quand
+   tan(angle) = profondeur / distance de l'œil ; --fx-flip est la fraction de la durée où cet angle
+   est atteint avec la courbe --fx-ease : le verso remplace le recto à cet instant. */
 .fx-door {
+  --fx-eye-x: 100%;
+  --fx-eye-y: 40px;
+  --fx-flip: 0.5;
   position: absolute;
   z-index: 4;
   top: var(--fx-top);
   bottom: var(--fx-bottom);
   width: calc((100% - var(--fx-band-left) - var(--fx-band-right)) / var(--fx-doors));
   pointer-events: none;
-  transform-style: preserve-3d;
   animation: fx-swing var(--fx-door-ms) var(--fx-ease) both;
 }
 .fx-door[data-hinge='left'] {
   left: var(--fx-band-left);
-  transform-origin: left center;
+  transform-origin: left top;
 }
 .fx-door[data-hinge='right'] {
+  --fx-eye-x: -100%;
   right: var(--fx-band-right);
-  transform-origin: right center;
+  transform-origin: right top;
+}
+.fx-scene[data-kind='fridge'] .fx-door {
+  --fx-eye-x: 150%;
+  --fx-flip: 0.4;
+}
+.fx-scene[data-kind='freezer'] .fx-door {
+  --fx-eye-x: 56%;
+  --fx-flip: 0.53;
 }
 @keyframes fx-swing {
   from {
-    transform: rotateY(0deg);
+    transform: translate(var(--fx-eye-x), var(--fx-eye-y)) perspective(var(--fx-depth))
+      translate(calc(-1 * var(--fx-eye-x)), calc(-1 * var(--fx-eye-y))) rotateY(0deg);
   }
   to {
-    transform: rotateY(var(--fx-angle, -78deg));
+    transform: translate(var(--fx-eye-x), var(--fx-eye-y)) perspective(var(--fx-depth))
+      translate(calc(-1 * var(--fx-eye-x)), calc(-1 * var(--fx-eye-y)))
+      rotateY(var(--fx-angle, -78deg));
   }
 }
 .fx-door-face {
@@ -136,7 +159,6 @@
   border: 5px solid var(--lavender-line);
   border-radius: 12px;
   box-shadow: 8px 6px 12px var(--fx-shade);
-  backface-visibility: hidden;
 }
 .fx-door-back {
   position: absolute;
@@ -145,8 +167,16 @@
   background: var(--lavender);
   border: 5px solid var(--lavender-line);
   border-radius: 12px;
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
+  opacity: 0;
+  animation: fx-back-on 1ms linear calc(var(--fx-door-ms) * var(--fx-flip)) both;
+}
+@keyframes fx-back-on {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 /* Contre-porte : un simple cadre en retrait. */
 .fx-door-back::after {
@@ -284,7 +314,6 @@
   height: 7rem;
   aspect-ratio: 120 / 140;
   margin-inline: auto;
-  perspective: 600px;
 }
 .fx-card-stage > svg {
   display: block;
@@ -293,8 +322,10 @@
 }
 .fx-card-door {
   --fx-sign: -1;
+  --fx-ajar: 0deg;
   position: absolute;
   transform-origin: left center;
+  transform: perspective(600px) rotateY(calc(var(--fx-sign) * var(--fx-ajar)));
   transition: transform 120ms ease-out;
   pointer-events: none;
 }
@@ -339,11 +370,11 @@
   transition: opacity 120ms ease-out;
   pointer-events: none;
 }
-.fx-card:active .fx-card-door {
-  transform: rotateY(calc(var(--fx-sign) * 20deg));
-}
 .fx-card[data-match='true'] .fx-card-door {
-  transform: rotateY(calc(var(--fx-sign) * 12deg));
+  --fx-ajar: 12deg;
+}
+.fx-card:active .fx-card-door {
+  --fx-ajar: 20deg;
 }
 .fx-card:active .fx-card-light,
 .fx-card[data-match='true'] .fx-card-light {
@@ -358,7 +389,8 @@
   .fx-light,
   .fx-spot,
   .fx-drawer,
-  .fx-door {
+  .fx-door,
+  .fx-door-back {
     animation-delay: 0s;
   }
 }

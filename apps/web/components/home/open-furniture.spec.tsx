@@ -133,6 +133,31 @@ describe('OpenFurniture', () => {
     );
   });
 
+  it('lives in the shell of its kind: door(s), light, and every shelf inside the body', () => {
+    const { container, unmount } = render(<OpenFurniture location={fridge()} />);
+    const scene = container.querySelector('.fx-scene.open-furniture')!;
+    expect(scene).toHaveAttribute('data-kind', 'fridge');
+    expect(scene.querySelectorAll('.fx-door')).toHaveLength(1);
+    expect(scene.querySelectorAll('.fx-light')).toHaveLength(1);
+    const body = scene.querySelector('.fx-body')!;
+    for (const name of ['Étagère 1', 'Étagère 2', 'Bac à légumes', 'Non rangé']) {
+      expect(body).toContainElement(screen.getByRole('region', { name }));
+    }
+    unmount();
+    render(<OpenFurniture location={fridge({ kind: 'cellar' })} />);
+    expect(document.querySelector('.fx-scene')).toHaveAttribute('data-kind', 'cellar');
+    expect(document.querySelectorAll('.fx-door')).toHaveLength(2);
+  });
+
+  it('has no « Ouvrir » or « Fermer » button: the door is a transition, not a control', () => {
+    render(<OpenFurniture location={fridge()} />);
+    expect(screen.queryByRole('button', { name: /ouvrir|fermer/i })).toBeNull();
+    // The only buttons are the tiles.
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Lait, quantité 3',
+    ]);
+  });
+
   it('builds the scanner link', () => {
     expect(scanHref(2)).toBe('/?lieu=2');
     expect(scanHref(2, 21)).toBe('/?lieu=2&etagere=21');

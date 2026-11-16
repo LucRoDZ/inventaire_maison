@@ -72,6 +72,15 @@ describe('furniture.css', () => {
     expect(transitions.filter((p) => p !== 'transform' && p !== 'opacity')).toEqual([]);
   });
 
+  it('never relies on an inherited perspective, preserve-3d or backface-visibility', () => {
+    // WebKit does not render them the same way everywhere: the doors carry their own perspective().
+    const rules = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(rules).not.toMatch(/\bperspective(-origin)?\s*:/);
+    expect(rules).not.toMatch(/preserve-3d/);
+    expect(rules).not.toMatch(/backface-visibility/);
+    expect(rules).toMatch(/perspective\(var\(--fx-depth\)\)/);
+  });
+
   it('opens the furniture at once under prefers-reduced-motion (no delay left)', () => {
     const reduced = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(css)?.[1];
     expect(reduced).toContain('.fx-door');

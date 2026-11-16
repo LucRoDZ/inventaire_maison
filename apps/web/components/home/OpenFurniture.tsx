@@ -1,4 +1,5 @@
 import type { HomeLocationDto, HomeTileDto } from '@inventaire/shared';
+import { FurnitureShell } from './FurnitureShell';
 import { ShelfRow } from './ShelfRow';
 import { UnshelvedTray } from './UnshelvedTray';
 
@@ -8,10 +9,13 @@ interface OpenFurnitureProps {
   isDimmed?: (tile: HomeTileDto) => boolean;
 }
 
-/** The furniture opened: its shelves stacked in order, then the « Non rangé » tray. */
+/**
+ * The furniture opened: its shelves stacked in order, then the « Non rangé » tray, inside the
+ * shell drawn for its kind. The door(s) swing open when it appears.
+ */
 export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurnitureProps) {
   return (
-    <div className="open-furniture flex flex-col gap-4">
+    <FurnitureShell kind={location.kind} className="open-furniture">
       {location.shelves.map((shelf) => (
         <ShelfRow
           key={shelf.id}
@@ -27,6 +31,6 @@ export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurniturePro
         onSelect={onSelect}
         isDimmed={isDimmed}
       />
-    </div>
+    </FurnitureShell>
   );
 }
