@@ -9,10 +9,10 @@ interface OpenFurnitureProps {
   isDimmed?: (tile: HomeTileDto) => boolean;
 }
 
-/** Glass shelves in the cold furniture, indigo boards under an amber spot in the cupboards. */
+/** Glass shelves in the fridge, drawers in the freezer, indigo boards under a spot elsewhere. */
 const SHELF_LOOKS: Record<LocationKind, { look: ShelfLook; spot: boolean }> = {
   fridge: { look: 'glass', spot: false },
-  freezer: { look: 'glass', spot: false },
+  freezer: { look: 'drawer', spot: false },
   pantry: { look: 'board', spot: true },
   cellar: { look: 'board', spot: true },
   other: { look: 'board', spot: true },
@@ -26,7 +26,7 @@ export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurniturePro
   const { look, spot } = SHELF_LOOKS[location.kind];
   return (
     <FurnitureShell kind={location.kind} className="open-furniture">
-      {location.shelves.map((shelf) => (
+      {location.shelves.map((shelf, index) => (
         <ShelfRow
           key={shelf.id}
           locationId={location.id}
@@ -35,6 +35,7 @@ export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurniturePro
           isDimmed={isDimmed}
           look={look}
           spot={spot}
+          index={index}
         />
       ))}
       <UnshelvedTray

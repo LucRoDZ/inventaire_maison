@@ -200,6 +200,103 @@ describe('OpenFurniture', () => {
     expect(container.querySelector('.fx-spot')).toBeNull();
   });
 
+  describe('a freezer of three drawers', () => {
+    const freezer = (): HomeLocationDto =>
+      fridge({
+        id: 3,
+        name: 'Congélateur',
+        kind: 'freezer',
+        shelves: [
+          shelf(31, 'Tiroir 1', 'plain', [tile(1, 'Glace', 2), tile(2, 'Pizza', 4)]),
+          shelf(32, 'Tiroir 2', 'plain', [tile(3, 'Poisson', 1)]),
+          shelf(33, 'Tiroir 3', 'plain'),
+        ],
+        unshelved: [tile(4, 'Frites', 1)],
+      });
+
+    it('draws each shelf as a drawer, in order, the tray last and not a drawer', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+        'Tiroir 1',
+        'Tiroir 2',
+        'Tiroir 3',
+        'Non rangé',
+      ]);
+      const drawers = [...container.querySelectorAll<HTMLElement>('.fx-drawer')];
+      expect(drawers.map((d) => d.getAttribute('aria-label'))).toEqual([
+        'Tiroir 1',
+        'Tiroir 2',
+        'Tiroir 3',
+      ]);
+      // They slide in one after the other: each one carries its rank.
+      expect(drawers.map((d) => d.style.getPropertyValue('--i'))).toEqual(['0', '1', '2']);
+      expect(screen.getByRole('region', { name: 'Non rangé' })).not.toHaveClass('fx-drawer');
+      expect(
+        [...container.querySelectorAll('[data-shelf-kind]')].map((b) =>
+          b.getAttribute('data-shelf-kind'),
+        ),
+      ).toEqual(['plain', 'plain', 'plain']);
+    });
+
+    it('writes the name and the number of articles on the front of each drawer', () => {
+      render(<OpenFurniture location={freezer()} />);
+      const counts = ['Tiroir 1', 'Tiroir 2', 'Tiroir 3'].map(
+        (name) =>
+          within(screen.getByRole('region', { name })).getByText(/^\d+ articles?$/).textContent,
+      );
+      expect(counts).toEqual(['2 articles', '1 article', '0 article']);
+    });
+
+    it('counts a product once when it lies on two lines of the same drawer', () => {
+      const twice = freezer();
+      twice.shelves[0]!.tiles = [
+        tile(1, 'Glace', 2),
+        { ...tile(5, 'Glace', 1), productId: 10 },
+        tile(2, 'Pizza', 4),
+      ];
+      render(<OpenFurniture location={twice} />);
+      expect(
+        within(screen.getByRole('region', { name: 'Tiroir 1' })).getByText('2 articles'),
+      ).toBeInTheDocument();
+    });
+
+    it('keeps every drawer open: content visible, nothing to expand, empty one still a target', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      const first = screen.getByRole('region', { name: 'Tiroir 1' });
+      expect(within(first).getByRole('button', { name: 'Glace, quantité 2' })).toBeVisible();
+      expect(within(first).getByRole('button', { name: 'Pizza, quantité 4' })).toBeVisible();
+      expect(
+        within(screen.getByRole('region', { name: 'Tiroir 2' })).getByRole('button', {
+          name: 'Poisson, quantité 1',
+        }),
+      ).toBeVisible();
+      expect(container.querySelector('[aria-expanded], details, summary')).toBeNull();
+      const empty = screen.getByRole('region', { name: 'Tiroir 3' });
+      expect(within(empty).getByText('Vide')).toBeInTheDocument();
+      expect(
+        within(empty).getByRole('link', { name: 'Ajouter un produit sur Tiroir 3' }),
+      ).toHaveAttribute('href', '/?lieu=3&etagere=33');
+      // The only buttons are the tiles.
+      expect(screen.getAllByRole('button')).toHaveLength(4);
+    });
+
+    it('frosts the body, as scenery', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      expect(container.querySelector('.fx-body > .fx-frost')).toHaveAttribute(
+        'aria-hidden',
+        'true',
+      );
+    });
+
+    it('follows the kind of the furniture, not the names: a fridge has no drawer', () => {
+      const { container } = render(
+        <OpenFurniture location={{ ...freezer(), kind: 'fridge', name: 'Congélateur' }} />,
+      );
+      expect(container.querySelector('.fx-drawer')).toBeNull();
+      expect(screen.queryByText(/^\d+ articles?$/)).toBeNull();
+    });
+  });
+
   it('piles decorative cards behind a tile: none for 1 unit, 4 at most from 5 units', () => {
     const quantities = [1, 2, 3, 5, 6, 12];
     const location = fridge({

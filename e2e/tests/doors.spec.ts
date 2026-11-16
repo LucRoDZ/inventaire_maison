@@ -127,4 +127,39 @@ test.describe('portes de la Vue Maison', () => {
     await tile.click();
     await expect(page.getByRole('dialog', { name: pantry })).toBeVisible();
   });
+
+  test('congélateur : trois tiroirs glissés en place, contenu toujours visible', async ({
+    page,
+  }, testInfo) => {
+    const { freezer } = STOCK[testInfo.project.name as keyof typeof STOCK];
+    await openPlace(page, 'Congélateur');
+    await settled(page);
+    const drawers = page.locator('section.fx-drawer');
+    await expect(drawers).toHaveCount(3);
+    expect(
+      await drawers.evaluateAll((all) => all.map((d) => d.getAttribute('aria-label'))),
+    ).toEqual(['Tiroir 1', 'Tiroir 2', 'Tiroir 3']);
+    // Slid in: fully opaque, back to their place, one after the other (60 ms apart).
+    expect(
+      await drawers.evaluateAll((all) =>
+        all.map((d) => {
+          const style = getComputedStyle(d);
+          // A finished animation leaves the identity matrix rather than « none ».
+          const inPlace = ['none', 'matrix(1, 0, 0, 1, 0, 0)'].includes(style.transform);
+          return [style.opacity, inPlace ? 'in place' : style.transform, style.animationDelay];
+        }),
+      ),
+    ).toEqual([
+      ['1', 'in place', '0s'],
+      ['1', 'in place', '0.06s'],
+      ['1', 'in place', '0.12s'],
+    ]);
+    const third = page.getByRole('region', { name: 'Tiroir 3' });
+    await expect(third.getByText(/^\d+ articles?$/)).toBeVisible();
+    // Nothing to open: the content is there, and it answers a tap.
+    const tile = third.getByRole('button', { name: `${freezer}, quantité 2` });
+    await expect(tile).toBeVisible();
+    await tile.click();
+    await expect(page.getByRole('dialog', { name: freezer })).toBeVisible();
+  });
 });

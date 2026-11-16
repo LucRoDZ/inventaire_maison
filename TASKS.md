@@ -506,7 +506,7 @@
   - Tests : nombre de cartes selon la quantité ; `aria-label` et classes de taille du bouton ; e2e : bouton de 80 × 80 px.
   - Fin : `aria-label` et taille 80 × 80 du bouton inchangés.
 
-- [ ] **1.5.7 Congélateur**
+- [x] **1.5.7 Congélateur**
   - Résultat : les étagères du congélateur sont dessinées en tiroirs.
   - Fichiers : `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/OpenFurniture.tsx`, specs associées.
   - Comportement : selon `location.kind` ; face blanche, poignée centrale, nom et nombre d'articles ; les tiroirs coulissent l'un après l'autre (12 px, 320 ms, décalage de 60 ms) ; contenu toujours visible (décision C).
