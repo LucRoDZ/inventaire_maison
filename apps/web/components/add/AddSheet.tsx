@@ -23,6 +23,7 @@ import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
 import { IconBadge } from '../ui/IconBadge';
+import { CategoryPicker } from './CategoryPicker';
 import { LocationPicker } from './LocationPicker';
 import { QuantityStepper } from './QuantityStepper';
 
@@ -76,25 +77,17 @@ export function AddSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // The category shown here is the one that is saved when the product is added: a guessed category
+  // is confirmed by adding, a category picked here replaces it (one request, before the stock).
   const [categoryId, setCategoryId] = useState(product.categoryId);
-  const [proposed, setProposed] = useState(product.categoryGuessed);
   const category = categories.find((c) => c.id === categoryId);
-
-  const changeCategory = async (next: number) => {
-    setError(null);
-    try {
-      await confirmCategory(product.id, next);
-      setCategoryId(next);
-      setProposed(false);
-    } catch (caught) {
-      setError(
-        caught instanceof ApiError && caught.status !== 0
-          ? caught.message
-          : 'Impossible de changer la catégorie.',
-      );
-    }
-  };
   const Glyph = category ? categoryIcon(category.icon) : Package;
+  // The grid takes most of the screen: it opens by itself only when nothing useful was proposed
+  // (« Autre » or no category); a proposal worth confirming shows as one line, « Changer » opens it.
+  const proposedCategory = categories.find((c) => c.id === product.categoryId);
+  const [expanded, setExpanded] = useState(
+    () => product.categoryGuessed && (proposedCategory?.isFallback ?? true),
+  );
 
   const submit = async (scanNext: boolean) => {
     if (!place || busy) return;
@@ -109,6 +102,9 @@ export function AddSheet({
       reason,
     };
     try {
+      if (product.categoryGuessed || categoryId !== product.categoryId) {
+        await confirmCategory(product.id, categoryId);
+      }
       await adjust(input);
     } catch (caught) {
       setBusy(false);
@@ -163,22 +159,29 @@ export function AddSheet({
           </div>
         </div>
 
-        {proposed ? (
-          <label className="text-label flex flex-col gap-1">
-            Catégorie proposée
-            <select
-              className="tap-target border-line text-ink w-full rounded-xl border bg-white px-3"
-              value={categoryId}
-              onChange={(event) => void changeCategory(Number(event.target.value))}
+        {expanded ? (
+          <CategoryPicker
+            categories={categories}
+            value={categoryId}
+            proposedId={product.categoryGuessed ? product.categoryId : null}
+            onChange={setCategoryId}
+            disabled={busy}
+          />
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-small min-w-0">
+              {product.categoryGuessed ? 'Catégorie proposée : ' : 'Catégorie : '}
+              <strong>{category?.name ?? 'Inconnue'}</strong>
+            </p>
+            <Button
+              variant="secondary"
+              aria-label="Changer la catégorie"
+              onClick={() => setExpanded(true)}
             >
-              {categories.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
+              Changer
+            </Button>
+          </div>
+        )}
 
         {!online ? (
           <Callout role="alert" title="Pas de connexion">

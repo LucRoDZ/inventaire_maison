@@ -18,12 +18,16 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
   await pushCode(page, code);
   const sheet = page.getByRole('dialog');
   await expect(sheet.getByRole('heading', { name })).toBeVisible();
-  const proposed = sheet.getByLabel('Catégorie proposée');
+  await expect(sheet.getByText(/Catégorie proposée/)).toBeVisible();
+  // A proposal worth confirming is one line; « Changer la catégorie » opens the whole grid.
+  const change = sheet.getByRole('button', { name: 'Changer la catégorie' });
+  if (await change.isVisible()) await change.click();
+  const proposed = sheet.getByRole('radiogroup', { name: 'Catégorie proposée' });
   await expect(proposed).toBeVisible();
 
-  // Confirming the category from the sheet, then adding two units to the fridge.
-  await proposed.selectOption({ index: 1 });
-  await expect(sheet.getByLabel('Catégorie proposée')).toHaveCount(0);
+  // Picking another category in the sheet: it is saved, as confirmed, when the product is added.
+  await proposed.locator('label', { hasText: 'Boissons' }).click();
+  await expect(proposed.getByRole('radio', { name: /Boissons/ })).toBeChecked();
   await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
   await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
   await sheet.getByRole('button', { name: 'Ajouter et scanner le suivant' }).click();
@@ -43,7 +47,7 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
   // Second scan, same code: the camera is still on, the product is known (no new product).
   await pushCode(page, code);
   await expect(sheet.getByRole('heading', { name })).toBeVisible();
-  await expect(sheet.getByLabel('Catégorie proposée')).toHaveCount(0);
+  await expect(sheet.getByRole('radiogroup', { name: 'Catégorie proposée' })).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Fermer' }).click();
   await expect(sheet).toHaveCount(0);
 
@@ -649,17 +653,30 @@ const REVIEW = {
   'webkit-mobile': { code: '3760009999992', name: 'Pâtes des classements' },
 } as const;
 
-test('À classer : un produit scanné apparaît, est confirmé, disparaît', async ({
+test('À classer : un produit à catégorie devinée mais jamais confirmée apparaît, est confirmé, disparaît', async ({
   page,
 }, testInfo) => {
   const { code, name } = REVIEW[testInfo.project.name as keyof typeof REVIEW];
+  const origin = { Origin: testInfo.project.use.baseURL! };
   await signIn(page);
   await startScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
-  await sheet.getByLabel('Lieu').selectOption({ label: 'Garde-manger' });
-  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
+  await expect(sheet.getByText(/Catégorie proposée/)).toBeVisible();
+  // The sheet is closed without adding: the product exists with its guessed category. Putting it in
+  // stock behind the sheet's back (as an old version of the app did) makes it wait for a review.
+  await sheet.getByRole('button', { name: 'Fermer' }).click();
+  const found = (await (
+    await page.request.get(`/api/products?q=${encodeURIComponent(name)}`)
+  ).json()) as {
+    id: number;
+  }[];
+  const places = (await (await page.request.get('/api/locations')).json()) as { id: number }[];
+  const added = await page.request.post('/api/stock/adjust', {
+    headers: origin,
+    data: { productId: found[0]!.id, locationId: places[0]!.id, delta: 1, reason: 'manual' },
+  });
+  expect(added.ok()).toBe(true);
 
   await page.getByRole('link', { name: /À classer/ }).click();
   const card = page.getByRole('article', { name });
@@ -669,6 +686,28 @@ test('À classer : un produit scanné apparaît, est confirmé, disparaît', asy
 
   // Reloading: the product is confirmed for good.
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'À classer', level: 1 })).toBeVisible();
+  await expect(page.getByRole('article', { name })).toHaveCount(0);
+});
+
+const REVIEW_ADDED = {
+  'chromium-mobile': { code: '3760017777773', name: 'Biscuits ajoutés directement' },
+  'webkit-mobile': { code: '3760018888881', name: 'Jus ajouté directement' },
+} as const;
+
+test('un produit scanné puis ajouté n’attend jamais dans À classer : la catégorie est confirmée à l’ajout', async ({
+  page,
+}, testInfo) => {
+  const { code, name } = REVIEW_ADDED[testInfo.project.name as keyof typeof REVIEW_ADDED];
+  await signIn(page);
+  await startScanner(page);
+  await pushCode(page, code);
+  const sheet = page.getByRole('dialog', { name });
+  await sheet.getByLabel('Lieu').selectOption({ label: 'Garde-manger' });
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
+
+  await page.getByRole('link', { name: /À classer/ }).click();
   await expect(page.getByRole('heading', { name: 'À classer', level: 1 })).toBeVisible();
   await expect(page.getByRole('article', { name })).toHaveCount(0);
 });
@@ -849,9 +888,10 @@ test('administration : une correspondance ajoutée classe un produit scanné ens
   await startScannerFrom(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
-  const proposed = sheet.getByLabel('Catégorie proposée');
-  await expect(proposed).toBeVisible();
-  await expect(proposed.locator('option:checked')).toHaveText('Boissons');
+  await expect(sheet.getByText('Catégorie proposée : Boissons')).toBeVisible();
+  await sheet.getByRole('button', { name: 'Changer la catégorie' }).click();
+  const proposed = sheet.getByRole('radiogroup', { name: 'Catégorie proposée' });
+  await expect(proposed.getByRole('radio', { name: /Boissons/ })).toBeChecked();
 });
 
 async function startScannerFrom(page: Page) {
