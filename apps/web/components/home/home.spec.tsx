@@ -1,5 +1,5 @@
 import type { HomeLocationDto, HomeResponse } from '@inventaire/shared';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -48,8 +48,8 @@ describe('HomeView', () => {
       '/inventaire/4',
     ]);
     for (const name of ['Garde-manger', 'Frigo', 'Congélateur', 'Cave']) {
-      expect(screen.getByRole('img', { name })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
+      const link = screen.getByRole('link', { name: new RegExp(`^${name}`) });
+      expect(link.querySelector('.fx-card-stage > svg')).not.toBeNull();
     }
   });
 
@@ -99,7 +99,79 @@ describe('FurnitureCard', () => {
   });
 
   it('draws the furniture from its kind, not its name', () => {
-    render(<FurnitureCard location={place(9, 'Mon réfrigérateur', 'fridge', 0)} />);
-    expect(screen.getByRole('img', { name: 'Frigo' })).toBeInTheDocument();
+    const { container } = render(
+      <FurnitureCard location={place(9, 'Mon réfrigérateur', 'fridge', 0)} />,
+    );
+    expect(container.querySelector('.fx-card-stage')).toHaveAttribute('data-kind', 'fridge');
+    expect(container.querySelectorAll('.fx-card-door')).toHaveLength(1);
+  });
+
+  it('is named by its text alone, the name first, with or without the badge', () => {
+    const { rerender } = render(<FurnitureCard location={place(2, 'Frigo', 'fridge', 4)} />);
+    expect(screen.getByRole('link', { name: /^Frigo/ })).toHaveAccessibleName(
+      /^Frigo\s*4 articles$/,
+    );
+    rerender(<FurnitureCard location={place(2, 'Frigo', 'fridge', 4, 2)} />);
+    expect(screen.getByRole('link', { name: /^Frigo/ })).toHaveAccessibleName(
+      /^Frigo\s*4 articles\s*2 bientôt périmés$/,
+    );
+  });
+
+  it('hides the drawing, the doors and the light from assistive technology', () => {
+    const { container } = render(<FurnitureCard location={place(2, 'Frigo', 'fridge', 4)} />);
+    expect(screen.queryByRole('img')).toBeNull();
+    const scenery = container.querySelectorAll('svg, .fx-card-door, .fx-card-light');
+    expect(scenery).toHaveLength(3);
+    for (const piece of scenery) expect(piece).toHaveAttribute('aria-hidden', 'true');
+    // The link is the only focusable element: no button inside it.
+    expect(container.querySelectorAll('a, button, [tabindex]')).toHaveLength(1);
+  });
+
+  it('closes each furniture with its own door(s), placed on the body of the drawing', () => {
+    const doors = (kind: HomeLocationDto['kind']) => {
+      const { container, unmount } = render(<FurnitureCard location={place(1, 'X', kind, 0)} />);
+      const found = [...container.querySelectorAll<HTMLElement>('.fx-card-door')].map((door) => ({
+        hinge: door.getAttribute('data-hinge'),
+        left: door.style.left,
+        width: door.style.width,
+        face: door.querySelectorAll('.fx-door-face .fx-handle, .fx-door-face .fx-gloss').length,
+      }));
+      unmount();
+      return found;
+    };
+    expect(doors('fridge')).toEqual([{ hinge: 'left', left: '21.7%', width: '56.7%', face: 2 }]);
+    expect(doors('freezer')).toEqual([{ hinge: 'left', left: '13.3%', width: '73.3%', face: 2 }]);
+    expect(doors('pantry')).toEqual([
+      { hinge: 'left', left: '11.7%', width: '38.35%', face: 2 },
+      { hinge: 'right', left: '50.05%', width: '38.35%', face: 2 },
+    ]);
+    expect(doors('cellar')).toEqual([
+      { hinge: 'left', left: '8.3%', width: '41.65%', face: 2 },
+      { hinge: 'right', left: '49.95%', width: '41.65%', face: 2 },
+    ]);
+    expect(doors('other')).toEqual(doors('pantry'));
+  });
+
+  it('marks the card as pressed from the pointer, and releases it', () => {
+    render(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4)} />);
+    const link = screen.getByRole('link');
+    expect(link).not.toHaveAttribute('data-pressed');
+    for (const release of [fireEvent.pointerUp, fireEvent.pointerCancel, fireEvent.pointerLeave]) {
+      fireEvent.pointerDown(link);
+      expect(link).toHaveAttribute('data-pressed', 'true');
+      release(link);
+      expect(link).not.toHaveAttribute('data-pressed');
+    }
+    // Feedback only: the link and its target are untouched.
+    expect(link).toHaveAttribute('href', '/inventaire/1');
+  });
+
+  it('leaves the door ajar (data-match) only when the search finds something inside', () => {
+    const { rerender } = render(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4)} />);
+    expect(screen.getByRole('link')).not.toHaveAttribute('data-match');
+    expect(screen.getByRole('link')).toHaveClass('fx-card');
+    rerender(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4)} highlighted />);
+    expect(screen.getByRole('link')).toHaveAttribute('data-match', 'true');
+    expect(screen.getByRole('link')).toHaveClass('ring-amber', 'ring-4');
   });
 });

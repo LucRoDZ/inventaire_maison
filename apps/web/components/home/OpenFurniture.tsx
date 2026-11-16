@@ -1,5 +1,6 @@
-import type { HomeLocationDto, HomeTileDto } from '@inventaire/shared';
-import { ShelfRow } from './ShelfRow';
+import type { HomeLocationDto, HomeTileDto, LocationKind } from '@inventaire/shared';
+import { FurnitureShell } from './FurnitureShell';
+import { ShelfRow, type ShelfLook } from './ShelfRow';
 import { UnshelvedTray } from './UnshelvedTray';
 
 interface OpenFurnitureProps {
@@ -8,17 +9,33 @@ interface OpenFurnitureProps {
   isDimmed?: (tile: HomeTileDto) => boolean;
 }
 
-/** The furniture opened: its shelves stacked in order, then the « Non rangé » tray. */
+/** Glass shelves in the fridge, drawers in the freezer, indigo boards under a spot elsewhere. */
+const SHELF_LOOKS: Record<LocationKind, { look: ShelfLook; spot: boolean }> = {
+  fridge: { look: 'glass', spot: false },
+  freezer: { look: 'drawer', spot: false },
+  pantry: { look: 'board', spot: true },
+  cellar: { look: 'board', spot: true },
+  other: { look: 'board', spot: true },
+};
+
+/**
+ * The furniture opened: its shelves stacked in order, then the « Non rangé » tray, inside the
+ * shell drawn for its kind. The door(s) swing open when it appears.
+ */
 export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurnitureProps) {
+  const { look, spot } = SHELF_LOOKS[location.kind];
   return (
-    <div className="open-furniture flex flex-col gap-4">
-      {location.shelves.map((shelf) => (
+    <FurnitureShell kind={location.kind} className="open-furniture">
+      {location.shelves.map((shelf, index) => (
         <ShelfRow
           key={shelf.id}
           locationId={location.id}
           shelf={shelf}
           onSelect={onSelect}
           isDimmed={isDimmed}
+          look={look}
+          spot={spot}
+          index={index}
         />
       ))}
       <UnshelvedTray
@@ -27,6 +44,6 @@ export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurniturePro
         onSelect={onSelect}
         isDimmed={isDimmed}
       />
-    </div>
+    </FurnitureShell>
   );
 }

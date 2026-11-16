@@ -9,13 +9,13 @@ interface DroppableShelfProps {
   className?: string;
 }
 
-/** A drop zone: it lights up (amber outline) while a tile is over it. */
+/** A drop zone: it lights up (amber outline and halo) while a tile is over it. */
 export function DroppableShelf({ id, children, className = '' }: DroppableShelfProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
     <div
       ref={setNodeRef}
-      className={`${className} rounded-xl ${isOver ? 'ring-amber ring-4' : ''}`}
+      className={`${className} rounded-xl ${isOver ? 'ring-amber fx-over ring-4' : ''}`}
     >
       {children}
     </div>

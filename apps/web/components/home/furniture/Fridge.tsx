@@ -1,7 +1,7 @@
 /** Frigo: tall door with a small freezer compartment and the amber light of the open fridge. */
 export function Fridge({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 140" role="img" aria-label="Frigo" className={className}>
+    <svg viewBox="0 0 120 140" aria-hidden="true" className={className}>
       <rect
         x="26"
         y="6"

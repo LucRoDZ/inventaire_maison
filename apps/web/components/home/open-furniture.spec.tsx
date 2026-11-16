@@ -133,6 +133,237 @@ describe('OpenFurniture', () => {
     );
   });
 
+  it('lives in the shell of its kind: door(s), light, and every shelf inside the body', () => {
+    const { container, unmount } = render(<OpenFurniture location={fridge()} />);
+    const scene = container.querySelector('.fx-scene.open-furniture')!;
+    expect(scene).toHaveAttribute('data-kind', 'fridge');
+    expect(scene.querySelectorAll('.fx-door')).toHaveLength(1);
+    expect(scene.querySelectorAll('.fx-light')).toHaveLength(1);
+    const body = scene.querySelector('.fx-body')!;
+    for (const name of ['Étagère 1', 'Étagère 2', 'Bac à légumes', 'Non rangé']) {
+      expect(body).toContainElement(screen.getByRole('region', { name }));
+    }
+    unmount();
+    render(<OpenFurniture location={fridge({ kind: 'cellar' })} />);
+    expect(document.querySelector('.fx-scene')).toHaveAttribute('data-kind', 'cellar');
+    expect(document.querySelectorAll('.fx-door')).toHaveLength(2);
+  });
+
+  it('draws every shelf of the fridge on the same glass board, whatever its name', () => {
+    const location = fridge({
+      shelves: [
+        shelf(21, 'Étagère 1', 'plain'),
+        shelf(23, 'Bac à légumes 1', 'plain'),
+        shelf(24, 'Balconnet', 'plain'),
+        shelf(25, 'Tiroir du bas', 'plain'),
+      ],
+    });
+    const { container } = render(<OpenFurniture location={location} />);
+    const boards = [...container.querySelectorAll('[data-shelf-kind] > div:first-child')];
+    expect(boards).toHaveLength(4);
+    for (const board of boards) expect(board.className).toBe('fx-glass-edge');
+    expect(container.querySelectorAll('.fx-spot, .fx-drawer')).toHaveLength(0);
+  });
+
+  it('keeps the posts of a rack under a glass board', () => {
+    const { container } = render(<OpenFurniture location={fridge()} />);
+    const rack = container.querySelector('[data-shelf-kind="rack"]')!;
+    expect(rack.querySelector('.fx-glass-edge')).not.toBeNull();
+    expect(rack.querySelectorAll('span')).toHaveLength(4);
+    expect(rack).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps the indigo board in the pantry, the cellar and any other furniture, under a spot', () => {
+    for (const kind of ['pantry', 'cellar', 'other'] as const) {
+      const { container, unmount } = render(<OpenFurniture location={fridge({ kind })} />);
+      const boards = [...container.querySelectorAll('[data-shelf-kind] > div:first-child')];
+      expect(boards).toHaveLength(3);
+      for (const board of boards) expect(board).toHaveClass('bg-indigo', 'h-2');
+      expect(
+        container.querySelector('[data-shelf-kind="rack"]')!.querySelectorAll('span'),
+      ).toHaveLength(4);
+      // One amber spot above each shelf, none on the tray; scenery only.
+      const spots = container.querySelectorAll('.fx-spot');
+      expect(spots).toHaveLength(3);
+      for (const spot of spots) expect(spot).toHaveAttribute('aria-hidden', 'true');
+      expect(
+        screen.getByRole('region', { name: 'Non rangé' }).querySelector('.fx-spot'),
+      ).toBeNull();
+      expect(container.querySelector('.fx-glass-edge')).toBeNull();
+      unmount();
+    }
+  });
+
+  it('uses the glass board in the freezer too', () => {
+    const { container } = render(<OpenFurniture location={fridge({ kind: 'freezer' })} />);
+    expect(container.querySelectorAll('.fx-glass-edge')).toHaveLength(3);
+    expect(container.querySelector('.fx-spot')).toBeNull();
+  });
+
+  describe('a freezer of three drawers', () => {
+    const freezer = (): HomeLocationDto =>
+      fridge({
+        id: 3,
+        name: 'Congélateur',
+        kind: 'freezer',
+        shelves: [
+          shelf(31, 'Tiroir 1', 'plain', [tile(1, 'Glace', 2), tile(2, 'Pizza', 4)]),
+          shelf(32, 'Tiroir 2', 'plain', [tile(3, 'Poisson', 1)]),
+          shelf(33, 'Tiroir 3', 'plain'),
+        ],
+        unshelved: [tile(4, 'Frites', 1)],
+      });
+
+    it('draws each shelf as a drawer, in order, the tray last and not a drawer', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+        'Tiroir 1',
+        'Tiroir 2',
+        'Tiroir 3',
+        'Non rangé',
+      ]);
+      const drawers = [...container.querySelectorAll<HTMLElement>('.fx-drawer')];
+      expect(drawers.map((d) => d.getAttribute('aria-label'))).toEqual([
+        'Tiroir 1',
+        'Tiroir 2',
+        'Tiroir 3',
+      ]);
+      // They slide in one after the other: each one carries its rank.
+      expect(drawers.map((d) => d.style.getPropertyValue('--i'))).toEqual(['0', '1', '2']);
+      expect(screen.getByRole('region', { name: 'Non rangé' })).not.toHaveClass('fx-drawer');
+      expect(
+        [...container.querySelectorAll('[data-shelf-kind]')].map((b) =>
+          b.getAttribute('data-shelf-kind'),
+        ),
+      ).toEqual(['plain', 'plain', 'plain']);
+    });
+
+    it('writes the name and the number of articles on the front of each drawer', () => {
+      render(<OpenFurniture location={freezer()} />);
+      const counts = ['Tiroir 1', 'Tiroir 2', 'Tiroir 3'].map(
+        (name) =>
+          within(screen.getByRole('region', { name })).getByText(/^\d+ articles?$/).textContent,
+      );
+      expect(counts).toEqual(['2 articles', '1 article', '0 article']);
+    });
+
+    it('counts a product once when it lies on two lines of the same drawer', () => {
+      const twice = freezer();
+      twice.shelves[0]!.tiles = [
+        tile(1, 'Glace', 2),
+        { ...tile(5, 'Glace', 1), productId: 10 },
+        tile(2, 'Pizza', 4),
+      ];
+      render(<OpenFurniture location={twice} />);
+      expect(
+        within(screen.getByRole('region', { name: 'Tiroir 1' })).getByText('2 articles'),
+      ).toBeInTheDocument();
+    });
+
+    it('keeps every drawer open: content visible, nothing to expand, empty one still a target', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      const first = screen.getByRole('region', { name: 'Tiroir 1' });
+      expect(within(first).getByRole('button', { name: 'Glace, quantité 2' })).toBeVisible();
+      expect(within(first).getByRole('button', { name: 'Pizza, quantité 4' })).toBeVisible();
+      expect(
+        within(screen.getByRole('region', { name: 'Tiroir 2' })).getByRole('button', {
+          name: 'Poisson, quantité 1',
+        }),
+      ).toBeVisible();
+      expect(container.querySelector('[aria-expanded], details, summary')).toBeNull();
+      const empty = screen.getByRole('region', { name: 'Tiroir 3' });
+      expect(within(empty).getByText('Vide')).toBeInTheDocument();
+      expect(
+        within(empty).getByRole('link', { name: 'Ajouter un produit sur Tiroir 3' }),
+      ).toHaveAttribute('href', '/?lieu=3&etagere=33');
+      // The only buttons are the tiles.
+      expect(screen.getAllByRole('button')).toHaveLength(4);
+    });
+
+    it('frosts the body, as scenery', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      expect(container.querySelector('.fx-body > .fx-frost')).toHaveAttribute(
+        'aria-hidden',
+        'true',
+      );
+    });
+
+    it('follows the kind of the furniture, not the names: a fridge has no drawer', () => {
+      const { container } = render(
+        <OpenFurniture location={{ ...freezer(), kind: 'fridge', name: 'Congélateur' }} />,
+      );
+      expect(container.querySelector('.fx-drawer')).toBeNull();
+      expect(screen.queryByText(/^\d+ articles?$/)).toBeNull();
+    });
+  });
+
+  it('piles decorative cards behind a tile: none for 1 unit, 4 at most from 5 units', () => {
+    const quantities = [1, 2, 3, 5, 6, 12];
+    const location = fridge({
+      shelves: [
+        shelf(
+          22,
+          'Étagère 2',
+          'plain',
+          quantities.map((quantity, i) => tile(i + 1, `P${quantity}`, quantity)),
+        ),
+      ],
+    });
+    render(<OpenFurniture location={location} />);
+    const piles = quantities.map((quantity) => {
+      const button = screen.getByRole('button', { name: `P${quantity}, quantité ${quantity}` });
+      const pile = button.parentElement!;
+      expect(pile).toHaveClass('fx-pile');
+      // Around the button, never inside it.
+      expect(button.querySelector('.fx-pile-card')).toBeNull();
+      const cards = [...pile.querySelectorAll<HTMLElement>(':scope > .fx-pile-card')];
+      for (const card of cards) {
+        expect(card).toHaveAttribute('aria-hidden', 'true');
+        expect(card.tagName).toBe('SPAN');
+      }
+      expect(cards.map((card) => card.style.getPropertyValue('--i'))).toEqual(
+        cards.map((_, k) => String(k + 1)),
+      );
+      return cards.length;
+    });
+    expect(piles).toEqual([0, 1, 2, 4, 4, 4]);
+  });
+
+  it('keeps the button of a tile as it was: same name, 80 × 80, one per line of stock', () => {
+    const location = fridge({
+      shelves: [shelf(22, 'Étagère 2', 'plain', [tile(1, 'Lait', 9), tile(2, 'Eau', 1)])],
+    });
+    render(<OpenFurniture location={location} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Lait, quantité 9',
+      'Eau, quantité 1',
+    ]);
+    for (const button of buttons) expect(button).toHaveClass('h-20', 'w-20', 'shrink-0');
+  });
+
+  it('draws no pile behind a tile faded by the filter', () => {
+    const location = fridge({
+      shelves: [shelf(22, 'Étagère 2', 'plain', [tile(1, 'Lait', 9), tile(2, 'Eau', 4)])],
+    });
+    const { container } = render(
+      <OpenFurniture location={location} isDimmed={(t) => t.name === 'Lait'} />,
+    );
+    expect(container.querySelectorAll('.fx-pile-card')).toHaveLength(3);
+    const faded = screen.getByRole('button', { name: 'Lait, quantité 9' });
+    expect(faded).toHaveClass('opacity-30');
+    expect(faded.parentElement!.querySelectorAll('.fx-pile-card')).toHaveLength(0);
+  });
+
+  it('has no « Ouvrir » or « Fermer » button: the door is a transition, not a control', () => {
+    render(<OpenFurniture location={fridge()} />);
+    expect(screen.queryByRole('button', { name: /ouvrir|fermer/i })).toBeNull();
+    // The only buttons are the tiles.
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Lait, quantité 3',
+    ]);
+  });
+
   it('builds the scanner link', () => {
     expect(scanHref(2)).toBe('/?lieu=2');
     expect(scanHref(2, 21)).toBe('/?lieu=2&etagere=21');

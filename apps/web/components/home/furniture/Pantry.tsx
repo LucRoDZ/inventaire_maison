@@ -1,7 +1,7 @@
 /** Garde-manger: a cupboard with three shelves behind two doors. */
 export function Pantry({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 140" role="img" aria-label="Garde-manger" className={className}>
+    <svg viewBox="0 0 120 140" aria-hidden="true" className={className}>
       <rect
         x="14"
         y="8"

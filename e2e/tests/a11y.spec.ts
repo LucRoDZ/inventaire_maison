@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { signIn } from './helpers';
+import { furnitureSettled, signIn } from './helpers';
 
 // One narrow phone for every screen.
 test.use({ viewport: { width: 360, height: 740 } });
@@ -10,6 +10,8 @@ interface Screen {
   path: string | ((page: Page) => Promise<string>);
   /** Opens the Liste view of the inventory. */
   list?: boolean;
+  /** An open piece of furniture: audited once its doors are open and its light is on. */
+  furniture?: boolean;
 }
 
 async function firstProductPath(page: Page): Promise<string> {
@@ -24,11 +26,24 @@ async function firstLocationPath(page: Page): Promise<string> {
   return `/inventaire/${places[0]!.id}`;
 }
 
+const locationPath =
+  (name: string) =>
+  async (page: Page): Promise<string> => {
+    const places = (await (await page.request.get('/api/locations')).json()) as {
+      id: number;
+      name: string;
+    }[];
+    return `/inventaire/${places.find((place) => place.name === name)!.id}`;
+  };
+
 const SCREENS: Screen[] = [
   { name: 'Scanner', path: '/' },
   { name: 'Inventaire, vue Maison', path: '/inventaire' },
   { name: 'Inventaire, vue Liste', path: '/inventaire', list: true },
-  { name: 'Meuble ouvert', path: firstLocationPath },
+  { name: 'Meuble ouvert', path: firstLocationPath, furniture: true },
+  { name: 'Frigo ouvert', path: locationPath('Frigo'), furniture: true },
+  { name: 'Congélateur ouvert', path: locationPath('Congélateur'), furniture: true },
+  { name: 'Cave ouverte', path: locationPath('Cave'), furniture: true },
   { name: 'Plus', path: '/plus' },
   { name: 'Compte', path: '/plus/compte' },
   { name: 'Administration', path: '/plus/administration' },
@@ -46,6 +61,7 @@ async function open(page: Page, screen: Screen) {
   await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
   // Let the data of the screen arrive.
   await page.waitForLoadState('networkidle');
+  if (screen.furniture) await furnitureSettled(page);
 }
 
 /** Gives the screens something to show: stock close to its date, and a product to classify. */

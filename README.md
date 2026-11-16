@@ -300,6 +300,17 @@ Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécuris�
 6. Refuser la permission (réglages du site) : le message donne les étapes de la plateforme et « Saisir le code à la main » met le focus sur la saisie.
 7. Ouvrir l'application en `http://` sur le réseau local (hors `localhost`) : message « HTTPS requis ».
 
+### Vue Maison (portes et lumière)
+
+Les tests automatiques mesurent la géométrie et la cadence des images dans des navigateurs sans écran ; le rendu réel d'un téléphone, surtout Safari sur iPhone, se vérifie à la main :
+
+1. Onglet Inventaire, vue Maison : les quatre meubles sont fermés. Un appui sur une carte fait pencher la porte et allume un halo ambre, puis le meuble s'ouvre sans attente.
+2. Dans chaque meuble : la ou les portes pivotent en un peu plus d'une demi-seconde, sans saccade, puis restent sur le côté sans recouvrir les étagères ; la lumière ambre s'allume en haut. Au congélateur, les tiroirs glissent l'un après l'autre et leur contenu reste visible.
+3. Faire défiler le meuble de haut en bas et une étagère pleine de gauche à droite : pas de saccade, les piles de vignettes ne sont pas rognées.
+4. Appui long sur une vignette puis glisser : l'étagère survolée s'entoure d'ambre ; déposer déplace le produit.
+5. Taper un nom dans la recherche de la vue Maison : seuls les meubles qui contiennent un résultat s'entourent d'ambre, porte entrouverte.
+6. Réglages du téléphone, « Réduire les animations » activé : le meuble apparaît directement ouvert et allumé.
+
 ## Exécution autonome avec Claude Code
 
 Sur une machine vierge dédiée (jamais sur le VPS de production) :
