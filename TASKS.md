@@ -458,6 +458,89 @@
   - Tests : sans objet.
   - Fin : `gh pr checks` vert ; la dernière ligne de `TASKS.md` est le marqueur d'arrêt.
 
+## Phase 1.5 : Portes (branche `phase-1-5-portes`) : 11 tâches
+
+> Cadrage : `docs/vue-maison-portes.md` (demande de Lucas du 16/11/2026). Recommandations A (halo flouté, sans dégradé), B (toutes les étagères du frigo se dessinent pareil) et C (tiroirs toujours ouverts) appliquées.
+> Périmètre : le dessin et l'animation des meubles de la Vue Maison. La navigation, l'API, la base, les types partagés et les pages hors Vue Maison ne changent pas. Aucune nouvelle dépendance.
+> À ne pas casser (section 7 du cadrage) : lien de carte `/^Frigo/`, régions d'étagère, ordre des `h3`, plateau « Non rangé » en dernier, `data-shelf-kind`, boutons « nom, quantité n », « Déplacer vers… », annonces du glisser-déposer, bascule Maison / Liste, audit axe à 360 px, zones de 44 px, aucun emoji, aucun texte ambre, aucun défilement horizontal de la page.
+
+- [ ] **1.5.1 Styles de base**
+  - Résultat : la feuille de style des portes et de la lumière, sans une seule couleur en dur.
+  - Fichiers : `apps/web/app/furniture.css`, `apps/web/app/globals.css`, `apps/web/app/furniture-css.spec.ts`.
+  - Comportement : classes `fx-*` de l'annexe A (scène, corps, lumière, porte, reflet, poignée, planche de verre, tiroir, givre, pile, étagère cible, carte) ; couleurs par variables de `tokens.css` et `color-mix()` ; importée dans `globals.css` après `tokens.css` ; seules `transform` et `opacity` sont animées ; aucune animation en boucle.
+  - Tests : recherche de motifs dans le fichier : valeur hexadécimale, `rgb()`, `rgba()`, `hsl()`, dégradé, animation infinie ; le test échoue aussi sur un extrait fautif.
+  - Fin : aucune valeur hexadécimale ni `rgb(a)` ni dégradé dans le fichier (test qui échoue sinon, par recherche de motifs).
+
+- [ ] **1.5.2 Coque de meuble**
+  - Résultat : un composant commun (corps, porte ou portes, lumière) paramétré par `kind`.
+  - Fichiers : `apps/web/components/home/FurnitureShell.tsx`, `apps/web/components/home/furniture-shell.spec.tsx`.
+  - Comportement : structure de l'annexe B ; frigo : une porte à gauche, −78° ; congélateur : une porte à gauche, −86°, givre sur le corps ; garde-manger, cave et autre : deux portes battantes, −88° et +88° ; décor en `aria-hidden` et `pointer-events: none`, seul le contenu est lu et focusable.
+  - Tests : rendu des cinq types (nombre de portes, charnières, angles, lumière, givre) ; aucun élément focusable ni rôle ajouté ; le contenu reste accessible.
+  - Fin : tests de rendu pour les cinq types ; aucun élément focusable ajouté.
+
+- [ ] **1.5.3 Cartes de l'écran Maison**
+  - Résultat : chaque carte montre un meuble fermé dont la porte réagit à l'appui et s'entrouvre quand la recherche y trouve un produit.
+  - Fichiers : `apps/web/components/home/FurnitureCard.tsx`, `apps/web/components/home/furniture/*.tsx`, `apps/web/components/home/home.spec.tsx`.
+  - Comportement : portes superposées aux SVG avec les rectangles du tableau de l'annexe A ; appui : 20° et halo en 120 ms, sans retarder la navigation ; résultat de recherche : anneau ambre conservé, porte à 12° et halo ; SVG en `aria-hidden` ; pastille et compteur à la même place.
+  - Tests : nom accessible du lien, avec et sans pastille ; portes par type ; `data-match` ; SVG masqués aux lecteurs d'écran.
+  - Fin : le lien garde son nom accessible ; `getByRole('link', { name: /^Frigo/ })` passe.
+
+- [ ] **1.5.4 Meuble ouvert**
+  - Résultat : `OpenFurniture` vit dans la coque et la séquence d'ouverture se joue à l'arrivée.
+  - Fichiers : `apps/web/components/home/OpenFurniture.tsx`, `apps/web/components/home/UnshelvedTray.tsx`, `apps/web/app/globals.css`, `apps/web/components/home/open-furniture.spec.tsx`.
+  - Comportement : porte en 600 ms, lumière en 260 ms après 200 ms ; le zoom de 250 ms est remplacé, pas additionné ; pas de bouton « Ouvrir / Fermer ».
+  - Tests : tests existants d'`OpenFurniture` ; coque du bon type autour des étagères.
+  - Fin : l'ordre des `h3` et les `data-shelf-kind` sont inchangés (tests existants verts).
+
+- [ ] **1.5.5 Étagères**
+  - Résultat : planche de verre au frigo et au congélateur, planche indigo ailleurs, halo ambre sur l'étagère survolée pendant un glisser-déposer.
+  - Fichiers : `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/dnd/DroppableShelf.tsx`, specs associées.
+  - Comportement : le dessin dépend de `location.kind` et de `shelf.kind`, jamais du nom ; spot ambre au-dessus de chaque étagère du garde-manger et de la cave ; les `rack` gardent leurs montants ; le halo de survol s'ajoute à l'anneau ; nom accessible de l'étagère inchangé.
+  - Tests : planche par type de meuble ; classe de survol ; tests de déplacement existants.
+  - Fin : tests de glisser-déposer existants verts.
+
+- [ ] **1.5.6 Vignettes**
+  - Résultat : une pile décorative derrière la vignette selon la quantité.
+  - Fichiers : `apps/web/components/home/dnd/DraggableTile.tsx`, `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/UnshelvedTray.tsx`, specs associées.
+  - Comportement : 0 carte pour une unité, jusqu'à 4 cartes pour 5 et plus, décalées de 3 px ; autour du bouton, pas dedans ; `aria-hidden`, aucune zone cliquable ; marges pour que le défilement horizontal ne rogne pas les cartes.
+  - Tests : nombre de cartes selon la quantité ; `aria-label` et classes de taille du bouton ; e2e : bouton de 80 × 80 px.
+  - Fin : `aria-label` et taille 80 × 80 du bouton inchangés.
+
+- [ ] **1.5.7 Congélateur**
+  - Résultat : les étagères du congélateur sont dessinées en tiroirs.
+  - Fichiers : `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/OpenFurniture.tsx`, specs associées.
+  - Comportement : selon `location.kind` ; face blanche, poignée centrale, nom et nombre d'articles ; les tiroirs coulissent l'un après l'autre (12 px, 320 ms, décalage de 60 ms) ; contenu toujours visible (décision C).
+  - Tests : un congélateur de trois tiroirs (classe, rang, nombre d'articles, contenu visible) ; un frigo n'a pas de tiroir.
+  - Fin : tests sur un congélateur de trois tiroirs.
+
+- [ ] **1.5.8 Mouvement réduit**
+  - Résultat : avec `prefers-reduced-motion`, le meuble apparaît ouvert et allumé, sans transition.
+  - Fichiers : `apps/web/app/furniture.css`, `e2e/tests/doors.spec.ts`.
+  - Comportement : durées à 0,01 ms (règle globale), retards annulés, `animation-fill-mode: both`.
+  - Tests : e2e avec `reducedMotion: 'reduce'` : portes à leur angle final, lumière à 0,85, tiroirs en place.
+  - Fin : test avec `prefers-reduced-motion`.
+
+- [ ] **1.5.9 Tests de bout en bout et accessibilité**
+  - Résultat : le parcours critique passe par les portes ; audit et captures sur les deux navigateurs.
+  - Fichiers : `e2e/tests/critical-path.spec.ts`, `e2e/tests/a11y.spec.ts`, `e2e/tests/doors.spec.ts`.
+  - Comportement : parcours critique étendu (meuble ouvert, porte et lumière en place) ; audit axe à 360 px sur « Inventaire, vue Maison » et sur les meubles ouverts ; captures `chromium-mobile` et `webkit-mobile` à 360 et 430 px, examinées.
+  - Tests : toute la suite e2e.
+  - Fin : e2e verts sur les deux navigateurs, zéro violation axe, pas de défilement horizontal de la page.
+
+- [ ] **1.5.10 Mesures**
+  - Résultat : poids du bundle et fluidité, avant et après, sur WebKit.
+  - Fichiers : aucun dans l'application (rapport dans la PR).
+  - Comportement : même méthode avant (`main`) et après (branche) ; `perspective` et `preserve-3d` surveillés sur WebKit.
+  - Tests : sans objet.
+  - Fin : rapport chiffré dans la PR ; aucune nouvelle dépendance.
+
+- [ ] **1.5.11 Documentation**
+  - Résultat : cahier des charges à jour pour la Vue Maison.
+  - Fichiers : `docs/cahier-des-charges.md`, `CLAUDE.md` si besoin, `TASKS.md`.
+  - Comportement : porte réalisée, halo flouté sans dégradé, comportement par type de meuble.
+  - Tests : sans objet.
+  - Fin : texte cohérent avec le code.
+
 ## Phase 2 : Confort (branche `phase-2-confort`) : 14 tâches
 
 > Contenu choisi par Lucas le 14/11/2026 (le schéma Roadmap est absent du cahier). Détail à affiner au début de la phase, au même format que la Phase 1.
@@ -631,5 +714,3 @@
 
 - (résolu 2026-11-14) 0.4 : WebKit installé par Lucas, e2e verts sur `chromium-mobile` et `webkit-mobile`.
 - (note 2026-11-14) 0.19 : le shell local utilisait Node 20 et `argon2` y faisait un SIGSEGV dans les tests API ; sous Node 24 (`.nvmrc`, `nvm use`) tout passe. Un conteneur local `inv-test-pg` occupe `127.0.0.1:5432` (base de test), ce qui peut gêner `docker-compose.dev.yml`.
-
-STOP: validation requise
