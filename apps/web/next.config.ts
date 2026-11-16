@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   // Always defined, so that webpack drops the fake scan engine (end-to-end tests only) from
   // every other build instead of emitting it as an unused chunk.
   env: { NEXT_PUBLIC_E2E: process.env['NEXT_PUBLIC_E2E'] === '1' ? '1' : '0' },
+  async redirects() {
+    // The « À classer » screen was removed: old bookmarks and installed shortcuts land on the inventory.
+    return [{ source: '/a-classer', destination: '/inventaire', permanent: false }];
+  },
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` }];
   },

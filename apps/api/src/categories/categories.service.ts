@@ -77,7 +77,7 @@ export class CategoriesService {
 
   /**
    * Products of the deleted category go to the fallback category ("Autre"), flagged as guessed so
-   * that they show up in "À classer"; its Open Food Facts mappings are deleted with it (cascade).
+   * that the next add sheet offers to pick a category again; its Open Food Facts mappings are deleted with it (cascade).
    */
   async remove(id: number): Promise<void> {
     await this.db.transaction(async (tx) => {

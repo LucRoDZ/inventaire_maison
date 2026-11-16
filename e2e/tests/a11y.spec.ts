@@ -29,7 +29,6 @@ const SCREENS: Screen[] = [
   { name: 'Inventaire, vue Maison', path: '/inventaire' },
   { name: 'Inventaire, vue Liste', path: '/inventaire', list: true },
   { name: 'Meuble ouvert', path: firstLocationPath },
-  { name: 'À classer', path: '/a-classer' },
   { name: 'Plus', path: '/plus' },
   { name: 'Compte', path: '/plus/compte' },
   { name: 'Administration', path: '/plus/administration' },
