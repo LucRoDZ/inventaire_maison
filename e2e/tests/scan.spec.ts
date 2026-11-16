@@ -648,54 +648,12 @@ test('une fiche produit inconnue affiche « Produit introuvable »', async ({ pa
   await expect(page.getByRole('heading', { name: 'Produit introuvable' })).toBeVisible();
 });
 
-const REVIEW = {
-  'chromium-mobile': { code: '3760008888884', name: 'Fromage des classements' },
-  'webkit-mobile': { code: '3760009999992', name: 'Pâtes des classements' },
-} as const;
-
-test('À classer : un produit à catégorie devinée mais jamais confirmée apparaît, est confirmé, disparaît', async ({
-  page,
-}, testInfo) => {
-  const { code, name } = REVIEW[testInfo.project.name as keyof typeof REVIEW];
-  const origin = { Origin: testInfo.project.use.baseURL! };
-  await signIn(page);
-  await startScanner(page);
-  await pushCode(page, code);
-  const sheet = page.getByRole('dialog', { name });
-  await expect(sheet.getByText(/Catégorie proposée/)).toBeVisible();
-  // The sheet is closed without adding: the product exists with its guessed category. Putting it in
-  // stock behind the sheet's back (as an old version of the app did) makes it wait for a review.
-  await sheet.getByRole('button', { name: 'Fermer' }).click();
-  const found = (await (
-    await page.request.get(`/api/products?q=${encodeURIComponent(name)}`)
-  ).json()) as {
-    id: number;
-  }[];
-  const places = (await (await page.request.get('/api/locations')).json()) as { id: number }[];
-  const added = await page.request.post('/api/stock/adjust', {
-    headers: origin,
-    data: { productId: found[0]!.id, locationId: places[0]!.id, delta: 1, reason: 'manual' },
-  });
-  expect(added.ok()).toBe(true);
-
-  await page.getByRole('link', { name: /À classer/ }).click();
-  const card = page.getByRole('article', { name });
-  await expect(card).toBeVisible();
-  await card.getByRole('button', { name: /^Confirmer/ }).click();
-  await expect(card).toHaveCount(0);
-
-  // Reloading: the product is confirmed for good.
-  await page.reload();
-  await expect(page.getByRole('heading', { name: 'À classer', level: 1 })).toBeVisible();
-  await expect(page.getByRole('article', { name })).toHaveCount(0);
-});
-
 const REVIEW_ADDED = {
   'chromium-mobile': { code: '3760017777773', name: 'Biscuits ajoutés directement' },
   'webkit-mobile': { code: '3760018888881', name: 'Jus ajouté directement' },
 } as const;
 
-test('un produit scanné puis ajouté n’attend jamais dans À classer : la catégorie est confirmée à l’ajout', async ({
+test('la catégorie proposée est confirmée par l’ajout, sans écran de relecture', async ({
   page,
 }, testInfo) => {
   const { code, name } = REVIEW_ADDED[testInfo.project.name as keyof typeof REVIEW_ADDED];
@@ -703,13 +661,31 @@ test('un produit scanné puis ajouté n’attend jamais dans À classer : la cat
   await startScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
+  await expect(sheet.getByText(/Catégorie proposée/)).toBeVisible();
+  const before = (await (
+    await page.request.get(`/api/products?q=${encodeURIComponent(name)}`)
+  ).json()) as {
+    categoryGuessed: boolean;
+  }[];
+  expect(before[0]!.categoryGuessed).toBe(true);
+
   await sheet.getByLabel('Lieu').selectOption({ label: 'Garde-manger' });
   await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
 
-  await page.getByRole('link', { name: /À classer/ }).click();
-  await expect(page.getByRole('heading', { name: 'À classer', level: 1 })).toBeVisible();
-  await expect(page.getByRole('article', { name })).toHaveCount(0);
+  const after = (await (
+    await page.request.get(`/api/products?q=${encodeURIComponent(name)}`)
+  ).json()) as {
+    categoryGuessed: boolean;
+  }[];
+  expect(after[0]!.categoryGuessed).toBe(false);
+
+  // The « À classer » screen is gone: its old address lands on the inventory.
+  await page.goto('/a-classer');
+  await expect(page).toHaveURL(/\/inventaire$/);
+  await expect(
+    page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link'),
+  ).toHaveCount(3);
 });
 
 const PASSWORD_CHANGE = { 'chromium-mobile': 'sophie', 'webkit-mobile': 'julien' } as const;

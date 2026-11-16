@@ -69,9 +69,9 @@ La vue Liste :
 
 Modifier nom, catégorie, photo et lieu habituel ; voir le stock par lieu et l'historique des mouvements (qui, quand, combien). Une modification de catégorie s'applique à tout le stock du produit.
 
-### 6. À classer
+### 6. À classer (supprimé)
 
-Liste des produits en stock dont la catégorie a été devinée automatiquement et que personne n'a encore confirmée, avec un classement en un tap. Une catégorie « Autre » choisie ou confirmée par une personne est un classement valide : le produit sort de la liste (corrigé le 15 novembre 2026, voir `TASKS.md` P1.46).
+L'écran a été retiré le 16 novembre 2026 : la catégorie proposée par Open Food Facts se confirme ou se change dans la fiche d'ajout, au moment du scan (voir `TASKS.md` P1.47 et P1.48).
 
 ### 7. Administration (rôle admin)
 
@@ -269,7 +269,7 @@ PostgreSQL 16, migrations versionnées (Prisma ou Drizzle au choix de l'impléme
 - Chaque changement de `stock_items` écrit une ligne dans `stock_movements` dans la même transaction ; le stock courant reste reconstructible depuis le journal.
 - Un déplacement entre étagères ou meubles écrit deux mouvements `move` (moins à l'origine, plus à la destination) dans la même transaction.
 - Une quantité qui atteint 0 supprime la ligne `stock_items`, jamais le produit. Supprimer une étagère renvoie ses produits au plateau « Non rangé ».
-- `category_guessed` vaut vrai quand la catégorie vient de la table de correspondance et que personne ne l'a encore confirmée ; c'est ce qui alimente l'écran « À classer ».
+- `category_guessed` vaut vrai quand la catégorie vient de la table de correspondance et que personne ne l'a encore confirmée ; la fiche d'ajout l'affiche alors comme « proposée » et l'enregistre comme confirmée à l'ajout.
 - Index : `products(barcode)`, `products` en trigram sur `name` (extension `pg_trgm`, pour la recherche par nom), `stock_items(location_id, shelf_id)`, `stock_items(expiry_date)`. La contrainte d'unicité de `stock_items` utilise `NULLS NOT DISTINCT` (PostgreSQL 15 ou plus).
 
 ## Flux de scan
@@ -404,7 +404,7 @@ Le dépôt démarre vide : la CI est créée dès la Phase 0, avant la première
 **UX et interface**
 
 - Mobile d'abord (360 px de large minimum), utilisable aussi sur ordinateur ; thème clair uniquement ; interface en français uniquement.
-- Barre de navigation en bas : Scanner, Inventaire (vues Maison et Liste), À classer, Plus (Compte, Administration, Installer l'application). L'onglet actif est signalé en ambre.
+- Barre de navigation en bas : Scanner, Inventaire (vues Maison et Liste), Plus (Compte, Administration, Installer l'application). L'onglet actif est signalé en ambre.
 - Zones tactiles de 44 px minimum ; stepper − / + pour les quantités.
 - Retour immédiat après chaque ajout : message du type « Ajouté : 2 × Lait demi-écrémé, Frigo, étagère 2 » avec un bouton Annuler pendant 5 secondes.
 - Hors connexion, l'application s'ouvre (coquille en cache) mais les écritures sont refusées avec un message clair ; pas de synchronisation hors ligne dans le MVP.

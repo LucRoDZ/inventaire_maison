@@ -14,7 +14,7 @@ import {
   type ProductSource,
   type ProductStockByLocationDto,
 } from '@inventaire/shared';
-import { and, asc, desc, eq, exists, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, or, sql, type SQL } from 'drizzle-orm';
 import { isUniqueViolation } from '../common/pg-errors';
 import { DB, type Database, type Transaction } from '../database/database.module';
 import { categories, locations, products, shelves, stockItems } from '../database/schema';
@@ -39,7 +39,6 @@ export interface ProductPatchInput {
 
 export interface ProductSearch {
   q?: string;
-  needsReview?: boolean;
   limit: number;
 }
 
@@ -67,22 +66,9 @@ export function toProductDto(row: typeof products.$inferSelect): ProductDto {
 export class ProductsService {
   constructor(@Inject(DB) private readonly db: Database) {}
 
-  async search({ q, needsReview, limit }: ProductSearch): Promise<ProductDto[]> {
+  async search({ q, limit }: ProductSearch): Promise<ProductDto[]> {
     const term = q ? normalizeSearch(q) : '';
     const conditions: SQL[] = [];
-    if (needsReview) {
-      conditions.push(
-        exists(
-          this.db
-            .select({ one: sql`1` })
-            .from(stockItems)
-            .where(eq(stockItems.productId, products.id)),
-        ),
-        // Only a category nobody has confirmed yet is pending. « Autre » chosen or confirmed by a
-        // person is a valid classification: counting it would keep the product here for ever.
-        eq(products.categoryGuessed, true),
-      );
-    }
 
     const query = this.db.select().from(products);
     if (term === '') {

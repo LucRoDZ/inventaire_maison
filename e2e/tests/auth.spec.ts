@@ -13,7 +13,7 @@ async function signIn(page: Page, username = USERNAME, password = PASSWORD) {
 }
 
 test('sans session, toute page renvoie vers la connexion', async ({ page }) => {
-  for (const path of ['/', '/inventaire', '/a-classer', '/plus']) {
+  for (const path of ['/', '/inventaire', '/plus']) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/connexion$/);
   }

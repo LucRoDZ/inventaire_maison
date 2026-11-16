@@ -40,12 +40,6 @@ async function addProduct(name: string, category: string, brand?: string): Promi
   return res.body.id;
 }
 
-async function putInStock(productId: number, location: string, quantity = 1) {
-  await db()
-    .insert(stockItems)
-    .values({ productId, locationId: await locationId(location), quantity });
-}
-
 beforeAll(async () => {
   app = await createTestApp();
 });
@@ -268,45 +262,10 @@ describe('GET /api/products', () => {
     expect((await api.get('/api/products?limit=100')).body.length).toBe(26);
   });
 
-  it('answers 400 for a bad limit or needsReview', async () => {
-    for (const query of ['limit=0', 'limit=101', 'limit=abc', 'needsReview=maybe']) {
+  it('answers 400 for a bad limit', async () => {
+    for (const query of ['limit=0', 'limit=101', 'limit=abc']) {
       expect((await api.get(`/api/products?${query}`)).status).toBe(400);
     }
-  });
-
-  it('needsReview=true lists the products in stock whose category is guessed and unconfirmed', async () => {
-    const chosenOther = await addProduct('Truc', 'Autre');
-    const guessed = await addProduct('Yaourt devine', 'Produits laitiers et œufs');
-    await db().update(products).set({ categoryGuessed: true }).where(eq(products.id, guessed));
-    const guessedOther = await addProduct('Sauce inconnue', 'Autre');
-    await db().update(products).set({ categoryGuessed: true }).where(eq(products.id, guessedOther));
-    const confirmed = await addProduct('Riz', 'Pâtes, riz et féculents');
-    const unstocked = await addProduct('Jamais en stock', 'Autre');
-    await db().update(products).set({ categoryGuessed: true }).where(eq(products.id, unstocked));
-    for (const id of [chosenOther, guessed, guessedOther, confirmed]) await putInStock(id, 'Frigo');
-
-    const res = await api.get('/api/products?needsReview=true');
-    expect(names(res).sort()).toEqual(['Sauce inconnue', 'Yaourt devine']);
-    expect(res.body.map((p: { id: number }) => p.id)).not.toContain(unstocked);
-    // Combines with a text query.
-    expect(names(await api.get('/api/products?needsReview=true&q=sauce'))).toEqual([
-      'Sauce inconnue',
-    ]);
-    // false is the same as absent.
-    expect((await api.get('/api/products?needsReview=false')).body.length).toBeGreaterThan(5);
-  });
-
-  it('confirming « Autre » takes the product out of the list for good', async () => {
-    const id = await addProduct('Sauce inconnue', 'Autre');
-    await db().update(products).set({ categoryGuessed: true }).where(eq(products.id, id));
-    await putInStock(id, 'Frigo');
-    expect(names(await api.get('/api/products?needsReview=true'))).toEqual(['Sauce inconnue']);
-
-    const other = (await db().select().from(products).where(eq(products.id, id)))[0]!.categoryId;
-    const patched = await api.patch(`/api/products/${id}`).send({ categoryId: other });
-    expect(patched.status).toBe(200);
-    expect(patched.body.categoryGuessed).toBe(false);
-    expect(names(await api.get('/api/products?needsReview=true'))).toEqual([]);
   });
 });
 

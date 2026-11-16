@@ -51,7 +51,6 @@ const patchSchema = z
 
 const searchSchema = z.object({
   q: z.string().max(100).optional(),
-  needsReview: z.enum(['true', 'false']).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
@@ -65,7 +64,6 @@ export class ProductsController {
     if (!parsed.success) throw new BadRequestException('Recherche invalide');
     return this.products.search({
       q: parsed.data.q,
-      needsReview: parsed.data.needsReview === 'true',
       limit: parsed.data.limit,
     });
   }
