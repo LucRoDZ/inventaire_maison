@@ -1,7 +1,7 @@
 /** Cave: a bottle rack, three rows of bottles seen from the end. */
 export function Cellar({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 140" role="img" aria-label="Cave" className={className}>
+    <svg viewBox="0 0 120 140" aria-hidden="true" className={className}>
       <rect
         x="10"
         y="12"

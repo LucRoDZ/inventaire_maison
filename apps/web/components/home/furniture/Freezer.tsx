@@ -1,7 +1,7 @@
 /** Congélateur: a chest with three pull-out drawers. */
 export function Freezer({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 140" role="img" aria-label="Congélateur" className={className}>
+    <svg viewBox="0 0 120 140" aria-hidden="true" className={className}>
       <rect
         x="16"
         y="14"

@@ -7,7 +7,7 @@
   --fx-ease: cubic-bezier(0.2, 0.72, 0.2, 1);
   --fx-door-ms: 600ms;
   --fx-shade: color-mix(in srgb, var(--ink) 15%, transparent);
-  --fx-gloss: color-mix(in srgb, var(--white) 75%, transparent);
+  --fx-gloss: color-mix(in srgb, var(--lavender) 70%, transparent);
   --fx-glass: color-mix(in srgb, var(--lavender) 72%, transparent);
   --fx-inner: color-mix(in srgb, var(--indigo) 15%, transparent);
   --fx-glow: color-mix(in srgb, var(--amber) 80%, transparent);

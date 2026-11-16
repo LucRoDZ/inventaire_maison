@@ -478,7 +478,7 @@
   - Tests : rendu des cinq types (nombre de portes, charnières, angles, lumière, givre) ; aucun élément focusable ni rôle ajouté ; le contenu reste accessible.
   - Fin : tests de rendu pour les cinq types ; aucun élément focusable ajouté.
 
-- [ ] **1.5.3 Cartes de l'écran Maison**
+- [x] **1.5.3 Cartes de l'écran Maison**
   - Résultat : chaque carte montre un meuble fermé dont la porte réagit à l'appui et s'entrouvre quand la recherche y trouve un produit.
   - Fichiers : `apps/web/components/home/FurnitureCard.tsx`, `apps/web/components/home/furniture/*.tsx`, `apps/web/components/home/home.spec.tsx`.
   - Comportement : portes superposées aux SVG avec les rectangles du tableau de l'annexe A ; appui : 20° et halo en 120 ms, sans retarder la navigation ; résultat de recherche : anneau ambre conservé, porte à 12° et halo ; SVG en `aria-hidden` ; pastille et compteur à la même place.

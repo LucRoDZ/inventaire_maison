@@ -290,8 +290,11 @@ test('vue Maison : quatre meubles nommés', async ({ page }) => {
     'true',
   );
   for (const name of ['Garde-manger', 'Frigo', 'Congélateur', 'Cave']) {
-    await expect(page.getByRole('link', { name: new RegExp(`\\b${name}\\b`) })).toBeVisible();
-    await expect(page.getByRole('img', { name })).toBeVisible();
+    const card = page.getByRole('link', { name: new RegExp(`^${name}\\b`) });
+    await expect(card).toBeVisible();
+    // The drawing is scenery (phase 1.5): hidden from assistive technology, still drawn.
+    await expect(card.locator('.fx-card-stage > svg')).toBeVisible();
+    await expect(page.getByRole('img', { name })).toHaveCount(0);
   }
   await expect(page.getByRole('link', { name: /^Frigo/ })).toContainText(/\d+ articles?/);
 });
