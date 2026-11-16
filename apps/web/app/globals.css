@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../../../tokens.css';
+@import './furniture.css';
 
 /* Tailwind utilities are generated from the tokens: no colour is ever written here. */
 @theme inline {

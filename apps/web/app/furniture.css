@@ -1,0 +1,366 @@
+/* Portes et lumière de la Vue Maison.
+   Aucune couleur en dur, aucun dégradé : uniquement les variables de tokens.css.
+   Seules transform et opacity sont animées, jamais en boucle. */
+
+.fx-scene,
+.fx-card {
+  --fx-ease: cubic-bezier(0.2, 0.72, 0.2, 1);
+  --fx-door-ms: 600ms;
+  --fx-shade: color-mix(in srgb, var(--ink) 15%, transparent);
+  --fx-gloss: color-mix(in srgb, var(--white) 75%, transparent);
+  --fx-glass: color-mix(in srgb, var(--lavender) 72%, transparent);
+  --fx-inner: color-mix(in srgb, var(--indigo) 15%, transparent);
+  --fx-glow: color-mix(in srgb, var(--amber) 80%, transparent);
+}
+
+/* ---------- Meuble ouvert ---------- */
+
+/* Le cadre sert d'étalon : la perspective suit la largeur du meuble, le dessin est donc le même
+   à 360 px, à 430 px et sur ordinateur. */
+.fx-frame {
+  container-type: inline-size;
+}
+
+/* La scène réserve une bande de chaque côté du corps : la porte ouverte, vue de biais, s'y projette
+   et ne recouvre jamais les étagères. Ce qui dépasse de la scène est coupé (pas de défilement). */
+.fx-scene {
+  --fx-band-left: 7%;
+  --fx-band-right: 7%;
+  --fx-doors: 2;
+  --fx-eye: 50%;
+  --fx-top: 16px;
+  --fx-bottom: 12px;
+  position: relative;
+  padding: var(--fx-top) var(--fx-band-right) var(--fx-bottom) var(--fx-band-left);
+  overflow: hidden;
+  perspective: 1100px;
+  perspective: 310cqw;
+  perspective-origin: var(--fx-eye) 56px;
+}
+.fx-scene[data-kind='fridge'] {
+  --fx-band-left: 19%;
+  --fx-band-right: 6px;
+  --fx-doors: 1;
+  --fx-eye: 137%;
+}
+.fx-scene[data-kind='freezer'] {
+  --fx-band-left: 12%;
+  --fx-band-right: 6px;
+  --fx-doors: 1;
+  --fx-eye: 60%;
+}
+
+/* Corps du meuble ouvert. Le contenu réel (étagères) est dedans, au-dessus de la lumière. */
+.fx-body {
+  position: relative;
+  overflow: hidden;
+  padding: 40px 8px 8px;
+  background: var(--lavender);
+  border: 7px solid var(--lavender-line);
+  border-radius: 13px;
+  box-shadow:
+    inset 0 0 20px var(--fx-inner),
+    var(--shadow-card);
+}
+.fx-body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Lumière : une ellipse ambre floutée, on n'anime que l'opacité. Une seule par écran. */
+.fx-light {
+  position: absolute;
+  z-index: 0;
+  top: -40px;
+  left: 15%;
+  width: 70%;
+  height: 110px;
+  border-radius: 50%;
+  background: var(--amber);
+  filter: blur(32px);
+  opacity: 0;
+  pointer-events: none;
+  animation: fx-light-on 260ms ease-out 200ms both;
+}
+@keyframes fx-light-on {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
+
+/* Givre du congélateur : liseré pointillé sur les bords du corps, décoratif. */
+.fx-frost {
+  position: absolute;
+  z-index: 0;
+  inset: 2px;
+  border: 3px dotted var(--white);
+  border-radius: 7px;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* Porte : décor pur, posée sur le corps. --fx-angle vaut -78deg (frigo), -86deg (congélateur),
+   -88deg / 88deg (battants). Ouverte, elle montre son verso dans la bande réservée. */
+.fx-door {
+  position: absolute;
+  z-index: 4;
+  top: var(--fx-top);
+  bottom: var(--fx-bottom);
+  width: calc((100% - var(--fx-band-left) - var(--fx-band-right)) / var(--fx-doors));
+  pointer-events: none;
+  transform-style: preserve-3d;
+  animation: fx-swing var(--fx-door-ms) var(--fx-ease) both;
+}
+.fx-door[data-hinge='left'] {
+  left: var(--fx-band-left);
+  transform-origin: left center;
+}
+.fx-door[data-hinge='right'] {
+  right: var(--fx-band-right);
+  transform-origin: right center;
+}
+@keyframes fx-swing {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(var(--fx-angle, -78deg));
+  }
+}
+.fx-door-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--white);
+  border: 5px solid var(--lavender-line);
+  border-radius: 12px;
+  box-shadow: 8px 6px 12px var(--fx-shade);
+  backface-visibility: hidden;
+}
+.fx-door-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--lavender);
+  border: 5px solid var(--lavender-line);
+  border-radius: 12px;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+}
+/* Contre-porte : un simple cadre en retrait. */
+.fx-door-back::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 2px solid var(--lavender-line);
+  border-radius: 8px;
+}
+.fx-gloss {
+  position: absolute;
+  inset: 0 auto 0 14px;
+  width: 16px;
+  background: var(--fx-gloss);
+  transform: skewX(-6deg);
+}
+.fx-handle {
+  position: absolute;
+  top: 35px;
+  right: 15px;
+  width: 7px;
+  height: 112px;
+  background: var(--grey);
+  border: 2px solid var(--white);
+  border-radius: 5px;
+  box-shadow: 0 2px 5px var(--fx-shade);
+}
+.fx-door[data-hinge='right'] .fx-handle,
+.fx-card-door[data-hinge='right'] .fx-handle {
+  right: auto;
+  left: 15px;
+}
+/* Congélateur : poignée longue. */
+.fx-scene[data-kind='freezer'] .fx-handle {
+  height: 220px;
+}
+
+/* ---------- Étagères ---------- */
+
+/* Planche de verre (frigo, congélateur). */
+.fx-glass-edge {
+  height: 7px;
+  background: var(--fx-glass);
+  border: 1px solid var(--white);
+  border-bottom-color: var(--lavender-line);
+  border-radius: 4px;
+  box-shadow: 0 3px 5px var(--fx-inner);
+}
+
+/* Spot au-dessus d'une étagère (garde-manger, cave) : une lampe ambre et sa lueur, sans flou. */
+.fx-spot {
+  position: absolute;
+  z-index: 0;
+  top: 2px;
+  left: 30%;
+  width: 40%;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 2px 14px 3px var(--fx-glow);
+  opacity: 0;
+  pointer-events: none;
+  animation: fx-light-on 260ms ease-out 200ms both;
+}
+
+/* Tiroir (congélateur) : l'étagère devient un tiroir. --i = son rang (0, 1, 2…). */
+.fx-drawer {
+  position: relative;
+  padding: 8px;
+  background: var(--white);
+  border: 2px solid var(--lavender-line);
+  border-radius: 12px;
+  box-shadow: 0 5px 7px var(--fx-shade);
+  animation: fx-drawer-in 320ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.fx-drawer::before {
+  content: '';
+  display: block;
+  width: 50%;
+  height: 7px;
+  margin: 0 auto 4px;
+  background: var(--grey);
+  border-radius: 5px;
+}
+@keyframes fx-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Pile de vignettes : le conteneur laisse 12 px en haut et à droite pour les cartes qui dépassent.
+   Chaque carte derrière porte --i = 1, 2, 3 ou 4 (quantité − 1, plafonné à 4). */
+.fx-pile {
+  position: relative;
+  padding: 12px 12px 0 0;
+}
+.fx-pile-card {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 5rem;
+  height: 5rem;
+  background: var(--white);
+  border: 1px solid var(--lavender-line);
+  border-radius: 12px;
+  box-shadow: 1px 2px 3px var(--fx-shade);
+  transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px));
+  pointer-events: none;
+}
+.fx-pile > button,
+.fx-pile > .fx-tile {
+  position: relative;
+  z-index: 1;
+}
+
+/* Étagère cible pendant un glisser-déposer : l'anneau ambre existant, plus un halo. */
+.fx-over {
+  background: color-mix(in srgb, var(--amber) 22%, transparent);
+  box-shadow:
+    0 0 0 4px var(--amber),
+    0 0 20px var(--fx-glow);
+}
+
+/* ---------- Cartes de l'écran Maison ---------- */
+
+/* --fx-sign vaut -1 (charnière à gauche) ou 1 (charnière à droite). */
+.fx-card-stage {
+  position: relative;
+  height: 7rem;
+  aspect-ratio: 120 / 140;
+  margin-inline: auto;
+  perspective: 600px;
+}
+.fx-card-stage > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.fx-card-door {
+  --fx-sign: -1;
+  position: absolute;
+  transform-origin: left center;
+  transition: transform 120ms ease-out;
+  pointer-events: none;
+}
+.fx-card-door[data-hinge='right'] {
+  --fx-sign: 1;
+  transform-origin: right center;
+}
+.fx-card-door .fx-door-face {
+  border-width: 2px;
+  border-radius: 7px;
+  box-shadow: 2px 2px 4px var(--fx-shade);
+}
+.fx-card-door .fx-gloss {
+  inset: 0 auto 0 14%;
+  width: 14%;
+}
+.fx-card-door .fx-handle {
+  top: 30%;
+  right: 10%;
+  width: 4px;
+  height: 28%;
+  border-width: 1px;
+  box-shadow: none;
+}
+.fx-card-door[data-hinge='right'] .fx-handle {
+  left: 10%;
+}
+.fx-card-stage[data-kind='freezer'] .fx-handle {
+  top: 20%;
+  height: 60%;
+}
+.fx-card-light {
+  position: absolute;
+  top: -10px;
+  left: 20%;
+  width: 60%;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--amber);
+  filter: blur(14px);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+.fx-card:active .fx-card-door {
+  transform: rotateY(calc(var(--fx-sign) * 20deg));
+}
+.fx-card[data-match='true'] .fx-card-door {
+  transform: rotateY(calc(var(--fx-sign) * 12deg));
+}
+.fx-card:active .fx-card-light,
+.fx-card[data-match='true'] .fx-card-light {
+  opacity: 0.85;
+}
+
+/* ---------- Mouvement réduit ---------- */
+
+/* La règle globale ramène les durées à 0,01 ms ; ici on retire aussi les retards : le meuble
+   apparaît directement ouvert, lumière allumée, tiroirs en place. */
+@media (prefers-reduced-motion: reduce) {
+  .fx-light,
+  .fx-spot,
+  .fx-drawer,
+  .fx-door {
+    animation-delay: 0s;
+  }
+}

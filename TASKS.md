@@ -464,7 +464,7 @@
 > Périmètre : le dessin et l'animation des meubles de la Vue Maison. La navigation, l'API, la base, les types partagés et les pages hors Vue Maison ne changent pas. Aucune nouvelle dépendance.
 > À ne pas casser (section 7 du cadrage) : lien de carte `/^Frigo/`, régions d'étagère, ordre des `h3`, plateau « Non rangé » en dernier, `data-shelf-kind`, boutons « nom, quantité n », « Déplacer vers… », annonces du glisser-déposer, bascule Maison / Liste, audit axe à 360 px, zones de 44 px, aucun emoji, aucun texte ambre, aucun défilement horizontal de la page.
 
-- [ ] **1.5.1 Styles de base**
+- [x] **1.5.1 Styles de base**
   - Résultat : la feuille de style des portes et de la lumière, sans une seule couleur en dur.
   - Fichiers : `apps/web/app/furniture.css`, `apps/web/app/globals.css`, `apps/web/app/furniture-css.spec.ts`.
   - Comportement : classes `fx-*` de l'annexe A (scène, corps, lumière, porte, reflet, poignée, planche de verre, tiroir, givre, pile, étagère cible, carte) ; couleurs par variables de `tokens.css` et `color-mix()` ; importée dans `globals.css` après `tokens.css` ; seules `transform` et `opacity` sont animées ; aucune animation en boucle.
