@@ -53,7 +53,7 @@ export function ShelfRow({
             </Link>
           </div>
         ) : (
-          <ul className="flex gap-2 overflow-x-auto pb-1">
+          <ul className="flex overflow-x-auto pb-1">
             {shelf.tiles.map((tile) => (
               <li key={tile.stockItemId} className="shrink-0">
                 <DraggableTile tile={tile} onSelect={onSelect} dimmed={isDimmed?.(tile)} />

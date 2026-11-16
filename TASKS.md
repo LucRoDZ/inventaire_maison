@@ -499,9 +499,9 @@
   - Tests : planche par type de meuble ; classe de survol ; tests de déplacement existants.
   - Fin : tests de glisser-déposer existants verts.
 
-- [ ] **1.5.6 Vignettes**
+- [x] **1.5.6 Vignettes**
   - Résultat : une pile décorative derrière la vignette selon la quantité.
-  - Fichiers : `apps/web/components/home/dnd/DraggableTile.tsx`, `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/UnshelvedTray.tsx`, specs associées.
+  - Fichiers : `apps/web/components/home/dnd/DraggableTile.tsx`, `apps/web/components/home/ProductTile.tsx`, `apps/web/components/home/ShelfRow.tsx`, `apps/web/components/home/UnshelvedTray.tsx`, `e2e/tests/doors.spec.ts`, specs associées.
   - Comportement : 0 carte pour une unité, jusqu'à 4 cartes pour 5 et plus, décalées de 3 px ; autour du bouton, pas dedans ; `aria-hidden`, aucune zone cliquable ; marges pour que le défilement horizontal ne rogne pas les cartes.
   - Tests : nombre de cartes selon la quantité ; `aria-label` et classes de taille du bouton ; e2e : bouton de 80 × 80 px.
   - Fin : `aria-label` et taille 80 × 80 du bouton inchangés.

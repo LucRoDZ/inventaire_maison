@@ -32,7 +32,7 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
         {tiles.length === 0 ? (
           <p className="text-small">Rien de non rangé.</p>
         ) : (
-          <ul className="flex gap-2 overflow-x-auto pb-1">
+          <ul className="flex overflow-x-auto pb-1">
             {tiles.map((tile) => (
               <li key={tile.stockItemId} className="shrink-0">
                 <DraggableTile tile={tile} onSelect={onSelect} dimmed={isDimmed?.(tile)} />

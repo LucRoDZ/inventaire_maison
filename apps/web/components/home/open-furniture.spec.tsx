@@ -200,6 +200,64 @@ describe('OpenFurniture', () => {
     expect(container.querySelector('.fx-spot')).toBeNull();
   });
 
+  it('piles decorative cards behind a tile: none for 1 unit, 4 at most from 5 units', () => {
+    const quantities = [1, 2, 3, 5, 6, 12];
+    const location = fridge({
+      shelves: [
+        shelf(
+          22,
+          'Étagère 2',
+          'plain',
+          quantities.map((quantity, i) => tile(i + 1, `P${quantity}`, quantity)),
+        ),
+      ],
+    });
+    render(<OpenFurniture location={location} />);
+    const piles = quantities.map((quantity) => {
+      const button = screen.getByRole('button', { name: `P${quantity}, quantité ${quantity}` });
+      const pile = button.parentElement!;
+      expect(pile).toHaveClass('fx-pile');
+      // Around the button, never inside it.
+      expect(button.querySelector('.fx-pile-card')).toBeNull();
+      const cards = [...pile.querySelectorAll<HTMLElement>(':scope > .fx-pile-card')];
+      for (const card of cards) {
+        expect(card).toHaveAttribute('aria-hidden', 'true');
+        expect(card.tagName).toBe('SPAN');
+      }
+      expect(cards.map((card) => card.style.getPropertyValue('--i'))).toEqual(
+        cards.map((_, k) => String(k + 1)),
+      );
+      return cards.length;
+    });
+    expect(piles).toEqual([0, 1, 2, 4, 4, 4]);
+  });
+
+  it('keeps the button of a tile as it was: same name, 80 × 80, one per line of stock', () => {
+    const location = fridge({
+      shelves: [shelf(22, 'Étagère 2', 'plain', [tile(1, 'Lait', 9), tile(2, 'Eau', 1)])],
+    });
+    render(<OpenFurniture location={location} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Lait, quantité 9',
+      'Eau, quantité 1',
+    ]);
+    for (const button of buttons) expect(button).toHaveClass('h-20', 'w-20', 'shrink-0');
+  });
+
+  it('draws no pile behind a tile faded by the filter', () => {
+    const location = fridge({
+      shelves: [shelf(22, 'Étagère 2', 'plain', [tile(1, 'Lait', 9), tile(2, 'Eau', 4)])],
+    });
+    const { container } = render(
+      <OpenFurniture location={location} isDimmed={(t) => t.name === 'Lait'} />,
+    );
+    expect(container.querySelectorAll('.fx-pile-card')).toHaveLength(3);
+    const faded = screen.getByRole('button', { name: 'Lait, quantité 9' });
+    expect(faded).toHaveClass('opacity-30');
+    expect(faded.parentElement!.querySelectorAll('.fx-pile-card')).toHaveLength(0);
+  });
+
   it('has no « Ouvrir » or « Fermer » button: the door is a transition, not a control', () => {
     render(<OpenFurniture location={fridge()} />);
     expect(screen.queryByRole('button', { name: /ouvrir|fermer/i })).toBeNull();
