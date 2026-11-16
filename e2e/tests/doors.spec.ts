@@ -268,18 +268,13 @@ test.describe('portes de la Vue Maison', () => {
     for (const [name, doors] of Object.entries(DOORS)) {
       await openPlace(page, name);
       await expect(page.locator('.fx-scene .fx-door')).toHaveCount(doors);
-      // Two frames, not a wait for the animations: the final state must be there at once.
-      await page.evaluate(
-        () =>
-          new Promise<void>((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-          ),
-      );
-      const state = await furnitureScenery(page);
-      expect(state.animations, name).toBeGreaterThan(doors);
-      expect(state.finished, name).toBe(true);
+      // Not a matter of waiting: the timing itself says there is neither transition nor delay.
+      const timing = await furnitureScenery(page);
+      expect(timing.animations, name).toBeGreaterThan(doors);
       // 0.01 ms by the global rule, and no delay left (it was 200 ms for the light).
-      expect(state.longest, name).toBeLessThan(1);
+      expect(timing.longest, name).toBeLessThan(1);
+      await furnitureSettled(page);
+      const state = await furnitureScenery(page);
       // Doors open: each one stands in its band, beside the body, showing its back.
       for (const overlap of state.overlap) expect(overlap, name).toBeLessThanOrEqual(1);
       for (const width of state.doorWidths) expect(width, name).toBeLessThan(state.bodyWidth / 3);

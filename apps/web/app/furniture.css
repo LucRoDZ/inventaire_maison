@@ -57,8 +57,10 @@
   background: var(--lavender);
   border: 7px solid var(--lavender-line);
   border-radius: 13px;
+  /* Ombre intérieure sans flou : une grande ombre floutée est recalculée à chaque image dès que
+     quelque chose bouge dans le meuble (mesuré sur WebKit, tâche 1.5.10). */
   box-shadow:
-    inset 0 0 20px var(--fx-inner),
+    inset 0 0 0 1px var(--fx-inner),
     var(--shadow-card);
 }
 .fx-body > * {
@@ -158,7 +160,6 @@
   background: var(--white);
   border: 5px solid var(--lavender-line);
   border-radius: 12px;
-  box-shadow: 8px 6px 12px var(--fx-shade);
 }
 .fx-door-back {
   position: absolute;
@@ -202,7 +203,6 @@
   background: var(--grey);
   border: 2px solid var(--white);
   border-radius: 5px;
-  box-shadow: 0 2px 5px var(--fx-shade);
 }
 .fx-door[data-hinge='right'] .fx-handle,
 .fx-card-door[data-hinge='right'] .fx-handle {
@@ -223,7 +223,7 @@
   border: 1px solid var(--white);
   border-bottom-color: var(--lavender-line);
   border-radius: 4px;
-  box-shadow: 0 3px 5px var(--fx-inner);
+  box-shadow: 0 2px 0 var(--fx-inner); /* fine ombre portée, sans flou */
 }
 
 /* Spot au-dessus d'une étagère (garde-manger, cave) : une lampe ambre et sa lueur, sans flou. */
@@ -249,7 +249,7 @@
   background: var(--white);
   border: 2px solid var(--lavender-line);
   border-radius: 12px;
-  box-shadow: 0 5px 7px var(--fx-shade);
+  box-shadow: 0 3px 0 var(--fx-shade); /* sans flou : le tiroir bouge à l'arrivée */
   animation: fx-drawer-in 320ms ease-out both;
   animation-delay: calc(var(--i, 0) * 60ms);
 }
@@ -286,9 +286,9 @@
   width: 5rem;
   height: 5rem;
   background: var(--white);
+  /* Pas d'ombre : jusqu'à quatre cartes par vignette défilent avec l'étagère, le liseré suffit. */
   border: 1px solid var(--lavender-line);
   border-radius: 12px;
-  box-shadow: 1px 2px 3px var(--fx-shade);
   transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px));
   pointer-events: none;
 }
@@ -348,7 +348,6 @@
   width: 4px;
   height: 28%;
   border-width: 1px;
-  box-shadow: none;
 }
 .fx-card-door[data-hinge='right'] .fx-handle {
   left: 10%;

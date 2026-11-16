@@ -527,9 +527,9 @@
   - Tests : toute la suite e2e.
   - Fin : e2e verts sur les deux navigateurs, zéro violation axe, pas de défilement horizontal de la page.
 
-- [ ] **1.5.10 Mesures**
+- [x] **1.5.10 Mesures**
   - Résultat : poids du bundle et fluidité, avant et après, sur WebKit.
-  - Fichiers : aucun dans l'application (rapport dans la PR).
+  - Fichiers : `apps/web/app/furniture.css` (ombres allégées après mesure), `e2e/tests/doors.spec.ts` ; rapport dans la PR.
   - Comportement : même méthode avant (`main`) et après (branche) ; `perspective` et `preserve-3d` surveillés sur WebKit.
   - Tests : sans objet.
   - Fin : rapport chiffré dans la PR ; aucune nouvelle dépendance.
@@ -723,6 +723,7 @@
 - 16/11/2026 : P1.5.12. Non fait, car facultatif dans le cadrage (« on peut ») : les alvéoles rondes derrière les vignettes des étagères `rack`. Les montants sont conservés.
 - 16/11/2026 : P1.5.13. `CLAUDE.md` inchangé : la recommandation A ne touche à aucune règle du projet. Le README gagne un test manuel de la Vue Maison sur vrais appareils.
 - 16/11/2026 : P1.5.14. Tests de l'API : lancés au début et à la fin de la phase, pas à chaque tâche (aucun fichier de l'API ni des types partagés n'est modifié) ; lint, format, typecheck et tests du web à chaque tâche.
+- 16/11/2026 : P1.5.15. Mesures (tâche 1.5.10), même méthode avant (`main`, 0d6b3c1) et après : build de production, puis cadence des images (`requestAnimationFrame`, médiane de 5 passages) à l'ouverture d'un meuble, au défilement de la page et au défilement d'une étagère, sur `chromium-mobile` (normal et CPU ralenti 4 fois) et `webkit-mobile`. Constat sur le WebKit de Playwright (rendu logiciel, sans carte graphique) : les ombres floutées étaient recalculées à chaque image, étagère du frigo à 15 images par seconde et ouverture à 35. Correctif : plus d'ombre sur les cartes de pile, la porte et la poignée ; ombre sans flou sous les planches de verre et les tiroirs ; ombre intérieure du corps remplacée par un filet de 1 px (l'ombre de carte `--shadow-card` reste). Le halo flouté est gardé tel que spécifié : c'est le seul coût encore mesurable (3 à 4 images de plus de 50 ms pendant l'ouverture, sur ce WebKit seulement). Chromium reste à 60 images par seconde partout. Chiffres complets dans la PR. Limite : ces navigateurs tournent sans écran ni carte graphique ; un vrai iPhone reste à vérifier à la main (README).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
