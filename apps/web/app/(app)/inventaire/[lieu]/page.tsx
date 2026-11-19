@@ -18,10 +18,11 @@ import { Callout } from '../../../../components/ui/Callout';
 import { applyMove, findTile, type Destination } from '../../../../lib/drop';
 import { ApiError } from '../../../../lib/api';
 import { fetchHome } from '../../../../lib/home-api';
-import { HomeFilters } from '../../../../components/home/HomeFilters';
+import { FilterReminder, FiltersControl } from '../../../../components/home/FiltersControl';
 import {
   filtersToQuery,
   isFiltering,
+  NO_FILTER,
   tileMatches,
   useHomeFilters,
 } from '../../../../lib/home-filters';
@@ -120,7 +121,7 @@ function Meuble() {
 
   return (
     <main className="fx-fit flex flex-col gap-1">
-      {/* One row of 48 px: back (icon only), the name of the furniture. */}
+      {/* One row of 48 px: back (icon only), the name of the furniture, the filters. */}
       <div className="flex h-12 shrink-0 items-center gap-1">
         <Link
           href={`/inventaire${filtersToQuery(filters)}`}
@@ -135,8 +136,13 @@ function Meuble() {
         ) : (
           <span className="flex-1" />
         )}
+        <FiltersControl filters={filters} onChange={setFilters} categories={categories} />
       </div>
-      <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
+      <FilterReminder
+        filters={filters}
+        categories={categories}
+        onClear={() => setFilters(NO_FILTER)}
+      />
       {failed ? (
         <Callout role="alert" title="Un instant">
           Impossible de charger le meuble : vérifiez la connexion.
