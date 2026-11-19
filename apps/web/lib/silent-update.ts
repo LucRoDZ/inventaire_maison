@@ -86,13 +86,6 @@ export function isChunkLoadError(reason: unknown): boolean {
   );
 }
 
-/** A `<script>` or stylesheet of the app (under /_next/static/) that failed to load. */
-export function isAppAssetError(target: EventTarget | null): boolean {
-  if (target instanceof HTMLScriptElement) return target.src.includes('/_next/static/');
-  if (target instanceof HTMLLinkElement) return target.href.includes('/_next/static/');
-  return false;
-}
-
 /**
  * Reloads the page once, silently. A flag in sessionStorage keeps it from doing it again within
  * CHUNK_RELOAD_WINDOW_MS, so a chunk that is really missing never makes the page loop.

@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import {
   applyPendingUpdate,
-  isAppAssetError,
   isBusy,
   isChunkLoadError,
   isTextEntry,
@@ -138,19 +137,36 @@ export function RegisterSW({
 
   // A page opened before a deployment asks for a chunk that is gone: reload once, silently.
   useEffect(() => {
-    const recover = () =>
-      reloadOnceAfterChunkError(sessionStore(), Date.now(), seams.current.reload);
-    const onError = (event: Event) => {
-      if (isAppAssetError(event.target) || isChunkLoadError((event as ErrorEvent).error)) recover();
+    // Leaving the page aborts the scripts still loading: those failures are not missing chunks.
+    let leaving = false;
+    const onLeave = () => {
+      leaving = true;
+    };
+    const onBack = () => {
+      leaving = false;
+    };
+    const recover = () => {
+      if (!leaving) reloadOnceAfterChunkError(sessionStore(), Date.now(), seams.current.reload);
+    };
+    // Webpack turns a chunk that cannot be loaded into a ChunkLoadError: an uncaught one reaches
+    // window as an error (render) or an unhandled rejection (import()).
+    const onError = (event: ErrorEvent) => {
+      if (isChunkLoadError(event.error)) recover();
     };
     const onRejection = (event: PromiseRejectionEvent) => {
       if (isChunkLoadError(event.reason)) recover();
     };
-    window.addEventListener('error', onError, true);
+    window.addEventListener('error', onError);
     window.addEventListener('unhandledrejection', onRejection);
+    window.addEventListener('pagehide', onLeave);
+    window.addEventListener('beforeunload', onLeave);
+    window.addEventListener('pageshow', onBack);
     return () => {
-      window.removeEventListener('error', onError, true);
+      window.removeEventListener('error', onError);
       window.removeEventListener('unhandledrejection', onRejection);
+      window.removeEventListener('pagehide', onLeave);
+      window.removeEventListener('beforeunload', onLeave);
+      window.removeEventListener('pageshow', onBack);
     };
   }, []);
 

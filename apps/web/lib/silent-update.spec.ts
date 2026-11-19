@@ -3,7 +3,6 @@ import {
   applyPendingUpdate,
   CHUNK_RELOAD_KEY,
   CHUNK_RELOAD_WINDOW_MS,
-  isAppAssetError,
   isBusy,
   isChunkLoadError,
   isTextEntry,
@@ -97,19 +96,6 @@ describe('chunk guard', () => {
     expect(isChunkLoadError(new TypeError('x is undefined'))).toBe(false);
     expect(isChunkLoadError(null)).toBe(false);
     expect(isChunkLoadError('Loading chunk 1 failed')).toBe(false);
-  });
-
-  it('recognises a failed script or stylesheet of the app only', () => {
-    const script = document.createElement('script');
-    script.src = 'http://localhost/_next/static/chunks/app.js';
-    const other = document.createElement('script');
-    other.src = 'http://localhost/elsewhere.js';
-    const sheet = document.createElement('link');
-    sheet.href = 'http://localhost/_next/static/css/app.css';
-    expect(isAppAssetError(script)).toBe(true);
-    expect(isAppAssetError(sheet)).toBe(true);
-    expect(isAppAssetError(other)).toBe(false);
-    expect(isAppAssetError(window)).toBe(false);
   });
 
   it('reloads once and writes the flag', () => {

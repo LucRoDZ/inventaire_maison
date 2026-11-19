@@ -216,6 +216,33 @@ describe('RegisterSW (silent update)', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('never reloads for a script cut short because the page is being left', async () => {
+    await mounted();
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+      const missing = Object.assign(new Error('Loading chunk 9 failed.'), {
+        name: 'ChunkLoadError',
+      });
+      window.dispatchEvent(new ErrorEvent('error', { error: missing }));
+      const script = document.createElement('script');
+      document.body.append(script);
+      script.dispatchEvent(new Event('error'));
+    });
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('reloads for a chunk missing in a dynamic import (unhandled rejection)', async () => {
+    await mounted();
+    const event = new Event('unhandledrejection') as PromiseRejectionEvent;
+    Object.defineProperty(event, 'reason', {
+      value: new TypeError('Failed to fetch dynamically imported module: /_next/static/x.js'),
+    });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
   it('ignores ordinary errors', async () => {
     await mounted();
     act(() => {
