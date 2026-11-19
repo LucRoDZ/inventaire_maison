@@ -22,8 +22,11 @@ const OFFLINE_HTML = `<!doctype html><html lang="fr"><meta charset="utf-8"><meta
 const serwist = new Serwist({
   // JS, CSS, fonts and icons: precached at install and versioned by revision.
   precacheEntries: self.__SW_MANIFEST,
-  // A new version waits until the user taps « Actualiser ».
-  skipWaiting: false,
+  // Silent update: a new version takes over at once, nobody is asked anything. The open pages
+  // switch to it at their next navigation (see lib/silent-update.ts); the precache of the previous
+  // version is removed.
+  precacheOptions: { cleanupOutdatedCaches: true },
+  skipWaiting: true,
   clientsClaim: true,
   navigationPreload: false,
   // Only GET requests are matched: writes (POST, PATCH, DELETE) are never intercepted.

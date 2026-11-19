@@ -20,6 +20,7 @@ import {
 } from '../../lib/scanner/camera';
 import { createScanner } from '../../lib/scanner/create-scanner';
 import type { ScanResult, Scanner } from '../../lib/scanner/types';
+import { setBusy } from '../../lib/silent-update';
 import { Button } from '../ui/Button';
 import { CameraControls } from './CameraControls';
 import { PermissionHelp } from './PermissionHelp';
@@ -144,6 +145,12 @@ export function ScannerView({
 
   // The camera stays on while paused; only the reading stops.
   const running = phase.name === 'running';
+  // A silent update never reloads the page while the camera is on.
+  useEffect(() => {
+    if (!running) return;
+    setBusy('camera', true);
+    return () => setBusy('camera', false);
+  }, [running]);
   useEffect(() => {
     if (!running) return;
     if (paused) scannerRef.current?.stop();
