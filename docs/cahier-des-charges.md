@@ -146,7 +146,11 @@ L'application s'installe depuis le navigateur sur l'écran d'accueil, s'ouvre en
 
 - Précache la coquille (JS, CSS, polices, icônes) ; images produits en `stale-while-revalidate` ; appels `/api` en réseau d'abord, sans aucune écriture hors ligne.
 - Hors connexion : la coquille s'ouvre et un encadré « Pas de connexion » explique que l'ajout et le retrait sont indisponibles.
-- Cache versionné. Quand une nouvelle version est détectée, un message « Nouvelle version disponible » propose Actualiser.
+- Cache versionné, **mise à jour silencieuse** : l'application ne demande jamais rien pour se mettre à jour (aucun message, aucun bouton).
+  - Le service worker d'une nouvelle version prend la main tout seul (`skipWaiting`, `clientsClaim`) et supprime le précache de la version précédente.
+  - L'application cherche une mise à jour au lancement et à chaque retour au premier plan (`visibilitychange`).
+  - La page ouverte passe à la nouvelle version à la navigation suivante d'un écran à l'autre, ou au prochain lancement ; jamais pendant une action : caméra du scanner active, texte saisi non enregistré, glisser-déposer en cours, feuille ou panneau ouvert.
+  - Garde-fou : si une page ouverte avant un déploiement demande un fichier JavaScript qui n'existe plus (erreur de chargement de bloc), elle se recharge une seule fois, sans message (drapeau en `sessionStorage`, au plus un rechargement toutes les 5 minutes).
 
 **Fenêtre d'installation**
 

@@ -31,8 +31,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="font-sans">
         <div className="mx-auto flex max-w-xl flex-col gap-2 px-4 pt-4 empty:hidden">
           <OfflineCallout />
-          <RegisterSW />
         </div>
+        {/* Silent update: renders nothing, never asks anything. */}
+        <RegisterSW />
         <InstallCapture />
         {children}
       </body>

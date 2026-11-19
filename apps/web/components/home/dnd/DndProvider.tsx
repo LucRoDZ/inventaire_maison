@@ -23,6 +23,7 @@ import {
   parseTileId,
   type Destination,
 } from '../../../lib/drop';
+import { setBusy } from '../../../lib/silent-update';
 import { ProductTile } from '../ProductTile';
 import { FurnitureDropBar } from './FurnitureDropBar';
 
@@ -111,11 +112,14 @@ export function DndProvider({ home, onMove, children }: DndProviderProps) {
   };
 
   const start = ({ active }: DragStartEvent) => {
+    // A silent update never reloads the page during a drag.
+    setBusy('drag', true);
     const stockItemId = parseTileId(active.id);
     setActiveTile(stockItemId === null ? null : (findTile(home, stockItemId)?.tile ?? null));
   };
 
   const end = ({ active, over }: DragEndEvent) => {
+    setBusy('drag', false);
     setActiveTile(null);
     const stockItemId = parseTileId(active.id);
     const to = parseDropId(over?.id);
@@ -137,7 +141,10 @@ export function DndProvider({ home, onMove, children }: DndProviderProps) {
       }}
       onDragStart={start}
       onDragEnd={end}
-      onDragCancel={() => setActiveTile(null)}
+      onDragCancel={() => {
+        setBusy('drag', false);
+        setActiveTile(null);
+      }}
     >
       {activeTile ? <FurnitureDropBar locations={home.locations} /> : null}
       {children}
