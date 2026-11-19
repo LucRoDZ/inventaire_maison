@@ -120,13 +120,23 @@ function Meuble() {
 
   return (
     <main className="fx-fit flex flex-col gap-1">
-      <Link
-        href={`/inventaire${filtersToQuery(filters)}`}
-        className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        Maison
-      </Link>
+      {/* One row of 48 px: back (icon only), the name of the furniture. */}
+      <div className="flex h-12 shrink-0 items-center gap-1">
+        <Link
+          href={`/inventaire${filtersToQuery(filters)}`}
+          aria-label="Maison"
+          className="tap-target text-indigo -ml-2 inline-flex shrink-0 items-center justify-center rounded-full"
+        >
+          <ChevronLeft size={26} aria-hidden="true" />
+        </Link>
+        {/* The title appears with the furniture (tests and audits wait for it before measuring). */}
+        {home || failed ? (
+          <h1 className="text-card-title min-w-0 flex-1 truncate">{location?.name ?? 'Meuble'}</h1>
+        ) : (
+          <span className="flex-1" />
+        )}
+      </div>
+      <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
       {failed ? (
         <Callout role="alert" title="Un instant">
           Impossible de charger le meuble : vérifiez la connexion.
@@ -139,8 +149,6 @@ function Meuble() {
       ) : null}
       {location && home ? (
         <DndProvider home={home} onMove={(id, to) => void drop(id, to)}>
-          <h1 className="text-title">{location.name}</h1>
-          <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
           <OpenFurniture
             location={location}
             onSelect={setSelected}
