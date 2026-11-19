@@ -130,10 +130,10 @@
   - Fin : `curl -s localhost:3000/manifest.webmanifest` contient `"display":"standalone"`.
 
 - [x] **0.18 Service worker, hors connexion, nouvelle version**
-  - Résultat : coquille disponible hors ligne et mise à jour proposée.
+  - Résultat : coquille disponible hors ligne et mise à jour proposée (remplacée le 19/11/2026 par la mise à jour silencieuse, décision F2.1).
   - Fichiers : `apps/web/app/sw.ts`, configuration Serwist, `apps/web/components/pwa/{OfflineCallout,UpdateCallout,RegisterSW}.tsx`, `apps/web/lib/online.ts`.
-  - Comportement : précache de la coquille (JS, CSS, polices, icônes) ; images produits en `stale-while-revalidate` ; `GET /api` réseau d'abord, `/api/auth` jamais en cache, écritures jamais interceptées ; hors ligne : encadré « Pas de connexion » qui dit que l'ajout et le retrait sont indisponibles ; nouvelle version : « Nouvelle version disponible » et bouton Actualiser ; caches vidés à la déconnexion ; service worker inactif en `npm run dev`.
-  - Tests : composants des deux encadrés (événements `online`, `offline`, mise à jour simulée). E2E Chromium : après une première visite, hors ligne, la coquille s'ouvre et l'encadré s'affiche.
+  - Comportement : précache de la coquille (JS, CSS, polices, icônes) ; images produits en `stale-while-revalidate` ; `GET /api` réseau d'abord, `/api/auth` jamais en cache, écritures jamais interceptées ; hors ligne : encadré « Pas de connexion » qui dit que l'ajout et le retrait sont indisponibles ; nouvelle version : mise à jour silencieuse, sans encadré (décision F2.1) ; caches vidés à la déconnexion ; service worker inactif en `npm run dev`.
+  - Tests : composant de l'encadré « Pas de connexion » (événements `online`, `offline`) et mise à jour silencieuse simulée (`pwa.spec.tsx`, `silent-update.spec.ts`, e2e `silent-update.spec.ts`). E2E Chromium : après une première visite, hors ligne, la coquille s'ouvre et l'encadré s'affiche.
   - Fin : l'e2e hors ligne passe.
 
 - [x] **0.19 `deploy.sh` et sauvegarde de la base**
@@ -761,6 +761,7 @@
 - 19/11/2026 : F1.5. Messages « C'est fait » et « Déplacement impossible » du meuble ouvert posés au-dessus de la barre du bas, par-dessus le meuble, pour ne jamais prendre de hauteur aux étagères. Même rôle (`status`, `alert`) et même texte.
 - 19/11/2026 : F1.6. Le meuble de 8 étagères des e2e est inséré directement dans la base e2e (comme `createMember`) : l'API n'a pas de route de création de lieu et n'est pas modifiée. Chaque navigateur a ses meubles et ses produits (« Topinambour », « Quenelle ») pour ne pas croiser les recherches des autres tests.
 - 19/11/2026 : F1.7. Le `h1` du meuble ouvert n'apparaît qu'avec les données (comme avant), pour que les tests et l'audit qui l'attendent mesurent un meuble chargé. Le bouton Filtres de l'écran Inventaire n'existe qu'en vue Maison ; les filtres en ligne de cet écran restent en place (« ne touche à rien d'autre »).
+- 19/11/2026 : F2.1. Mise à jour silencieuse (demande de Lucas) : l'encadré « Nouvelle version disponible » et son bouton Actualiser sont supprimés (`UpdateCallout`), l'application ne demande plus jamais rien pour se mettre à jour. Le service worker prend la main tout seul (`skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches`) ; l'application cherche une mise à jour au lancement et au retour au premier plan. La page passe à la nouvelle version à la navigation suivante : un clic sur un lien devient une navigation complète, toute autre navigation recharge le nouvel écran ; jamais pendant une action (caméra active, texte saisi non enregistré, glisser-déposer, dialogue modal ouvert : `lib/silent-update.ts`). Garde-fou sur erreur de chargement de bloc : un seul rechargement silencieux, drapeau `inventaire.chunk-reload` en `sessionStorage`, pas de nouvel essai avant 5 minutes (évite toute boucle même si le bloc manque vraiment). Choix : la feuille d'installation, non modale et affichée jusqu'à « Plus tard », ne bloque pas la mise à jour ; « texte non enregistré » = une saisie dans un champ de texte depuis l'arrivée sur l'écran (remis à zéro à chaque navigation et à l'envoi d'un formulaire). Les encadrés « Pas de connexion » et la feuille d'installation sont inchangés ; le mode hors ligne reste vérifié par l'e2e existant.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

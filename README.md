@@ -193,6 +193,8 @@ Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
 `./deploy.sh`. Le script vérifie `.env` et Docker, sauvegarde la base, fait `git pull --ff-only`, reconstruit les images, relance les conteneurs (les migrations s'appliquent au démarrage de l'API), attend les healthchecks puis supprime les images orphelines. Options : `--no-backup`, `--no-cache`. Retour arrière : `git checkout <commit> && ./deploy.sh`.
 
+Après un déploiement, les téléphones passent à la nouvelle version **sans rien demander** : le service worker prend la main tout seul, et une page déjà ouverte change de version à la navigation suivante (jamais pendant un scan, une saisie, un glisser-déposer ou avec un panneau ouvert), ou au prochain lancement. Aucun message « Nouvelle version disponible ».
+
 ### Renouvellement du certificat
 
 Les certificats vivent dans le volume `easyq_certbot_certs`, comme ceux d'easyq. Si le VPS renouvelle déjà ce volume (cron ou minuteur d'easyq), il suffit que nginx relise les certificats après chaque renouvellement. Sinon, renouveler à la main ou par cron :
@@ -287,6 +289,15 @@ La CI ne peut pas tester la caméra. Recette du cahier des charges, à cocher av
 4. Sur chaque appareil, trois codes scannés (EAN-13, EAN-8, UPC-A), dont un en lumière faible.
 5. Sur chaque appareil, un ajout hors connexion refusé avec le message « Pas de connexion ».
 6. Chaque solution de repli testée une fois : saisie manuelle, photo du code, recherche par nom.
+
+### Mise à jour silencieuse
+
+Après un déploiement, sur un téléphone où l'application est déjà ouverte :
+
+1. Aucun message ni bouton n'annonce la nouvelle version.
+2. Pendant un scan (caméra allumée) ou une saisie en cours, la page ne se recharge pas.
+3. Toucher un onglet de la barre du bas : l'écran suivant s'ouvre dans la nouvelle version (un bref rechargement est normal).
+4. Mettre l'application en arrière-plan puis la rouvrir : elle vérifie seule s'il existe une nouvelle version.
 
 ### Écran Scanner (caméra)
 
