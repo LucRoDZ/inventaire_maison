@@ -13,8 +13,9 @@ async function mark(page: Page) {
     (window as MarkedWindow).__beforeUpdate = 'oui';
   });
 }
+/** True while the marker is there; null while the page is reloading (asked again by the polls). */
 const marked = (page: Page) =>
-  page.evaluate(() => (window as MarkedWindow).__beforeUpdate === 'oui');
+  page.evaluate(() => (window as MarkedWindow).__beforeUpdate === 'oui').catch(() => null);
 
 async function newVersionTakesOver(page: Page) {
   await page.waitForFunction(() => typeof (window as MarkedWindow).__e2eUpdateReady === 'function');
