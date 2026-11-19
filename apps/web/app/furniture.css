@@ -15,24 +15,23 @@
 
 /* ---------- Meuble ouvert ---------- */
 
-/* Le cadre sert d'étalon : la profondeur de la perspective suit la largeur du meuble, le dessin
-   est donc le même à 360 px, à 430 px et sur ordinateur. */
+/* Le cadre sert d'étalon : 100cqw est la largeur du meuble (largeur du battant qui pivote,
+   profondeur de la perspective), le dessin est donc le même à 360 px, à 430 px et sur ordinateur. */
 .fx-frame {
   container-type: inline-size;
 }
 
-/* La scène réserve une bande de chaque côté du corps : la porte ouverte, vue de biais, s'y projette
-   et ne recouvre jamais les étagères. Ce qui dépasse de la scène est coupé (pas de défilement). */
+/* La scène : le corps prend toute la largeur utile, moins une lamelle de 20 px par porte, accolée
+   à son bord. Rien ne dépasse de la scène (pas de défilement). */
 .fx-scene {
-  --fx-band-left: 7%;
-  --fx-band-right: 7%;
+  --fx-slat: 20px;
+  --fx-band-left: var(--fx-slat);
+  --fx-band-right: var(--fx-slat);
   --fx-doors: 2; /* posé par la coque selon le type de meuble */
   --fx-depth: 1100px;
-  --fx-top: 10px;
-  --fx-bottom: 8px;
   position: relative;
   isolation: isolate; /* les z-index du décor ne sortent pas du meuble (barre du bas, panneaux) */
-  padding: var(--fx-top) var(--fx-band-right) var(--fx-bottom) var(--fx-band-left);
+  padding: 0 var(--fx-band-right) 0 var(--fx-band-left);
   overflow: hidden;
 }
 @supports (width: 1cqw) {
@@ -40,22 +39,19 @@
     --fx-depth: 310cqw;
   }
 }
-.fx-scene[data-kind='fridge'] {
-  --fx-band-left: 19%;
-  --fx-band-right: 6px;
-}
+/* Une seule porte (frigo, congélateur), à gauche. */
+.fx-scene[data-kind='fridge'],
 .fx-scene[data-kind='freezer'] {
-  --fx-band-left: 12%;
-  --fx-band-right: 6px;
+  --fx-band-right: 0px;
 }
 
-/* Corps du meuble ouvert. Le contenu réel (étagères) est dedans, au-dessus de la lumière. */
+/* Corps du meuble ouvert : il épouse son contenu (jamais plus haut). */
 .fx-body {
   position: relative;
   overflow: hidden;
-  padding: 16px 6px 6px;
+  padding: 6px 5px 4px;
   background: var(--lavender);
-  border: 7px solid var(--lavender-line);
+  border: 5px solid var(--lavender-line);
   border-radius: 13px;
   /* Ombre intérieure sans flou : une grande ombre floutée est recalculée à chaque image dès que
      quelque chose bouge dans le meuble (mesuré sur WebKit, tâche 1.5.10). */
@@ -68,17 +64,19 @@
   z-index: 1;
 }
 
-/* Lumière : une ellipse ambre floutée, on n'anime que l'opacité. Une seule par écran. */
+/* Lumière (pas dans le congélateur) : une barre ambre de 4 px sur le bord haut intérieur et sa
+   lueur, sans flou, qui ne décale rien (posée en absolu dans la marge du haut). On n'anime que
+   l'opacité, 0,6 au plus. */
 .fx-light {
   position: absolute;
   z-index: 0;
-  top: -40px;
-  left: 15%;
-  width: 70%;
-  height: 110px;
-  border-radius: 50%;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
   background: var(--amber);
-  filter: blur(32px);
+  box-shadow: 0 2px 12px 2px var(--fx-glow);
   opacity: 0;
   pointer-events: none;
   animation: fx-light-on 260ms ease-out 200ms both;
@@ -88,69 +86,63 @@
     opacity: 0;
   }
   to {
-    opacity: 0.85;
+    opacity: 0.6;
   }
 }
 
-/* Givre du congélateur : liseré pointillé sur les bords du corps, décoratif. */
-.fx-frost {
-  position: absolute;
-  z-index: 0;
-  inset: 2px;
-  border: 3px dotted var(--white);
-  border-radius: 7px;
-  opacity: 0.8;
-  pointer-events: none;
-}
-
-/* Porte : décor pur, posée sur le corps. --fx-angle vaut -78deg (frigo), -86deg (congélateur),
-   -88deg / 88deg (battants). Ouverte, elle montre son verso dans la bande réservée.
-
-   La perspective est écrite dans la transformation de la porte elle-même, jamais sur un parent, et
-   le verso apparaît par opacité : ni `perspective` héritée, ni `preserve-3d`, ni
-   `backface-visibility`, que WebKit ne rend pas partout de la même façon.
-   L'œil est à --fx-eye-x de la charnière (en largeurs de porte, vers l'intérieur du meuble) et à
-   --fx-eye-y sous le haut de la porte. La porte se présente par la tranche quand
-   tan(angle) = profondeur / distance de l'œil ; --fx-flip est la fraction de la durée où cet angle
-   est atteint avec la courbe --fx-ease : le verso remplace le recto à cet instant. */
+/* Porte : décor pur. La boîte .fx-door est la lamelle (la porte ouverte vue par la tranche),
+   accolée au bord du corps et aussi haute que lui. Le battant (.fx-door-face) part fermé sur le
+   corps et pivote autour de la charnière jusqu'à se présenter par la tranche (--fx-angle, ±90°),
+   en s'effaçant ; la lamelle (.fx-door-back) apparaît à mi-course.
+   La perspective est écrite dans la transformation du battant lui-même, jamais sur un parent : ni
+   `perspective` héritée, ni `preserve-3d`, ni `backface-visibility`, que WebKit ne rend pas
+   partout de la même façon. */
 .fx-door {
-  --fx-eye-x: 100%;
-  --fx-eye-y: 40px;
   --fx-flip: 0.5;
   position: absolute;
   z-index: 4;
-  top: var(--fx-top);
-  bottom: var(--fx-bottom);
-  width: calc((100% - var(--fx-band-left) - var(--fx-band-right)) / var(--fx-doors));
+  top: 0;
+  bottom: 0;
+  width: var(--fx-slat);
   pointer-events: none;
-  animation: fx-swing var(--fx-door-ms) var(--fx-ease) both;
 }
 .fx-door[data-hinge='left'] {
-  left: var(--fx-band-left);
-  transform-origin: left top;
+  left: 0;
 }
 .fx-door[data-hinge='right'] {
-  --fx-eye-x: -100%;
-  right: var(--fx-band-right);
-  transform-origin: right top;
+  right: 0;
 }
-.fx-scene[data-kind='fridge'] .fx-door {
-  --fx-eye-x: 150%;
-  --fx-flip: 0.4;
+.fx-door > .fx-door-face {
+  top: 0;
+  bottom: 0;
+  inset-inline: auto;
+  width: calc((100cqw - var(--fx-band-left) - var(--fx-band-right)) / var(--fx-doors));
+  animation:
+    fx-swing var(--fx-door-ms) var(--fx-ease) both,
+    fx-face-off 1ms linear calc(var(--fx-door-ms) * var(--fx-flip)) both;
 }
-.fx-scene[data-kind='freezer'] .fx-door {
-  --fx-eye-x: 56%;
-  --fx-flip: 0.53;
+.fx-door[data-hinge='left'] > .fx-door-face {
+  left: 100%;
+  transform-origin: left center;
+}
+.fx-door[data-hinge='right'] > .fx-door-face {
+  right: 100%;
+  transform-origin: right center;
 }
 @keyframes fx-swing {
   from {
-    transform: translate(var(--fx-eye-x), var(--fx-eye-y)) perspective(var(--fx-depth))
-      translate(calc(-1 * var(--fx-eye-x)), calc(-1 * var(--fx-eye-y))) rotateY(0deg);
+    transform: perspective(var(--fx-depth)) rotateY(0deg);
   }
   to {
-    transform: translate(var(--fx-eye-x), var(--fx-eye-y)) perspective(var(--fx-depth))
-      translate(calc(-1 * var(--fx-eye-x)), calc(-1 * var(--fx-eye-y)))
-      rotateY(var(--fx-angle, -78deg));
+    transform: perspective(var(--fx-depth)) rotateY(var(--fx-angle, -90deg));
+  }
+}
+@keyframes fx-face-off {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 .fx-door-face {
@@ -161,13 +153,14 @@
   border: 5px solid var(--lavender-line);
   border-radius: 12px;
 }
+/* La lamelle : la tranche de la porte ouverte. */
 .fx-door-back {
   position: absolute;
   inset: 0;
   overflow: hidden;
   background: var(--lavender);
-  border: 5px solid var(--lavender-line);
-  border-radius: 12px;
+  border: 4px solid var(--lavender-line);
+  border-radius: 8px;
   opacity: 0;
   animation: fx-back-on 1ms linear calc(var(--fx-door-ms) * var(--fx-flip)) both;
 }
@@ -178,14 +171,6 @@
   to {
     opacity: 1;
   }
-}
-/* Contre-porte : un simple cadre en retrait. */
-.fx-door-back::after {
-  content: '';
-  position: absolute;
-  inset: 12px;
-  border: 2px solid var(--lavender-line);
-  border-radius: 8px;
 }
 .fx-gloss {
   position: absolute;
@@ -209,14 +194,91 @@
   right: auto;
   left: 15px;
 }
-/* Congélateur : poignée longue. */
-.fx-scene[data-kind='freezer'] .fx-handle {
-  height: 220px;
-}
 
 /* ---------- Étagères ---------- */
 
-/* Planche de verre (frigo, congélateur). */
+/* Hauteur d'une rangée : la même pour toutes les étagères d'un meuble, 56 px au moins (vignette de
+   44 px et ligne du nom de 12 px ; c'est le mode compact : la pile s'aplatit sous 56 px). Hors verrouillage
+   (ordinateur, paysage), 120 px. Sur un téléphone en portrait (plus bas), le partage de l'espace
+   disponible : min(120 px, (espace − plateau vide − écarts) / rangées). */
+.fx-shelves {
+  --fx-gap: 3px;
+  --fx-row-h: 120px;
+  gap: var(--fx-gap);
+}
+
+/* Une rangée : zone du haut (vignettes, ou « Vide » et +), ligne du bas (nom et planche). */
+.fx-row,
+.fx-tray-row {
+  flex: none;
+  height: var(--fx-row-h);
+}
+.fx-tray-row.fx-tray-empty {
+  height: 56px;
+}
+.fx-shelf,
+.fx-tray {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Zone du haut : conteneur de taille, 100cqh est sa hauteur. La pile prend d'abord ses 12 px, la
+   vignette le reste, entre 44 px (zone tactile minimale) et 96 px, posée sur la planche. */
+.fx-zone {
+  container-type: size;
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  min-height: 0;
+}
+.fx-tiles {
+  --fx-pile-off: clamp(0px, 100cqh - 44px, 12px);
+  --fx-tile: clamp(44px, 100cqh - var(--fx-pile-off), 96px);
+  align-items: flex-end;
+  width: 100%;
+  overflow-y: hidden;
+  /* Défilement au doigt, sans barre : une vignette coupée à droite sert d'indice. */
+  scrollbar-width: none;
+}
+.fx-tiles::-webkit-scrollbar {
+  display: none;
+}
+
+/* Zone vide : « Vide » centré, le + à droite ; contour pointillé hors tiroir seulement. */
+.fx-zone-empty {
+  align-items: center;
+  justify-content: center;
+  padding-inline: 48px;
+}
+.fx-shelf:not(.fx-drawer) .fx-zone-empty {
+  border: 2px dashed var(--lavender-line);
+  border-radius: 12px;
+}
+.fx-zone-empty .fx-plus {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+/* Ligne du bas : nom (12 px) puis planche à sa droite. */
+.fx-line {
+  flex: none;
+  height: 12px;
+}
+.fx-shelf-name {
+  line-height: 12px;
+}
+.fx-line .fx-board {
+  flex: 1 1 0;
+  min-width: 24px;
+}
+
+/* Planche de verre (frigo). */
 .fx-glass-edge {
   height: 7px;
   background: var(--fx-glass);
@@ -225,45 +287,35 @@
   border-radius: 4px;
   box-shadow: 0 2px 0 var(--fx-inner); /* fine ombre portée, sans flou */
 }
-
-/* Spot au-dessus d'une étagère (garde-manger, cave) : une lampe ambre et sa lueur, sans flou. */
-.fx-spot {
-  position: absolute;
-  z-index: 0;
-  top: 2px;
-  left: 30%;
-  width: 40%;
+.fx-line .fx-board > :first-child {
   height: 5px;
-  border-radius: 50%;
-  background: var(--amber);
-  box-shadow: 0 2px 14px 3px var(--fx-glow);
-  opacity: 0;
-  pointer-events: none;
-  animation: fx-light-on 260ms ease-out 200ms both;
+}
+.fx-line .fx-posts {
+  display: none;
 }
 
-/* Tiroir (congélateur) : l'étagère devient un tiroir. --i = son rang (0, 1, 2…). */
+/* Tiroir (congélateur) : une face blanche ; en haut, l'espace réservé à la poignée (jamais sous
+   un texte ou un bouton), puis le contenu, puis « Tiroir n » et le nombre d'articles. Pas de
+   planche dessous. --i = son rang (0, 1, 2…). */
 .fx-drawer {
-  position: relative;
-  padding: 4px 6px;
+  padding: 5px 6px 0;
   background: var(--white);
-  border: 2px solid var(--lavender-line);
+  border: 1px solid var(--lavender-line);
   border-radius: 12px;
-  box-shadow: 0 3px 0 var(--fx-shade); /* sans flou : le tiroir bouge à l'arrivée */
+  box-shadow: 0 2px 0 var(--fx-shade); /* sans flou : le tiroir bouge à l'arrivée */
   animation: fx-drawer-in 320ms ease-out both;
   animation-delay: calc(var(--i, 0) * 60ms);
 }
-/* Poignée : posée en haut du tiroir, derrière le contenu ; elle ne prend aucune hauteur. */
 .fx-drawer::before {
   content: '';
   position: absolute;
   z-index: 0;
-  top: 2px;
-  left: 25%;
-  width: 50%;
-  height: 4px;
+  top: 1px;
+  left: 30%;
+  width: 40%;
+  height: 3px;
   background: var(--grey);
-  border-radius: 5px;
+  border-radius: 3px;
 }
 .fx-drawer > * {
   position: relative;
@@ -278,6 +330,12 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* Plateau « Non rangé » : blanc, une ligne de 56 px vide, une rangée pleine. */
+.fx-tray {
+  padding: 0 4px 0 8px;
+  border-radius: var(--radius-card);
 }
 
 /* Pile de vignettes : le conteneur laisse --fx-pile-off (12 px au plus) en haut et à droite pour
@@ -309,6 +367,20 @@
   z-index: 1;
 }
 
+/* Vignette carrée : son côté suit la hauteur de sa rangée. */
+.fx-tile {
+  width: var(--fx-tile, 64px);
+  height: var(--fx-tile, 64px);
+}
+.fx-tile-badge {
+  width: 70%;
+  height: 70%;
+}
+.fx-tile-glyph {
+  width: 50%;
+  height: 50%;
+}
+
 /* Étagère cible pendant un glisser-déposer : l'anneau ambre existant, plus un halo. */
 .fx-over {
   background: color-mix(in srgb, var(--amber) 22%, transparent);
@@ -324,181 +396,39 @@
   --fx-nav-h: 67px;
 }
 
-/* Vignette carrée : son côté suit la hauteur réellement donnée à son étagère. */
-.fx-tile {
-  width: var(--fx-tile, 64px);
-  height: var(--fx-tile, 64px);
-}
-.fx-tile-badge {
-  width: 70%;
-  height: 70%;
-}
-.fx-tile-glyph {
-  width: 50%;
-  height: 50%;
-}
-
-.fx-shelves {
-  gap: 6px;
-}
-.fx-row,
-.fx-row-empty {
-  display: flex;
-  flex-direction: column;
-}
-.fx-row > section {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Étagère garnie : la zone des vignettes et la ligne « nom + planche » dessous. C'est un conteneur
-   de taille : 100cqh est la hauteur donnée à l'étagère. La pile prend d'abord ses 12 px, la vignette
-   le reste, bornée entre 44 px (zone tactile minimale) et 96 px ; sous 44 px, la pile s'aplatit.
-   Hors verrouillage (ordinateur, paysage), l'étagère a la hauteur de la plus grande vignette. */
-.fx-fill {
-  container-type: size;
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  height: calc(96px + 12px + 16px);
-}
-.fx-fill > * {
-  --fx-line: 16px;
-  --fx-a: calc(100cqh - var(--fx-line));
-  --fx-pile-off: clamp(0px, var(--fx-a) - 44px, 12px);
-  --fx-tile: clamp(44px, var(--fx-a) - var(--fx-pile-off), 96px);
-}
-.fx-tiles {
-  flex: 1 1 0;
-  min-height: 0;
-  align-items: flex-end;
-  overflow-y: hidden;
-}
-.fx-line {
-  flex: none;
-  height: var(--fx-line);
-}
-.fx-line .fx-board {
-  flex: 1 1 0;
-  min-width: 24px;
-}
-
-/* Très compact : la vignette est à 44 px et sa pile ne tient plus en entier. Nom sur 12 px, planche
-   fine, piliers courts. */
-@container (height < 72px) {
-  .fx-fill > * {
-    --fx-line: 11px;
-  }
-  .fx-fill .fx-shelf-name {
-    font-size: 12px;
-    line-height: 11px;
-  }
-  .fx-fill .fx-board > :first-child {
-    height: 3px;
-  }
-  .fx-fill .fx-posts > span {
-    height: 4px;
-  }
-}
-
-/* Étagère vide : rangée pointillée de 36 px (bordure comprise) posée sur une planche fine ; le +
-   garde 44 px de zone tactile et ne dépasse que de 4 px (le retrait des étagères les absorbe). */
-.fx-empty {
-  min-height: 36px;
-}
-.fx-empty .fx-plus {
-  margin-block: -6px;
-}
-/* Le nom passe avant le texte d'aide : c'est lui qui se tronque en dernier. */
-.fx-empty .fx-shelf-name {
-  flex-shrink: 0;
-  max-width: 60%;
-}
-.fx-row-empty .fx-board {
-  margin-top: 2px;
-}
-.fx-row-empty .fx-board > :first-child {
-  height: 4px;
-}
-.fx-row-empty .fx-posts {
-  display: none;
-}
-
-/* Plateau « Non rangé ». */
-.fx-tray {
-  padding: 4px 6px;
-  border-radius: var(--radius-card);
-}
-.fx-row-empty > .fx-tray {
-  padding-block: 0;
-}
-
-/* Téléphone en portrait : la page ne défile pas. Le cadre de l'application prend exactement la
-   hauteur visible moins la barre du bas et les marges de sécurité ; le meuble prend ce qui reste
-   sous la barre du haut, et ses étagères garnies se le partagent à parts égales. En paysage, sous
+/* Téléphone en portrait : la page ne défile pas. Le meuble épouse son contenu ; ses rangées se
+   partagent au plus l'espace disponible sous la barre du haut. Tout ce qui est fixe, en px :
+   cadre 4 + 4, barre du haut 48 + 4, corps 2 × 5 + 6 + 4, plus la barre du bas, les marges de
+   sécurité et la ligne de rappel du filtre (--fx-reminder, posée par la page). En paysage, sous
    480 px de haut ou sur ordinateur, rien n'est verrouillé. */
 @media (max-width: 767.98px) and (orientation: portrait) and (min-height: 480px) {
   .app-frame:has(.fx-fit) {
-    display: flex;
-    flex-direction: column;
-    height: calc(100dvh - env(safe-area-inset-top));
     min-height: 0;
     padding-top: 4px;
     padding-bottom: calc(var(--fx-nav-h) + 4px + env(safe-area-inset-bottom));
   }
-  /* Chaque pixel compte : marges resserrées, sans toucher au dessin. */
   .fx-fit {
+    --fx-avail: calc(
+      100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--fx-nav-h) - 80px -
+        var(--fx-reminder, 0px)
+    );
     gap: 4px;
   }
-  .fx-fit .fx-scene {
-    --fx-top: 6px;
-    --fx-bottom: 4px;
-  }
-  .fx-fit .fx-body {
-    padding: 8px 5px 5px;
-    border-width: 5px;
-  }
   .fx-fit .fx-shelves {
-    gap: 3px;
-  }
-  .fx-fit .fx-row > .fx-tray {
-    padding-block: 0;
-  }
-  .fx-fit .fx-drawer {
-    padding: 0 4px;
-    border-width: 1px;
-  }
-  .fx-fit,
-  .fx-fit .fx-frame,
-  .fx-fit .fx-scene,
-  .fx-fit .fx-body,
-  .fx-fit .fx-shelves {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    min-height: 0;
-  }
-  /* Au-delà de ce qui tient même en très compact, les étagères défilent dans le meuble, jamais la
-     page. Le retrait laisse voir le halo d'une étagère cible. */
-  .fx-fit .fx-shelves {
+    --fx-row-h: max(
+      calc(56px + var(--fx-row-chrome, 0px)),
+      min(
+        120px,
+        calc(
+          (var(--fx-avail) - var(--fx-tray-fixed, 56px) - var(--fx-gap) * var(--n, 1)) /
+            var(--fx-slots, 1)
+        )
+      )
+    );
+    /* Au-delà de ce qui tient même en très compact, les étagères défilent dans le meuble, jamais
+       la page. */
+    max-height: var(--fx-avail);
     overflow-y: auto;
-    padding: 4px;
-    margin: -4px;
-  }
-  .fx-fit .fx-row {
-    flex: 1 1 0;
-  }
-  .fx-fit .fx-row > section {
-    flex: 1 1 0;
-  }
-  .fx-fit .fx-fill {
-    flex: 1 1 0;
-    height: auto;
-    min-height: calc(44px + 11px);
-  }
-  .fx-fit .fx-row-empty {
-    flex: none;
   }
 }
 
@@ -584,9 +514,8 @@
    apparaît directement ouvert, lumière allumée, tiroirs en place. */
 @media (prefers-reduced-motion: reduce) {
   .fx-light,
-  .fx-spot,
   .fx-drawer,
-  .fx-door,
+  .fx-door > .fx-door-face,
   .fx-door-back {
     animation-delay: 0s;
   }

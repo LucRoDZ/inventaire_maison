@@ -58,7 +58,8 @@ describe('furniture.css', () => {
     const used = new Set([...css.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]!));
     expect(used.size).toBeGreaterThan(5);
     const unknown = [...used].filter((name) => !name.startsWith('--fx-') && !defined.has(name));
-    expect(unknown.filter((name) => name !== '--i')).toEqual([]);
+    // --i (rank of a drawer or pile card) and --n (number of shelves) are set by React.
+    expect(unknown.filter((name) => name !== '--i' && name !== '--n')).toEqual([]);
   });
 
   it('animates transform and opacity only', () => {

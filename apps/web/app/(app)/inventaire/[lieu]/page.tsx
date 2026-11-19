@@ -10,7 +10,7 @@ import type {
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { DndProvider } from '../../../../components/home/dnd/DndProvider';
 import { OpenFurniture } from '../../../../components/home/OpenFurniture';
 import { ProductSheet } from '../../../../components/home/ProductSheet';
@@ -120,7 +120,11 @@ function Meuble() {
       : undefined;
 
   return (
-    <main className="fx-fit flex flex-col gap-1">
+    <main
+      className="fx-fit flex flex-col gap-1"
+      // The reminder line (32 px and its gap) is taken from the height of the shelves.
+      style={{ '--fx-reminder': isFiltering(filters) ? '36px' : '0px' } as CSSProperties}
+    >
       {/* One row of 48 px: back (icon only), the name of the furniture, the filters. */}
       <div className="flex h-12 shrink-0 items-center gap-1">
         <Link
