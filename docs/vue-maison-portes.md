@@ -146,6 +146,17 @@ Le type vient de `location.kind`, déjà dans les données.
 
 **D. Largeur de la porte ouverte.** Dans le prototype, le corps du frigo n'occupe que 73 % de la largeur et le reste à gauche est réservé à la porte vue de biais. À 360 px, cela laisse environ 240 px aux étagères (deux vignettes et demie avant défilement). À valider par des captures à 360 et 430 px ; si c'est trop étroit, réserver 18 à 20 % seulement.
 
+### Décisions du correctif « rendu des meubles » (19/11/2026)
+
+Prises après les captures de Lucas (congélateur de 3 tiroirs vides, garde-manger avec une étagère remplie). Elles remplacent, pour le meuble ouvert, A (halo), D (largeur de la porte) et le givre de l'annexe B.
+
+- **Givre supprimé** : plus de liseré pointillé ni sur le corps du congélateur ni ailleurs ; il se lisait comme un défaut d'affichage.
+- **Cadre qui s'ajuste au contenu** : le corps du meuble n'est jamais plus haut que ses étagères (plus 24 px de bord au plus) ; sur téléphone en portrait, il ne dépasse pas l'espace sous la barre du haut. L'espace libre en dessous reste blanc. Toutes les étagères d'un meuble ont la même hauteur, `min(120 px, (espace − plateau − écarts) / nombre de rangées)`, calculée en CSS à partir de `--n` posé par React (56 px au moins). Le plateau « Non rangé » fait 56 px vide, une rangée quand il contient des produits.
+- **Lamelle de porte de 20 px** : le corps prend toute la largeur utile ; chaque porte ouverte est une lamelle de 20 px accolée à son bord, aussi haute que le corps, symétrique pour deux battants. Le battant part fermé sur le corps et pivote jusqu'à se présenter par la tranche (±90°) en s'effaçant. Plus de bande réservée.
+- **Halo en barre fine** : plus de grande tache floue. Une barre ambre de 4 px sur le bord haut intérieur, avec une lueur sans flou, à 0,6 d'opacité au plus ; aucune lumière dans le congélateur ; plus de spot au-dessus des étagères (ils couvraient le contour des étagères vides).
+- **Une seule structure d'étagère** : zone du haut (vignettes ou « Vide » centré et +), ligne du bas (nom puis planche). Contour pointillé seulement autour de la zone vide d'une étagère qui n'est pas un tiroir. Tiroir : face blanche, poignée dans son propre espace en haut, nom à gauche et nombre d'articles à droite (rien quand il est vide), sans planche dessous.
+- **Barre de défilement horizontal masquée** : le défilement reste possible au doigt, une vignette coupée à droite sert d'indice.
+
 ## 6. Tâches proposées (nouvelle phase « 1.5 : portes », avant la Phase 2)
 
 Une branche `phase-1-5-portes`, une PR, un commit par tâche, critère « Fin » vérifié avant de cocher.
