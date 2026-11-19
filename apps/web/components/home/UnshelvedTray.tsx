@@ -15,9 +15,9 @@ interface UnshelvedTrayProps {
 }
 
 /**
- * « Non rangé »: what is in the piece of furniture without a shelf. A white tray in the lavender
- * body; filled, it takes its share of the height like a shelf; empty, a thin row that stays a drop
- * target.
+ * « Non rangé »: what is in the piece of furniture without a shelf. A white tray in the body:
+ * empty, a thin line of 56 px; with products, exactly the height of a shelf, never more. It
+ * stays a drop target either way.
  */
 export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: UnshelvedTrayProps) {
   const empty = tiles.length === 0;
@@ -32,20 +32,22 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
       </span>
     </Link>
   );
-  const name = <h3 className="text-label fx-shelf-name min-w-0 truncate">Non rangé</h3>;
+  const name = <h3 className="text-label fx-shelf-name shrink-0">Non rangé</h3>;
   return (
-    <DroppableShelf id={trayDropId(locationId)} className={empty ? 'fx-row-empty' : 'fx-row'}>
+    <DroppableShelf
+      id={trayDropId(locationId)}
+      className={`fx-tray-row ${empty ? 'fx-tray-empty' : ''}`}
+    >
       <section aria-label="Non rangé" className="fx-tray bg-white">
         {empty ? (
-          <div className="fx-empty flex items-center gap-2 pr-1 pl-2">
+          <div className="flex h-full items-center gap-2">
             {name}
-            <p className="text-small min-w-0 truncate">Rien de non rangé.</p>
-            <span className="ml-auto" />
+            <p className="text-help min-w-0 flex-1 truncate">Rien de non rangé.</p>
             {add}
           </div>
         ) : (
-          <div className="fx-fill">
-            <div className="flex min-h-0 flex-1 items-center gap-1">
+          <>
+            <div className="fx-zone">
               <ul className="fx-tiles flex min-w-0 flex-1 overflow-x-auto">
                 {tiles.map((tile) => (
                   <li key={tile.stockItemId} className="shrink-0">
@@ -56,7 +58,7 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
               {add}
             </div>
             <div className="fx-line flex items-center gap-2">{name}</div>
-          </div>
+          </>
         )}
       </section>
     </DroppableShelf>

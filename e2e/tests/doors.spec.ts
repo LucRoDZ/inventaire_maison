@@ -170,17 +170,16 @@ test.describe('portes de la Vue Maison', () => {
         const label = `${name} à ${width} px`;
         // The sequence of the framing document: the door in 600 ms, nothing longer.
         expect(state.longest, label).toBe(600);
-        // Open, each door stands beside the body: it never covers a shelf, and it is still seen.
+        // Open, each door is a slat of 20 px at most along the body: it never covers a shelf.
         for (const overlap of state.overlap) expect(overlap, label).toBeLessThanOrEqual(1);
         for (const doorWidth of state.doorWidths) {
           expect(doorWidth, label).toBeGreaterThanOrEqual(8);
-          expect(doorWidth, label).toBeLessThan(state.bodyWidth / 3);
+          expect(doorWidth, label).toBeLessThanOrEqual(20);
         }
         expect(state.back, label).toEqual(Array.from({ length: doors }, () => 1));
-        // One blurred halo, lit; a spot above each shelf of the cupboards only.
-        expect(state.light, label).toEqual([0.85]);
-        expect(state.spots.length > 0, label).toBe(doors === 2);
-        for (const spot of state.spots) expect(spot, label).toBe(0.85);
+        // A thin amber bar along the top of the body, 0.6 at most; none in the freezer; no spot.
+        expect(state.light, label).toEqual(name === 'Congélateur' ? [] : [0.6]);
+        expect(state.spots, label).toEqual([]);
         // Room for at least two tiles side by side in the body.
         expect(state.bodyWidth, label).toBeGreaterThanOrEqual(240);
 
@@ -276,8 +275,8 @@ test.describe('portes de la Vue Maison', () => {
       for (const overlap of state.overlap) expect(overlap, name).toBeLessThanOrEqual(1);
       for (const width of state.doorWidths) expect(width, name).toBeLessThan(state.bodyWidth / 3);
       expect(state.back, name).toEqual(Array.from({ length: doors }, () => 1));
-      expect(state.light, name).toEqual([0.85]);
-      for (const spot of state.spots) expect(spot, name).toBe(0.85);
+      expect(state.light, name).toEqual(name === 'Congélateur' ? [] : [0.6]);
+      expect(state.spots, name).toEqual([]);
       for (const drawer of state.drawers) expect(drawer, name).toBe(1);
     }
   });

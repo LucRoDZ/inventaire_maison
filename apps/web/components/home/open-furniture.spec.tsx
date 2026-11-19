@@ -173,7 +173,7 @@ describe('OpenFurniture', () => {
     expect(rack).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('keeps the indigo board in the pantry, the cellar and any other furniture, under a spot', () => {
+  it('keeps the indigo board in the pantry, the cellar and any other furniture, without spots', () => {
     for (const kind of ['pantry', 'cellar', 'other'] as const) {
       const { container, unmount } = render(<OpenFurniture location={fridge({ kind })} />);
       const boards = [...container.querySelectorAll('[data-shelf-kind] > div:first-child')];
@@ -182,22 +182,24 @@ describe('OpenFurniture', () => {
       expect(
         container.querySelector('[data-shelf-kind="rack"]')!.querySelectorAll('span'),
       ).toHaveLength(4);
-      // One amber spot above each shelf, none on the tray; scenery only.
-      const spots = container.querySelectorAll('.fx-spot');
-      expect(spots).toHaveLength(3);
-      for (const spot of spots) expect(spot).toHaveAttribute('aria-hidden', 'true');
-      expect(
-        screen.getByRole('region', { name: 'Non rangé' }).querySelector('.fx-spot'),
-      ).toBeNull();
+      // The only light is the thin bar along the top of the body: no spot over a shelf.
+      expect(container.querySelectorAll('.fx-spot')).toHaveLength(0);
+      expect(container.querySelectorAll('.fx-light')).toHaveLength(1);
       expect(container.querySelector('.fx-glass-edge')).toBeNull();
       unmount();
     }
   });
 
-  it('uses the glass board in the freezer too', () => {
+  it('draws no board under the drawers of the freezer, and no spot', () => {
     const { container } = render(<OpenFurniture location={fridge({ kind: 'freezer' })} />);
-    expect(container.querySelectorAll('.fx-glass-edge')).toHaveLength(3);
+    expect(container.querySelectorAll('.fx-glass-edge, .fx-board')).toHaveLength(0);
     expect(container.querySelector('.fx-spot')).toBeNull();
+    // The kind of each shelf is still written, on the drawer itself.
+    expect(
+      [...container.querySelectorAll('section.fx-drawer[data-shelf-kind]')].map((d) =>
+        d.getAttribute('data-shelf-kind'),
+      ),
+    ).toEqual(['plain', 'rack', 'plain']);
   });
 
   describe('a freezer of three drawers', () => {
@@ -238,13 +240,19 @@ describe('OpenFurniture', () => {
       ).toEqual(['plain', 'plain', 'plain']);
     });
 
-    it('writes the name and the number of articles on the front of each drawer', () => {
+    it('writes the name and the number of articles on one line, nothing when empty', () => {
       render(<OpenFurniture location={freezer()} />);
       const counts = ['Tiroir 1', 'Tiroir 2', 'Tiroir 3'].map(
         (name) =>
-          within(screen.getByRole('region', { name })).getByText(/^\d+ articles?$/).textContent,
+          within(screen.getByRole('region', { name })).queryByText(/^\d+ articles?$/)
+            ?.textContent ?? null,
       );
-      expect(counts).toEqual(['2 articles', '1 article', '0 article']);
+      expect(counts).toEqual(['2 articles', '1 article', null]);
+      const line = within(screen.getByRole('region', { name: 'Tiroir 1' }))
+        .getByRole('heading', { level: 3 })
+        .closest('.fx-line')!;
+      expect(line).toHaveTextContent('Tiroir 12 articles');
+      expect(screen.queryByText('0 article')).toBeNull();
     });
 
     it('counts a product once when it lies on two lines of the same drawer', () => {
@@ -280,12 +288,17 @@ describe('OpenFurniture', () => {
       expect(screen.getAllByRole('button')).toHaveLength(4);
     });
 
-    it('frosts the body, as scenery', () => {
+    it('has no frost and no light: no dotted edging, no halo', () => {
       const { container } = render(<OpenFurniture location={freezer()} />);
-      expect(container.querySelector('.fx-body > .fx-frost')).toHaveAttribute(
-        'aria-hidden',
-        'true',
-      );
+      expect(container.querySelector('.fx-frost')).toBeNull();
+      expect(container.querySelector('.fx-light')).toBeNull();
+    });
+
+    it('never draws a dotted outline inside a drawer', () => {
+      const { container } = render(<OpenFurniture location={freezer()} />);
+      const empty = screen.getByRole('region', { name: 'Tiroir 3' });
+      expect(empty.querySelector('.fx-zone-empty')).not.toBeNull();
+      expect(container.querySelector('.border-dashed')).toBeNull();
     });
 
     it('follows the kind of the furniture, not the names: a fridge has no drawer', () => {
@@ -364,33 +377,51 @@ describe('OpenFurniture', () => {
     ]);
   });
 
-  it('makes an empty shelf a thin row, a filled one a share of the height with its name on the board line', () => {
+  it('gives every shelf the same structure, empty or full: zone on top, name and board below', () => {
     const { container } = render(<OpenFurniture location={fridge()} />);
+    for (const name of ['Étagère 1', 'Étagère 2', 'Bac à légumes']) {
+      const section = screen.getByRole('region', { name });
+      expect(section.parentElement).toHaveClass('fx-row');
+      expect(section.children[0]).toHaveClass('fx-zone');
+      const line = section.querySelector(':scope > .fx-line')!;
+      expect(within(line as HTMLElement).getByRole('heading', { level: 3 })).toHaveTextContent(
+        name,
+      );
+      expect(line.querySelector('[data-shelf-kind]')).not.toBeNull();
+    }
     const empty = screen.getByRole('region', { name: 'Étagère 1' });
-    expect(empty.parentElement).toHaveClass('fx-row-empty');
-    expect(empty.querySelector('.fx-empty')).toHaveClass('border-dashed');
-    expect(within(empty).getByRole('heading', { level: 3 })).toHaveTextContent('Étagère 1');
-    const filled = screen.getByRole('region', { name: 'Étagère 2' });
-    expect(filled.parentElement).toHaveClass('fx-row');
-    const line = filled.querySelector('.fx-fill > .fx-line')!;
-    expect(within(line as HTMLElement).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'Étagère 2',
-    );
-    expect(line.querySelector('[data-shelf-kind="rack"]')).not.toBeNull();
-    expect(
-      container.querySelectorAll('.fx-shelves > .fx-row, .fx-shelves > .fx-row-empty'),
-    ).toHaveLength(4);
+    const zone = empty.querySelector('.fx-zone')!;
+    expect(zone).toHaveClass('fx-zone-empty');
+    expect(within(zone as HTMLElement).getByText('Vide')).toHaveClass('text-help');
+    expect(container.querySelectorAll('.fx-shelves > .fx-row')).toHaveLength(3);
   });
 
-  it('keeps the « Non rangé » tray a drop zone, empty (thin) or filled (a share)', () => {
+  it('tells the stylesheet how many shelves share the height, and what the tray takes', () => {
+    const { container, unmount } = render(<OpenFurniture location={fridge()} />);
+    const shelves = container.querySelector<HTMLElement>('.fx-shelves')!;
+    expect(shelves.style.getPropertyValue('--n')).toBe('3');
+    expect(shelves.style.getPropertyValue('--fx-slots')).toBe('3');
+    expect(shelves.style.getPropertyValue('--fx-tray-fixed')).toBe('56px');
+    unmount();
+    const filled = render(
+      <OpenFurniture location={fridge({ unshelved: [tile(5, 'Beurre', 2)] })} />,
+    );
+    const next = filled.container.querySelector<HTMLElement>('.fx-shelves')!;
+    expect(next.style.getPropertyValue('--fx-slots')).toBe('4');
+    expect(next.style.getPropertyValue('--fx-tray-fixed')).toBe('0px');
+  });
+
+  it('keeps the « Non rangé » tray a drop zone: a thin line empty, a shelf row with products', () => {
     const { unmount } = render(<OpenFurniture location={fridge()} />);
     expect(screen.getByRole('region', { name: 'Non rangé' }).parentElement).toHaveClass(
-      'fx-row-empty',
+      'fx-tray-row',
+      'fx-tray-empty',
     );
     unmount();
     render(<OpenFurniture location={fridge({ unshelved: [tile(5, 'Beurre', 2)] })} />);
     const tray = screen.getByRole('region', { name: 'Non rangé' });
-    expect(tray.parentElement).toHaveClass('fx-row');
+    expect(tray.parentElement).toHaveClass('fx-tray-row');
+    expect(tray.parentElement).not.toHaveClass('fx-tray-empty');
     expect(within(tray).getByRole('heading', { level: 3 })).toHaveTextContent('Non rangé');
   });
 

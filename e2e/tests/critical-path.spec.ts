@@ -94,7 +94,8 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   expect(open.overlap).toHaveLength(1);
   expect(open.overlap[0]).toBeLessThanOrEqual(1);
   expect(open.back).toEqual([1]);
-  expect(open.light).toEqual([0.85]);
+  // The thin light bar of the fridge, 0.6 at most.
+  expect(open.light).toEqual([0.6]);
   // No « Ouvrir » or « Fermer » button: the way back is the « Maison » link.
   await expect(page.getByRole('button', { name: /^(ouvrir|fermer)$/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Maison' })).toBeVisible();

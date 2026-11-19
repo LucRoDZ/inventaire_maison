@@ -6,20 +6,21 @@ import { DOORS, FurnitureShell } from './FurnitureShell';
 
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex], [contenteditable]';
 
+// Open, the swinging face is edge-on (±90°): only the 20 px slat beside the body is seen.
 const EXPECTED: Record<LocationKind, { hinge: string; angle: string }[]> = {
-  fridge: [{ hinge: 'left', angle: '-78deg' }],
-  freezer: [{ hinge: 'left', angle: '-86deg' }],
+  fridge: [{ hinge: 'left', angle: '-90deg' }],
+  freezer: [{ hinge: 'left', angle: '-90deg' }],
   pantry: [
-    { hinge: 'left', angle: '-88deg' },
-    { hinge: 'right', angle: '88deg' },
+    { hinge: 'left', angle: '-90deg' },
+    { hinge: 'right', angle: '90deg' },
   ],
   cellar: [
-    { hinge: 'left', angle: '-88deg' },
-    { hinge: 'right', angle: '88deg' },
+    { hinge: 'left', angle: '-90deg' },
+    { hinge: 'right', angle: '90deg' },
   ],
   other: [
-    { hinge: 'left', angle: '-88deg' },
-    { hinge: 'right', angle: '88deg' },
+    { hinge: 'left', angle: '-90deg' },
+    { hinge: 'right', angle: '90deg' },
   ],
 };
 
@@ -57,23 +58,22 @@ describe('FurnitureShell', () => {
         }
       });
 
-      it('has one light, inside the body and behind the content', () => {
+      it('has one light inside the body, none in the freezer', () => {
         const { container } = shell(kind);
-        expect(container.querySelectorAll('.fx-body > .fx-light')).toHaveLength(1);
-        expect(container.querySelectorAll('.fx-light')).toHaveLength(1);
+        const lights = kind === 'freezer' ? 0 : 1;
+        expect(container.querySelectorAll('.fx-body > .fx-light')).toHaveLength(lights);
+        expect(container.querySelectorAll('.fx-light')).toHaveLength(lights);
       });
 
-      it('frosts the freezer only', () => {
+      it('has no frost: no dotted edging on the body', () => {
         const { container } = shell(kind);
-        expect(container.querySelectorAll('.fx-body > .fx-frost')).toHaveLength(
-          kind === 'freezer' ? 1 : 0,
-        );
+        expect(container.querySelectorAll('.fx-frost')).toHaveLength(0);
       });
 
       it('hides all the scenery from assistive technology', () => {
         const { container } = shell(kind);
-        const scenery = container.querySelectorAll('.fx-door, .fx-light, .fx-frost');
-        expect(scenery.length).toBeGreaterThanOrEqual(2);
+        const scenery = container.querySelectorAll('.fx-door, .fx-light');
+        expect(scenery.length).toBeGreaterThanOrEqual(kind === 'freezer' ? 1 : 2);
         for (const piece of scenery) expect(piece).toHaveAttribute('aria-hidden', 'true');
         // Nothing but the content has a role: one heading, one button.
         expect(screen.getAllByRole('heading')).toHaveLength(1);
