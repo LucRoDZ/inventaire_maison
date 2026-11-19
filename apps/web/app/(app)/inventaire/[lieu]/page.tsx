@@ -18,10 +18,11 @@ import { Callout } from '../../../../components/ui/Callout';
 import { applyMove, findTile, type Destination } from '../../../../lib/drop';
 import { ApiError } from '../../../../lib/api';
 import { fetchHome } from '../../../../lib/home-api';
-import { HomeFilters } from '../../../../components/home/HomeFilters';
+import { FilterReminder, FiltersControl } from '../../../../components/home/FiltersControl';
 import {
   filtersToQuery,
   isFiltering,
+  NO_FILTER,
   tileMatches,
   useHomeFilters,
 } from '../../../../lib/home-filters';
@@ -119,14 +120,29 @@ function Meuble() {
       : undefined;
 
   return (
-    <main className="flex flex-col gap-4">
-      <Link
-        href={`/inventaire${filtersToQuery(filters)}`}
-        className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        Maison
-      </Link>
+    <main className="fx-fit flex flex-col gap-1">
+      {/* One row of 48 px: back (icon only), the name of the furniture, the filters. */}
+      <div className="flex h-12 shrink-0 items-center gap-1">
+        <Link
+          href={`/inventaire${filtersToQuery(filters)}`}
+          aria-label="Maison"
+          className="tap-target text-indigo -ml-2 inline-flex shrink-0 items-center justify-center rounded-full"
+        >
+          <ChevronLeft size={26} aria-hidden="true" />
+        </Link>
+        {/* The title appears with the furniture (tests and audits wait for it before measuring). */}
+        {home || failed ? (
+          <h1 className="text-card-title min-w-0 flex-1 truncate">{location?.name ?? 'Meuble'}</h1>
+        ) : (
+          <span className="flex-1" />
+        )}
+        <FiltersControl filters={filters} onChange={setFilters} categories={categories} />
+      </div>
+      <FilterReminder
+        filters={filters}
+        categories={categories}
+        onClear={() => setFilters(NO_FILTER)}
+      />
       {failed ? (
         <Callout role="alert" title="Un instant">
           Impossible de charger le meuble : vérifiez la connexion.
@@ -137,26 +153,29 @@ function Meuble() {
           Ce meuble n’existe pas.
         </Callout>
       ) : null}
-      {notice ? (
-        <Callout role="status" title="C’est fait">
-          {notice}
-        </Callout>
-      ) : null}
-      {problem ? (
-        <Callout role="alert" title="Déplacement impossible">
-          {problem}
-        </Callout>
-      ) : null}
       {location && home ? (
         <DndProvider home={home} onMove={(id, to) => void drop(id, to)}>
-          <h1 className="text-title">{location.name}</h1>
-          <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
           <OpenFurniture
             location={location}
             onSelect={setSelected}
             isDimmed={isFiltering(filters) ? (tile) => !tileMatches(tile, filters) : undefined}
           />
         </DndProvider>
+      ) : null}
+      {notice || problem ? (
+        // Above the bottom bar, over the furniture: a message never takes height from the shelves.
+        <div className="fixed inset-x-0 bottom-[calc(var(--fx-nav-h)+0.5rem+env(safe-area-inset-bottom))] z-20 mx-auto flex max-w-xl flex-col gap-2 px-4">
+          {notice ? (
+            <Callout role="status" title="C’est fait" className="shadow-card">
+              {notice}
+            </Callout>
+          ) : null}
+          {problem ? (
+            <Callout role="alert" title="Déplacement impossible" className="shadow-card">
+              {problem}
+            </Callout>
+          ) : null}
+        </div>
       ) : null}
       {location && current ? (
         <ProductSheet

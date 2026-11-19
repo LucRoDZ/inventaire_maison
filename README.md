@@ -306,9 +306,10 @@ Les tests automatiques mesurent la géométrie et la cadence des images dans des
 
 1. Onglet Inventaire, vue Maison : les quatre meubles sont fermés. Un appui sur une carte fait pencher la porte et allume un halo ambre, puis le meuble s'ouvre sans attente.
 2. Dans chaque meuble : la ou les portes pivotent en un peu plus d'une demi-seconde, sans saccade, puis restent sur le côté sans recouvrir les étagères ; la lumière ambre s'allume en haut. Au congélateur, les tiroirs glissent l'un après l'autre et leur contenu reste visible.
-3. Faire défiler le meuble de haut en bas et une étagère pleine de gauche à droite : pas de saccade, les piles de vignettes ne sont pas rognées.
+3. Téléphone en portrait : le meuble entier (barre du haut, étagères, « Non rangé ») tient entre le haut de l'écran et la barre du bas, la page ne défile pas, y compris dans Safari quand la barre d'adresse se replie. Faire défiler une étagère pleine de gauche à droite : pas de saccade, les piles de vignettes ne sont pas rognées. Tourner le téléphone en paysage : la page défile de nouveau.
 4. Appui long sur une vignette puis glisser : l'étagère survolée s'entoure d'ambre ; déposer déplace le produit.
 5. Taper un nom dans la recherche de la vue Maison : seuls les meubles qui contiennent un résultat s'entourent d'ambre, porte entrouverte.
+   Dans un meuble ouvert, le bouton Filtres (en haut à droite) ouvre le panneau de recherche par le bas ; un filtre actif met un point ambre sur le bouton et une ligne « Filtré : … » sous la barre, les étagères se resserrent sans faire défiler la page.
 6. Réglages du téléphone, « Réduire les animations » activé : le meuble apparaît directement ouvert et allumé.
 
 ## Exécution autonome avec Claude Code

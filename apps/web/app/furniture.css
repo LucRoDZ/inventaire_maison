@@ -28,8 +28,8 @@
   --fx-band-right: 7%;
   --fx-doors: 2; /* posé par la coque selon le type de meuble */
   --fx-depth: 1100px;
-  --fx-top: 16px;
-  --fx-bottom: 12px;
+  --fx-top: 10px;
+  --fx-bottom: 8px;
   position: relative;
   isolation: isolate; /* les z-index du décor ne sortent pas du meuble (barre du bas, panneaux) */
   padding: var(--fx-top) var(--fx-band-right) var(--fx-bottom) var(--fx-band-left);
@@ -53,7 +53,7 @@
 .fx-body {
   position: relative;
   overflow: hidden;
-  padding: 40px 8px 8px;
+  padding: 16px 6px 6px;
   background: var(--lavender);
   border: 7px solid var(--lavender-line);
   border-radius: 13px;
@@ -245,7 +245,7 @@
 /* Tiroir (congélateur) : l'étagère devient un tiroir. --i = son rang (0, 1, 2…). */
 .fx-drawer {
   position: relative;
-  padding: 8px;
+  padding: 4px 6px;
   background: var(--white);
   border: 2px solid var(--lavender-line);
   border-radius: 12px;
@@ -253,14 +253,21 @@
   animation: fx-drawer-in 320ms ease-out both;
   animation-delay: calc(var(--i, 0) * 60ms);
 }
+/* Poignée : posée en haut du tiroir, derrière le contenu ; elle ne prend aucune hauteur. */
 .fx-drawer::before {
   content: '';
-  display: block;
+  position: absolute;
+  z-index: 0;
+  top: 2px;
+  left: 25%;
   width: 50%;
-  height: 7px;
-  margin: 0 auto 4px;
+  height: 4px;
   background: var(--grey);
   border-radius: 5px;
+}
+.fx-drawer > * {
+  position: relative;
+  z-index: 1;
 }
 @keyframes fx-drawer-in {
   from {
@@ -273,23 +280,27 @@
   }
 }
 
-/* Pile de vignettes : le conteneur laisse 12 px en haut et à droite pour les cartes qui dépassent.
-   Chaque carte derrière porte --i = 1, 2, 3 ou 4 (quantité − 1, plafonné à 4). */
+/* Pile de vignettes : le conteneur laisse --fx-pile-off (12 px au plus) en haut et à droite pour
+   les cartes qui dépassent. Chaque carte derrière porte --i = 1, 2, 3 ou 4 (quantité − 1, plafonné
+   à 4). Hors d'une étagère (vignette tirée), valeurs par défaut. */
 .fx-pile {
   position: relative;
-  padding: 12px 12px 0 0;
+  padding: var(--fx-pile-off, 12px) var(--fx-pile-off, 12px) 0 0;
 }
 .fx-pile-card {
   position: absolute;
-  top: 12px;
+  top: var(--fx-pile-off, 12px);
   left: 0;
-  width: 5rem;
-  height: 5rem;
+  width: var(--fx-tile, 64px);
+  height: var(--fx-tile, 64px);
   background: var(--white);
   /* Pas d'ombre : jusqu'à quatre cartes par vignette défilent avec l'étagère, le liseré suffit. */
   border: 1px solid var(--lavender-line);
   border-radius: 12px;
-  transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px));
+  transform: translate(
+    calc(var(--i) * var(--fx-pile-off, 12px) / 4),
+    calc(var(--i) * var(--fx-pile-off, 12px) / -4)
+  );
   pointer-events: none;
 }
 .fx-pile > button,
@@ -304,6 +315,191 @@
   box-shadow:
     0 0 0 4px var(--amber),
     0 0 20px var(--fx-glow);
+}
+
+/* ---------- Meuble tenant dans l'écran ---------- */
+
+/* Hauteur de la barre de navigation du bas (BottomNav : 8 + 32 + 2 + 16 + 8 px, plus son filet). */
+:root {
+  --fx-nav-h: 67px;
+}
+
+/* Vignette carrée : son côté suit la hauteur réellement donnée à son étagère. */
+.fx-tile {
+  width: var(--fx-tile, 64px);
+  height: var(--fx-tile, 64px);
+}
+.fx-tile-badge {
+  width: 70%;
+  height: 70%;
+}
+.fx-tile-glyph {
+  width: 50%;
+  height: 50%;
+}
+
+.fx-shelves {
+  gap: 6px;
+}
+.fx-row,
+.fx-row-empty {
+  display: flex;
+  flex-direction: column;
+}
+.fx-row > section {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Étagère garnie : la zone des vignettes et la ligne « nom + planche » dessous. C'est un conteneur
+   de taille : 100cqh est la hauteur donnée à l'étagère. La pile prend d'abord ses 12 px, la vignette
+   le reste, bornée entre 44 px (zone tactile minimale) et 96 px ; sous 44 px, la pile s'aplatit.
+   Hors verrouillage (ordinateur, paysage), l'étagère a la hauteur de la plus grande vignette. */
+.fx-fill {
+  container-type: size;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  height: calc(96px + 12px + 16px);
+}
+.fx-fill > * {
+  --fx-line: 16px;
+  --fx-a: calc(100cqh - var(--fx-line));
+  --fx-pile-off: clamp(0px, var(--fx-a) - 44px, 12px);
+  --fx-tile: clamp(44px, var(--fx-a) - var(--fx-pile-off), 96px);
+}
+.fx-tiles {
+  flex: 1 1 0;
+  min-height: 0;
+  align-items: flex-end;
+  overflow-y: hidden;
+}
+.fx-line {
+  flex: none;
+  height: var(--fx-line);
+}
+.fx-line .fx-board {
+  flex: 1 1 0;
+  min-width: 24px;
+}
+
+/* Très compact : la vignette est à 44 px et sa pile ne tient plus en entier. Nom sur 12 px, planche
+   fine, piliers courts. */
+@container (height < 72px) {
+  .fx-fill > * {
+    --fx-line: 11px;
+  }
+  .fx-fill .fx-shelf-name {
+    font-size: 12px;
+    line-height: 11px;
+  }
+  .fx-fill .fx-board > :first-child {
+    height: 3px;
+  }
+  .fx-fill .fx-posts > span {
+    height: 4px;
+  }
+}
+
+/* Étagère vide : rangée pointillée de 36 px (bordure comprise) posée sur une planche fine ; le +
+   garde 44 px de zone tactile et ne dépasse que de 4 px (le retrait des étagères les absorbe). */
+.fx-empty {
+  min-height: 36px;
+}
+.fx-empty .fx-plus {
+  margin-block: -6px;
+}
+/* Le nom passe avant le texte d'aide : c'est lui qui se tronque en dernier. */
+.fx-empty .fx-shelf-name {
+  flex-shrink: 0;
+  max-width: 60%;
+}
+.fx-row-empty .fx-board {
+  margin-top: 2px;
+}
+.fx-row-empty .fx-board > :first-child {
+  height: 4px;
+}
+.fx-row-empty .fx-posts {
+  display: none;
+}
+
+/* Plateau « Non rangé ». */
+.fx-tray {
+  padding: 4px 6px;
+  border-radius: var(--radius-card);
+}
+.fx-row-empty > .fx-tray {
+  padding-block: 0;
+}
+
+/* Téléphone en portrait : la page ne défile pas. Le cadre de l'application prend exactement la
+   hauteur visible moins la barre du bas et les marges de sécurité ; le meuble prend ce qui reste
+   sous la barre du haut, et ses étagères garnies se le partagent à parts égales. En paysage, sous
+   480 px de haut ou sur ordinateur, rien n'est verrouillé. */
+@media (max-width: 767.98px) and (orientation: portrait) and (min-height: 480px) {
+  .app-frame:has(.fx-fit) {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - env(safe-area-inset-top));
+    min-height: 0;
+    padding-top: 4px;
+    padding-bottom: calc(var(--fx-nav-h) + 4px + env(safe-area-inset-bottom));
+  }
+  /* Chaque pixel compte : marges resserrées, sans toucher au dessin. */
+  .fx-fit {
+    gap: 4px;
+  }
+  .fx-fit .fx-scene {
+    --fx-top: 6px;
+    --fx-bottom: 4px;
+  }
+  .fx-fit .fx-body {
+    padding: 8px 5px 5px;
+    border-width: 5px;
+  }
+  .fx-fit .fx-shelves {
+    gap: 3px;
+  }
+  .fx-fit .fx-row > .fx-tray {
+    padding-block: 0;
+  }
+  .fx-fit .fx-drawer {
+    padding: 0 4px;
+    border-width: 1px;
+  }
+  .fx-fit,
+  .fx-fit .fx-frame,
+  .fx-fit .fx-scene,
+  .fx-fit .fx-body,
+  .fx-fit .fx-shelves {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+  /* Au-delà de ce qui tient même en très compact, les étagères défilent dans le meuble, jamais la
+     page. Le retrait laisse voir le halo d'une étagère cible. */
+  .fx-fit .fx-shelves {
+    overflow-y: auto;
+    padding: 4px;
+    margin: -4px;
+  }
+  .fx-fit .fx-row {
+    flex: 1 1 0;
+  }
+  .fx-fit .fx-row > section {
+    flex: 1 1 0;
+  }
+  .fx-fit .fx-fill {
+    flex: 1 1 0;
+    height: auto;
+    min-height: calc(44px + 11px);
+  }
+  .fx-fit .fx-row-empty {
+    flex: none;
+  }
 }
 
 /* ---------- Cartes de l'écran Maison ---------- */

@@ -301,7 +301,7 @@ test('vue Maison : quatre meubles nommés', async ({ page }) => {
 
 const SHELVES = {
   'chromium-mobile': { shelf: 'Étagère 3', product: 'Pommes Golden' },
-  'webkit-mobile': { shelf: 'Étagère 4', product: 'Abricots secs' },
+  'webkit-mobile': { shelf: 'Bac à légumes', product: 'Abricots secs' },
 } as const;
 
 // A 1 x 1 PNG: the server turns any picture into a WebP thumbnail.
@@ -365,14 +365,14 @@ const MOVES = {
   'chromium-mobile': {
     code: '3760001111118',
     name: 'Beurre doux du déplacement',
-    from: 'Balconnet',
+    from: 'Étagère 2',
     toLocation: 'Frigo',
-    to: 'Bac à légumes 1',
+    to: 'Étagère 1',
   },
   'webkit-mobile': {
     code: '3760002222226',
     name: 'Confiture de fraises du déplacement',
-    from: 'Bac à légumes 2',
+    from: 'Étagère 2',
     toLocation: 'Garde-manger',
     to: 'Étagère 1',
   },

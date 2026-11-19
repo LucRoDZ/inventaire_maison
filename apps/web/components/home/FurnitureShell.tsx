@@ -60,7 +60,7 @@ export function FurnitureShell({ kind, children, className = '' }: FurnitureShel
         <div className="fx-body">
           <span className="fx-light" aria-hidden="true" />
           {kind === 'freezer' ? <span className="fx-frost" aria-hidden="true" /> : null}
-          <div className="flex flex-col gap-3">{children}</div>
+          <div className="fx-shelves flex flex-col">{children}</div>
         </div>
       </div>
     </div>

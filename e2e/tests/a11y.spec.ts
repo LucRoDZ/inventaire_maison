@@ -158,6 +158,36 @@ test.describe('audit à 360 px', () => {
     });
   }
 
+  for (const screen of [SCREENS[4]!, SCREENS[1]!]) {
+    test(`${screen.name} : panneau Filtres ouvert, axe et zones tactiles`, async ({ page }) => {
+      await open(page, screen);
+      await page.getByRole('button', { name: 'Filtres', exact: true }).click();
+      const sheet = page.getByRole('dialog', { name: 'Filtres' });
+      await expect(sheet).toBeVisible();
+      await sheet.getByRole('group', { name: 'Catégories' }).getByRole('button').first().click();
+      await expect(page.getByRole('button', { name: 'Filtres, actifs' })).toBeAttached();
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(
+        results.violations.map(
+          (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
+        ),
+      ).toEqual([]);
+
+      const small = await sheet.evaluate((dialog) =>
+        [...dialog.querySelectorAll<HTMLElement>('button, input')]
+          .filter((el) => {
+            const box = el.getBoundingClientRect();
+            return box.width > 0 && (box.height < 43.5 || box.width < 43.5);
+          })
+          .map((el) => el.getAttribute('aria-label') ?? el.textContent ?? ''),
+      );
+      expect(small).toEqual([]);
+    });
+  }
+
   test('police Carlito chargée', async ({ page }) => {
     await open(page, SCREENS[0]!);
     const loaded = await page.evaluate(async () => {

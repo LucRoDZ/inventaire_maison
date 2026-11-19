@@ -329,7 +329,7 @@ describe('OpenFurniture', () => {
     expect(piles).toEqual([0, 1, 2, 4, 4, 4]);
   });
 
-  it('keeps the button of a tile as it was: same name, 80 × 80, one per line of stock', () => {
+  it('keeps the button of a tile: same name, square sized by its shelf, one per line of stock', () => {
     const location = fridge({
       shelves: [shelf(22, 'Étagère 2', 'plain', [tile(1, 'Lait', 9), tile(2, 'Eau', 1)])],
     });
@@ -339,7 +339,7 @@ describe('OpenFurniture', () => {
       'Lait, quantité 9',
       'Eau, quantité 1',
     ]);
-    for (const button of buttons) expect(button).toHaveClass('h-20', 'w-20', 'shrink-0');
+    for (const button of buttons) expect(button).toHaveClass('fx-tile', 'shrink-0');
   });
 
   it('draws no pile behind a tile faded by the filter', () => {
@@ -362,6 +362,36 @@ describe('OpenFurniture', () => {
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
       'Lait, quantité 3',
     ]);
+  });
+
+  it('makes an empty shelf a thin row, a filled one a share of the height with its name on the board line', () => {
+    const { container } = render(<OpenFurniture location={fridge()} />);
+    const empty = screen.getByRole('region', { name: 'Étagère 1' });
+    expect(empty.parentElement).toHaveClass('fx-row-empty');
+    expect(empty.querySelector('.fx-empty')).toHaveClass('border-dashed');
+    expect(within(empty).getByRole('heading', { level: 3 })).toHaveTextContent('Étagère 1');
+    const filled = screen.getByRole('region', { name: 'Étagère 2' });
+    expect(filled.parentElement).toHaveClass('fx-row');
+    const line = filled.querySelector('.fx-fill > .fx-line')!;
+    expect(within(line as HTMLElement).getByRole('heading', { level: 3 })).toHaveTextContent(
+      'Étagère 2',
+    );
+    expect(line.querySelector('[data-shelf-kind="rack"]')).not.toBeNull();
+    expect(
+      container.querySelectorAll('.fx-shelves > .fx-row, .fx-shelves > .fx-row-empty'),
+    ).toHaveLength(4);
+  });
+
+  it('keeps the « Non rangé » tray a drop zone, empty (thin) or filled (a share)', () => {
+    const { unmount } = render(<OpenFurniture location={fridge()} />);
+    expect(screen.getByRole('region', { name: 'Non rangé' }).parentElement).toHaveClass(
+      'fx-row-empty',
+    );
+    unmount();
+    render(<OpenFurniture location={fridge({ unshelved: [tile(5, 'Beurre', 2)] })} />);
+    const tray = screen.getByRole('region', { name: 'Non rangé' });
+    expect(tray.parentElement).toHaveClass('fx-row');
+    expect(within(tray).getByRole('heading', { level: 3 })).toHaveTextContent('Non rangé');
   });
 
   it('builds the scanner link', () => {

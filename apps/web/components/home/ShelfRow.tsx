@@ -31,7 +31,27 @@ interface ShelfRowProps {
 export const scanHref = (locationId: number, shelfId?: number): string =>
   `/?lieu=${locationId}${shelfId ? `&etagere=${shelfId}` : ''}`;
 
-/** One shelf: tiles on a board (`rack` shows posts, `plain` a flat board); empty: dotted outline. */
+/** The board under the tiles (`rack` adds posts). Scenery: hidden from assistive technology. */
+function Board({ look, kind }: { look: ShelfLook; kind: HomeShelfDto['kind'] }) {
+  return (
+    <div aria-hidden="true" data-shelf-kind={kind} className="fx-board">
+      <div className={look === 'board' ? 'bg-indigo h-2 rounded-full' : 'fx-glass-edge'} />
+      {kind === 'rack' ? (
+        <div className="fx-posts flex justify-between px-3">
+          {[0, 1, 2, 3].map((post) => (
+            <span key={post} className="bg-indigo h-2 w-1.5" />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * One shelf. Filled: its tiles above a line holding its name and its board; the row takes its share
+ * of the height of the furniture and the tiles grow or shrink with it. Empty: a thin dotted row
+ * with « Vide » and a + that opens the scanner on this shelf.
+ */
 export function ShelfRow({
   locationId,
   shelf,
@@ -42,55 +62,59 @@ export function ShelfRow({
   index = 0,
 }: ShelfRowProps) {
   const drawer = look === 'drawer';
+  const empty = shelf.tiles.length === 0;
   const articles = new Set(shelf.tiles.map((tile) => tile.productId)).size;
+  const count = drawer ? (
+    <span className="text-help shrink-0">
+      {articles} {articles > 1 ? 'articles' : 'article'}
+    </span>
+  ) : null;
+  const name = <h3 className="text-label fx-shelf-name min-w-0 truncate">{shelf.name}</h3>;
+
   return (
-    <DroppableShelf id={shelfDropId(locationId, shelf.id)}>
+    <DroppableShelf
+      id={shelfDropId(locationId, shelf.id)}
+      className={empty ? 'fx-row-empty' : 'fx-row'}
+    >
       <section
         aria-label={shelf.name}
-        className={`flex flex-col gap-1 ${drawer ? 'fx-drawer' : ''} ${spot ? 'relative isolate pt-2' : ''}`}
+        className={`relative isolate ${drawer ? 'fx-drawer' : ''}`}
         style={drawer ? ({ '--i': index } as CSSProperties) : undefined}
       >
         {spot ? <span className="fx-spot" aria-hidden="true" /> : null}
-        {drawer ? (
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="text-label">{shelf.name}</h3>
-            <span className="text-help">
-              {articles} {articles > 1 ? 'articles' : 'article'}
-            </span>
-          </div>
-        ) : (
-          <h3 className="text-label">{shelf.name}</h3>
-        )}
-        {shelf.tiles.length === 0 ? (
-          <div className="border-lavender-line flex min-h-20 items-center justify-between rounded-xl border-2 border-dashed px-4">
+        {empty ? (
+          <div className="fx-empty border-lavender-line flex items-center gap-2 rounded-xl border-2 border-dashed pr-1 pl-2">
+            {name}
             <span className="text-small">Vide</span>
+            <span className="ml-auto" />
+            {count}
             <Link
               href={scanHref(locationId, shelf.id)}
               aria-label={`Ajouter un produit sur ${shelf.name}`}
-              className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full"
+              className="fx-plus tap-target text-indigo inline-flex shrink-0 items-center justify-center"
             >
-              <Plus size={20} aria-hidden="true" />
+              <span className="bg-amber inline-flex h-7 w-7 items-center justify-center rounded-full">
+                <Plus size={18} aria-hidden="true" />
+              </span>
             </Link>
           </div>
         ) : (
-          <ul className="flex overflow-x-auto pb-1">
-            {shelf.tiles.map((tile) => (
-              <li key={tile.stockItemId} className="shrink-0">
-                <DraggableTile tile={tile} onSelect={onSelect} dimmed={isDimmed?.(tile)} />
-              </li>
-            ))}
-          </ul>
-        )}
-        <div aria-hidden="true" data-shelf-kind={shelf.kind}>
-          <div className={look === 'board' ? 'bg-indigo h-2 rounded-full' : 'fx-glass-edge'} />
-          {shelf.kind === 'rack' ? (
-            <div className="flex justify-between px-3">
-              {[0, 1, 2, 3].map((post) => (
-                <span key={post} className="bg-indigo h-2 w-1.5" />
+          <div className="fx-fill">
+            <ul className="fx-tiles flex overflow-x-auto">
+              {shelf.tiles.map((tile) => (
+                <li key={tile.stockItemId} className="shrink-0">
+                  <DraggableTile tile={tile} onSelect={onSelect} dimmed={isDimmed?.(tile)} />
+                </li>
               ))}
+            </ul>
+            <div className="fx-line flex items-center gap-2">
+              {name}
+              <Board look={look} kind={shelf.kind} />
+              {count}
             </div>
-          ) : null}
-        </div>
+          </div>
+        )}
+        {empty ? <Board look={look} kind={shelf.kind} /> : null}
       </section>
     </DroppableShelf>
   );
