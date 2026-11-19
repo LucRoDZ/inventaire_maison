@@ -41,7 +41,7 @@ Le prototype propose aussi sa propre barre de navigation, un écran de recherche
 Le cahier des charges (section Vue Maison) dit déjà : « un toucher le fait s'ouvrir (zoom de 250 ms, **porte du frigo qui pivote**) » et décrit le frigo « porte ouverte, intérieur éclairé en ambre ». Le zoom est fait ; **la porte qui pivote ne l'est pas**. Cette phase comble donc un manque du cahier des charges, elle ne change pas le périmètre.
 
 ### Constats à connaître
-1. **Étagères = données.** Le frigo du seed a « Étagère 1 à 4 », « Bac à légumes 1 et 2 » et « Balconnet », tous de type `plain` ; le congélateur a « Tiroir 1 à 3 ». Aucun champ ne distingue un balconnet d'un bac, et l'admin peut tout renommer. Le dessin ne doit donc jamais dépendre des noms.
+1. **Étagères = données.** Le frigo du seed a « Étagère 1 à 3 » et « Bac à légumes », tous de type `plain` (quatre étagères au plus par meuble depuis le correctif « meuble sans défilement ») ; le congélateur a « Tiroir 1 à 3 ». Aucun champ ne distingue un balconnet d'un bac, et l'admin peut tout renommer. Le dessin ne doit donc jamais dépendre des noms.
 2. **Pas de dégradé dans le projet.** Le cahier des charges interdit les dégradés ; aucun `gradient` dans `apps/web`.
 3. **Pas de couleur en dur.** `tokens.css` impose les variables.
 4. **Deux fonds seulement** (blanc, et indigo pour les cartes de chiffres et l'en-tête de la Vue Maison). L'intérieur des meubles est en lavande.

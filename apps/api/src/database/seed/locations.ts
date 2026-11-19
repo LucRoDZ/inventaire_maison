@@ -13,6 +13,9 @@ export interface LocationSeed {
 const plain = (name: string): ShelfSeed => ({ name, kind: 'plain' });
 const rack = (name: string): ShelfSeed => ({ name, kind: 'rack' });
 
+/** At most this many shelves per furniture: the open furniture must fit on a phone screen. */
+export const MAX_SEED_SHELVES = 4;
+
 export const LOCATION_SEEDS: readonly LocationSeed[] = [
   {
     name: 'Garde-manger',
@@ -24,15 +27,7 @@ export const LOCATION_SEEDS: readonly LocationSeed[] = [
     name: 'Frigo',
     kind: 'fridge',
     icon: 'refrigerator',
-    shelves: [
-      plain('Étagère 1'),
-      plain('Étagère 2'),
-      plain('Étagère 3'),
-      plain('Étagère 4'),
-      plain('Bac à légumes 1'),
-      plain('Bac à légumes 2'),
-      plain('Balconnet'),
-    ],
+    shelves: [plain('Étagère 1'), plain('Étagère 2'), plain('Étagère 3'), plain('Bac à légumes')],
   },
   {
     name: 'Congélateur',

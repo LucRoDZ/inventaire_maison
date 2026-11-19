@@ -4,6 +4,7 @@ import { createTempDatabase, type TempDatabase } from '../../../test/temp-databa
 import type { MigrationRunner } from '../database.module';
 import { categories, locations, offCategoryMap, shelves } from '../schema';
 import { CATEGORY_SEEDS } from './categories';
+import { LOCATION_SEEDS, MAX_SEED_SHELVES } from './locations';
 import { OFF_CATEGORY_MAP_SEEDS } from './off-category-map';
 import { SeedService } from './seed.service';
 
@@ -34,12 +35,12 @@ beforeEach(async () => {
 });
 
 describe('SeedService', () => {
-  it('fills an empty database with 15 categories, 4 locations and 18 shelves', async () => {
+  it('fills an empty database with 15 categories, 4 locations and 15 shelves', async () => {
     await service.seed();
     const result = await counts();
     expect(result.categories).toBe(15);
     expect(result.locations).toBe(4);
-    expect(result.shelves).toBe(18);
+    expect(result.shelves).toBe(15);
     expect(result.map).toBeGreaterThanOrEqual(75);
   });
 
@@ -79,5 +80,24 @@ describe('SeedService', () => {
     const rows = await tmp.db.select().from(shelves).where(eq(shelves.locationId, cave!.id));
     expect(rows.filter((s) => s.kind === 'rack')).toHaveLength(3);
     expect(rows.filter((s) => s.kind === 'plain').map((s) => s.name)).toEqual(['Caisses et packs']);
+  });
+
+  it('gives no furniture more than four shelves, so that it fits on a phone', () => {
+    expect(MAX_SEED_SHELVES).toBe(4);
+    for (const location of LOCATION_SEEDS) {
+      expect(location.shelves.length, location.name).toBeLessThanOrEqual(MAX_SEED_SHELVES);
+    }
+  });
+
+  it('gives the fridge three shelves and a vegetable drawer', async () => {
+    await service.seed();
+    const [frigo] = await tmp.db.select().from(locations).where(eq(locations.kind, 'fridge'));
+    const rows = await tmp.db.select().from(shelves).where(eq(shelves.locationId, frigo!.id));
+    expect(rows.sort((a, b) => a.sortOrder - b.sortOrder).map((s) => s.name)).toEqual([
+      'Étagère 1',
+      'Étagère 2',
+      'Étagère 3',
+      'Bac à légumes',
+    ]);
   });
 });
