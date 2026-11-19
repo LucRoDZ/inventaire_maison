@@ -119,7 +119,7 @@ function Meuble() {
       : undefined;
 
   return (
-    <main className="flex flex-col gap-4">
+    <main className="fx-fit flex flex-col gap-1">
       <Link
         href={`/inventaire${filtersToQuery(filters)}`}
         className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
@@ -137,16 +137,6 @@ function Meuble() {
           Ce meuble n’existe pas.
         </Callout>
       ) : null}
-      {notice ? (
-        <Callout role="status" title="C’est fait">
-          {notice}
-        </Callout>
-      ) : null}
-      {problem ? (
-        <Callout role="alert" title="Déplacement impossible">
-          {problem}
-        </Callout>
-      ) : null}
       {location && home ? (
         <DndProvider home={home} onMove={(id, to) => void drop(id, to)}>
           <h1 className="text-title">{location.name}</h1>
@@ -157,6 +147,21 @@ function Meuble() {
             isDimmed={isFiltering(filters) ? (tile) => !tileMatches(tile, filters) : undefined}
           />
         </DndProvider>
+      ) : null}
+      {notice || problem ? (
+        // Above the bottom bar, over the furniture: a message never takes height from the shelves.
+        <div className="fixed inset-x-0 bottom-[calc(var(--fx-nav-h)+0.5rem+env(safe-area-inset-bottom))] z-20 mx-auto flex max-w-xl flex-col gap-2 px-4">
+          {notice ? (
+            <Callout role="status" title="C’est fait" className="shadow-card">
+              {notice}
+            </Callout>
+          ) : null}
+          {problem ? (
+            <Callout role="alert" title="Déplacement impossible" className="shadow-card">
+              {problem}
+            </Callout>
+          ) : null}
+        </div>
       ) : null}
       {location && current ? (
         <ProductSheet

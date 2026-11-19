@@ -76,7 +76,7 @@ test.describe('portes de la Vue Maison', () => {
     await stock(page, baseURL, mine.freezer, 'Congélateur', 'Tiroir 3', 2);
   });
 
-  test('vignette : bouton de 80 × 80 au même nom, pile décorative autour, jamais rognée', async ({
+  test('vignette : bouton carré de 44 à 96 px au même nom, pile décorative autour, jamais rognée', async ({
     page,
   }, testInfo) => {
     const { pantry } = STOCK[testInfo.project.name as keyof typeof STOCK];
@@ -85,9 +85,11 @@ test.describe('portes de la Vue Maison', () => {
     const shelf = page.getByRole('region', { name: 'Étagère 2' });
     const tile = shelf.getByRole('button', { name: `${pantry}, quantité 6` });
     await expect(tile).toBeVisible();
+    // Its side follows the height given to its shelf: never under the 44 px tap target, never huge.
     const box = (await tile.boundingBox())!;
-    expect(Math.round(box.width)).toBe(80);
-    expect(Math.round(box.height)).toBe(80);
+    expect(Math.round(box.width)).toBe(Math.round(box.height));
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.width).toBeLessThanOrEqual(96);
 
     const pile = await tile.evaluate((button) => {
       const wrapper = button.parentElement!;
@@ -103,7 +105,7 @@ test.describe('portes de la Vue Maison', () => {
           const rect = card.getBoundingClientRect();
           return rect.top < row.top - 0.5 || rect.bottom > row.bottom + 0.5;
         }).length,
-        // The furthest card is 12 px up and to the right of the button.
+        // The furthest card is up to 12 px up and to the right of the button.
         offset: cards.length
           ? Math.round(
               button.getBoundingClientRect().top - cards.at(-1)!.getBoundingClientRect().top,
@@ -111,14 +113,9 @@ test.describe('portes de la Vue Maison', () => {
           : 0,
       };
     });
-    expect(pile).toEqual({
-      cards: 4,
-      inside: 0,
-      hidden: true,
-      inert: true,
-      clipped: 0,
-      offset: 12,
-    });
+    expect(pile).toMatchObject({ cards: 4, inside: 0, hidden: true, inert: true, clipped: 0 });
+    expect(pile.offset).toBeGreaterThan(0);
+    expect(pile.offset).toBeLessThanOrEqual(12);
 
     // The pile takes no tap: the button still opens the product panel.
     await tile.click();

@@ -14,7 +14,7 @@ interface ProductTileProps {
 }
 
 /**
- * Square thumbnail: the photo, or the category glyph on its lavender badge, with an amber quantity
+ * Square thumbnail (its side follows the height of its shelf, see furniture.css): the photo, or the category glyph on its lavender badge, with an amber quantity
  * badge. A white card with a thin outline, so that it reads on the lavender inside of a furniture.
  */
 export function ProductTile({
@@ -32,7 +32,7 @@ export function ProductTile({
       {...dragProps}
       onClick={() => onSelect?.(tile)}
       aria-label={`${tile.name}, quantité ${tile.quantity}`}
-      className={`border-lavender-line relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-white transition-opacity ${
+      className={`border-lavender-line fx-tile relative shrink-0 overflow-hidden rounded-xl border bg-white transition-opacity ${
         dimmed ? 'opacity-30' : ''
       }`}
     >
@@ -40,8 +40,8 @@ export function ProductTile({
         <img src={tile.imageUrl} alt="" className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center">
-          <span className="bg-lavender text-indigo flex h-14 w-14 items-center justify-center rounded-full">
-            <Glyph size={28} aria-hidden="true" />
+          <span className="fx-tile-badge bg-lavender text-indigo flex items-center justify-center rounded-full">
+            <Glyph size={28} aria-hidden="true" className="fx-tile-glyph" />
           </span>
         </span>
       )}
