@@ -11,6 +11,9 @@ import type { AppConfig } from './config/env.schema';
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'same-origin',
+  // Household data is never kept by a browser or a proxy (a shared phone, the back button after a
+  // logout). The image route replaces it with `private, no-cache` and an ETag.
+  'Cache-Control': 'private, no-store',
 };
 
 const FORWARDED_HEADERS = ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-host'] as const;

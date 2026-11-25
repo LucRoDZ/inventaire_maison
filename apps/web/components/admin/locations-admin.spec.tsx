@@ -174,7 +174,7 @@ describe('LocationsAdmin', () => {
     expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
     await user.click(within(dialog).getByRole('button', { name: 'Supprimer Frigo' }));
     expect(api.deleteLocation).toHaveBeenCalledWith(2, undefined);
-    expect(await screen.findByRole('status')).toHaveTextContent('Frigo supprimé.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Meuble « Frigo » supprimé.');
   });
 
   it('requires the destination of the products and says where they go', async () => {

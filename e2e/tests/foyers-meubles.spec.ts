@@ -85,7 +85,7 @@ for (const size of SIZES) {
     const card = page.getByRole('link', { name: /^Frigo 2/ });
     await expect(card).toBeFocused();
     await expect(
-      page.locator('[aria-live="polite"]').filter({ hasText: 'Frigo 2 est ajouté' }),
+      page.locator('[aria-live="polite"]').filter({ hasText: 'Meuble « Frigo 2 » ajouté' }),
     ).toHaveCount(1);
 
     // A product on its first shelf (through the API, as the add sheet would).
@@ -130,7 +130,9 @@ for (const size of SIZES) {
     await dialog.getByLabel('Meuble qui reçoit les produits').selectOption({ label: 'Frigo' });
     await expect(dialog).toContainText('plateau « Non rangé » de Frigo');
     await dialog.getByRole('button', { name: 'Supprimer Frigo 2' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Frigo 2 supprimé' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Meuble « Frigo 2 » supprimé' }),
+    ).toBeVisible();
 
     const detail = await client.get<{
       stock: { locationName: string; lines: { shelfId: number | null; quantity: number }[] }[];

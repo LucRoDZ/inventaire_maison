@@ -585,7 +585,7 @@
 - [x] **F.11 E2E** : `foyers-meubles.spec.ts` (Frigo 2, transfert, deux foyers y compris hors ligne, Foyer Dupont, axe, clavier) et suite existante sur les deux navigateurs.
 - [x] **F.12 Finition (`unslop`)** : audit `docs/audit-finition.md`, passes du skill dans le cadre Indigo Ambre, captures avant et après.
 - [x] **F.13 Documentation** : cahier des charges, README (variables, rôles, déploiement, sauvegarde, retour arrière, crédit du skill), `TASKS.md`.
-- [ ] **F.14 Revue indépendante, PR, CI et fusion**.
+- [x] **F.14 Revue indépendante, PR, CI et fusion**.
 
 ## Critères de fin de phase
 
@@ -806,6 +806,9 @@
 - 25/11/2026 : F.B5. Supprimer un meuble qui contient du stock sans destination : 409 « choisissez le meuble qui les recevra » ; le dernier meuble ne peut être supprimé que vide.
 - 25/11/2026 : F.B6. Sélecteurs de meuble regroupés par type (`optgroup`) à partir de 6 meubles ; barre de dépôt du glisser-déposer en rangées de 3 au-delà de 4 meubles.
 - 25/11/2026 : F.B7. E2E : les jeux de données des tests de rendu et d'ajustement vivent dans un foyer dédié par navigateur (comptes `rendu-a`, `ajuste-a`…), créés par l'API de la console : le foyer de l'admin reste sous la limite de 12 meubles.
+
+- 25/11/2026 : F.R1. Revue indépendante (sous-agent sans part au code) : aucun défaut d'isolation trouvé. Corrigés : texte du déplacement de compte (« et non plus celui de »), focus perdu après le renommage ou la suppression d'un foyer et à l'ouverture ou la fermeture des panneaux d'un compte, erreurs de validation annoncées (`role="alert"`), boutons du pas à pas et d'envoi en `aria-disabled` (le focus reste dans la feuille), accords (« son meuble », « Meuble « Cave » supprimé »). Ajoutés : `Cache-Control: private, no-store` sur toutes les réponses de l'API (sauf les images, `no-cache` + ETag) ; la migration suffixe un nom de meuble en double par son identifiant (« frigo (12) »), qui ne peut entrer en collision avec aucun autre nom.
+- 25/11/2026 : F.R2. Non fait, à décider avec Lucas : (a) l'API garde `DATABASE_MIGRATION_URL` (propriétaire, superutilisateur) dans son environnement pour migrer au démarrage (décision C2) ; une fuite d'environnement exposerait ce rôle. Alternative : un conteneur de migration ponctuel. (b) `BottomSheet` ne rend pas le fond `inert` (seulement `aria-modal` et le piège de focus). (c) Noms identiques des boutons « Renommer le foyer » d'une carte à l'autre (la région de la carte porte le nom du foyer). **À confirmer.**
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

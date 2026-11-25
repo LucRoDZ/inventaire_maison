@@ -74,8 +74,13 @@ function DeleteHouseholdDialog({
         Supprimer le foyer {household.name} ?
       </h2>
       <p id={textId} className="text-body">
-        Ses {household.locationCount} meubles, ses produits, son stock, ses catégories et son
-        historique seront effacés. Seule une sauvegarde de la base permet de revenir en arrière.
+        {household.locationCount === 0
+          ? 'Ses produits'
+          : household.locationCount === 1
+            ? 'Son meuble, ses produits'
+            : `Ses ${household.locationCount} meubles, ses produits`}
+        , son stock, ses catégories et son historique seront effacés. Seule une sauvegarde de la
+        base permet de revenir en arrière.
       </p>
       <div className="flex flex-col gap-1">
         <label htmlFor={inputId} className="text-label">
@@ -119,6 +124,8 @@ function HouseholdCard({
 }) {
   const [name, setName] = useState(household.name);
   const [busy, setBusy] = useState(false);
+  // The card stays mounted across reloads (keyed by id): follow a new name from the server.
+  useEffect(() => setName(household.name), [household.name]);
   const dirty = name.trim() !== household.name;
   const accounts = household.members.length;
 
@@ -255,6 +262,7 @@ export function HouseholdsAdmin({ api = householdsApi }: { api?: Api }) {
   const [loadError, setLoadError] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [deleting, setDeleting] = useState<HouseholdDto | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
 
   const load = useCallback(() => {
     api
@@ -276,6 +284,11 @@ export function HouseholdsAdmin({ api = householdsApi }: { api?: Api }) {
         <Callout role="alert">Impossible de charger les foyers : vérifiez la connexion.</Callout>
       ) : null}
       <CreateHouseholdForm api={api} onCreated={load} notify={setNotice} />
+      {households ? (
+        <h2 ref={heading} tabIndex={-1} className="text-label outline-none">
+          {households.length} {households.length > 1 ? 'foyers' : 'foyer'}
+        </h2>
+      ) : null}
       {households === null && !loadError ? (
         <p role="status" className="text-small">
           Chargement…
@@ -283,7 +296,7 @@ export function HouseholdsAdmin({ api = householdsApi }: { api?: Api }) {
       ) : null}
       {(households ?? []).map((household) => (
         <HouseholdCard
-          key={`${household.id}-${household.name}`}
+          key={household.id}
           household={household}
           api={api}
           onChanged={load}
@@ -300,6 +313,8 @@ export function HouseholdsAdmin({ api = householdsApi }: { api?: Api }) {
             setNotice({ kind: 'ok', text: `Foyer « ${deleting.name} » supprimé.` });
             setDeleting(null);
             load();
+            // The card is gone: the focus goes to the top of the list.
+            requestAnimationFrame(() => heading.current?.focus());
           }}
         />
       ) : null}

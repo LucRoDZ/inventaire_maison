@@ -127,10 +127,13 @@ describe('CreateFurnitureSheet', () => {
     const { user, props } = setup();
     const less = screen.getByRole('button', { name: 'Une étagère de moins' });
     const more = screen.getByRole('button', { name: 'Une étagère de plus' });
-    for (let i = 0; i < 3; i++) await user.click(less);
-    expect(less).toBeDisabled();
-    for (let i = 0; i < 7; i++) await user.click(more);
-    expect(more).toBeDisabled();
+    for (let i = 0; i < 4; i++) await user.click(less);
+    // At the limit the button says it is unavailable but keeps the focus.
+    expect(less).toHaveAttribute('aria-disabled', 'true');
+    expect(less).toHaveFocus();
+    for (let i = 0; i < 8; i++) await user.click(more);
+    expect(more).toHaveAttribute('aria-disabled', 'true');
+    expect(more).toHaveFocus();
     await user.click(screen.getByRole('button', { name: 'Ajouter le meuble' }));
     expect(props.create).toHaveBeenCalledWith({ name: 'Frigo 2', kind: 'fridge', shelfCount: 8 });
     expect(props.onCreated).toHaveBeenCalled();
@@ -170,12 +173,15 @@ describe('CreateFurnitureSheet', () => {
     );
     const { user } = setup({ create });
     const submit = screen.getByRole('button', { name: 'Ajouter le meuble' });
-    expect(submit).toBeEnabled();
+    expect(submit).not.toHaveAttribute('aria-disabled', 'true');
     await user.click(submit);
-    expect(screen.getByRole('button', { name: 'Ajout…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ajout…' })).toHaveAttribute('aria-disabled', 'true');
     fail(new ApiError(409, 'Vous avez déjà 12 meubles : c’est le maximum.'));
     expect(await screen.findByRole('alert')).toHaveTextContent('12 meubles');
-    expect(screen.getByRole('button', { name: 'Ajouter le meuble' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Ajouter le meuble' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 });
 
@@ -241,7 +247,7 @@ describe('HomeView and the furniture', () => {
     const card = await screen.findByRole('link', { name: /^Frigo 2/ });
     await waitFor(() => expect(card).toHaveFocus());
     expect(container.querySelector('[aria-live="polite"]')).toHaveTextContent(
-      'Frigo 2 est ajouté à la maison.',
+      'Meuble « Frigo 2 » ajouté à la maison.',
     );
   });
 });

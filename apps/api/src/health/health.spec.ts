@@ -34,6 +34,9 @@ describe('GET /api/health', () => {
     const unauthenticated = await request(app.getHttpServer()).get('/api/auth/me');
     expect(unauthenticated.status).toBe(401);
     expect(unauthenticated.headers['x-content-type-options']).toBe('nosniff');
+    // Nothing of the API is kept by a browser or a proxy.
+    expect(res.headers['cache-control']).toBe('private, no-store');
+    expect(unauthenticated.headers['cache-control']).toBe('private, no-store');
     expect(unauthenticated.headers['x-powered-by']).toBeUndefined();
   });
 

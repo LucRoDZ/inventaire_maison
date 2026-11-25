@@ -83,7 +83,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
     // The house may not be loaded again yet: wait for the card to exist.
     if (!location) return;
     document.getElementById(furnitureCardId(focusId))?.focus();
-    setAnnouncement(`${location.name} est ajouté à la maison.`);
+    setAnnouncement(`Meuble « ${location.name} » ajouté à la maison.`);
     setFocusId(null);
     if (params.has(NEW_FURNITURE_PARAM)) {
       const rest = new URLSearchParams(params);

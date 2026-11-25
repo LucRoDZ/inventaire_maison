@@ -82,8 +82,8 @@ export function DeleteFurnitureDialog({
     }
     onDeleted(
       holdsStock && target
-        ? `${location.name} supprimé : ses produits sont dans le plateau « Non rangé » de ${target.name}.`
-        : `${location.name} supprimé.`,
+        ? `Meuble « ${location.name} » supprimé : ses produits sont dans le plateau « Non rangé » de ${target.name}.`
+        : `Meuble « ${location.name} » supprimé.`,
     );
   }
 
@@ -125,7 +125,7 @@ export function DeleteFurnitureDialog({
             <LocationOptions locations={others} />
           </select>
           {destinationError ? (
-            <p id={destinationErrorId} className="text-small text-alert">
+            <p id={destinationErrorId} role="alert" className="text-small text-alert">
               Choisissez le meuble qui recevra les produits.
             </p>
           ) : null}
@@ -139,7 +139,7 @@ export function DeleteFurnitureDialog({
       ) : null}
       <div className="flex flex-col gap-2">
         {blocked ? null : (
-          <Button disabled={busy} onClick={() => void confirm()}>
+          <Button aria-disabled={busy} onClick={() => void confirm()}>
             {busy ? 'Suppression…' : `Supprimer ${location.name}`}
           </Button>
         )}

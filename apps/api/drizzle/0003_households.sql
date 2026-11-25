@@ -130,8 +130,9 @@ ALTER TABLE "off_category_map" DROP CONSTRAINT "off_category_map_off_tag_unique"
 --> statement-breakpoint
 ALTER TABLE "off_category_map" ADD CONSTRAINT "off_category_map_household_tag_key" UNIQUE("household_id","off_tag");
 --> statement-breakpoint
--- Two pieces of furniture whose names only differ by their case: the later ones get a number.
-UPDATE "locations" AS l SET "name" = l."name" || ' ' || d.rn
+-- Two pieces of furniture whose names only differ by their case: the later ones get their id, which
+-- no other name can already hold (« frigo (12) »).
+UPDATE "locations" AS l SET "name" = l."name" || ' (' || l."id" || ')'
 FROM (
   SELECT "id", row_number() OVER (PARTITION BY "household_id", lower("name") ORDER BY "id") AS rn
   FROM "locations"

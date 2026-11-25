@@ -22,7 +22,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`tap-target inline-flex items-center justify-center gap-2 rounded-xl px-4 font-bold disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
+      className={`tap-target inline-flex items-center justify-center gap-2 rounded-xl px-4 font-bold disabled:opacity-50 aria-disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
       {...rest}
     />
   );

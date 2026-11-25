@@ -95,7 +95,7 @@ describe('migration 0003 on a populated database', () => {
 
   it('renames furniture whose names only differ by their case', async () => {
     const names = await q<{ name: string }>('SELECT name FROM locations ORDER BY id');
-    expect(names.map((r) => r.name)).toEqual(['Frigo', 'Cave', 'CAVE 2']);
+    expect(names.map((r) => r.name)).toEqual(['Frigo', 'Cave', 'CAVE (3)']);
   });
 
   it('keeps the history with the names of the places, even a shelf deleted earlier', async () => {

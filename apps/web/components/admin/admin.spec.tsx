@@ -208,7 +208,7 @@ describe('MembersAdmin', () => {
     expect(move).toBeDisabled();
     await user.selectOptions(within(row).getByLabelText('Nouveau foyer de marie'), 'Dupont');
     expect(row).toHaveTextContent(
-      'marie verra alors l’inventaire de Dupont, plus celui de Famille. Ses sessions ouvertes seront coupées.',
+      'marie verra alors l’inventaire de Dupont et non plus celui de Famille. Ses sessions ouvertes seront coupées.',
     );
     await user.click(move);
     expect(api.moveUser).toHaveBeenCalledWith(2, 2);
@@ -219,5 +219,17 @@ describe('MembersAdmin', () => {
     render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={makeApi()} />);
     const self = await screen.findByRole('listitem', { name: 'root' });
     expect(within(self).queryByRole('button', { name: 'Changer de foyer' })).toBeNull();
+  });
+
+  it('moves the focus into the panel it opens, and back to the actions when it closes', async () => {
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={makeApi()} />);
+    const row = await screen.findByRole('listitem', { name: 'marie' });
+    const user = userEvent.setup();
+    await user.click(within(row).getByRole('button', { name: 'Changer de foyer' }));
+    expect(within(row).getByLabelText('Nouveau foyer de marie')).toHaveFocus();
+    await user.click(within(row).getByRole('button', { name: 'Annuler' }));
+    expect(within(row).getByRole('button', { name: 'Changer de foyer' })).toHaveFocus();
+    await user.click(within(row).getByRole('button', { name: 'Désactiver' }));
+    expect(within(row).getByRole('button', { name: 'Annuler' })).toHaveFocus();
   });
 });

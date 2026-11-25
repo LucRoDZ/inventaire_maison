@@ -9,7 +9,7 @@ import {
   type UserDto,
   type UserRole,
 } from '@inventaire/shared';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import { fetchHouseholds } from '../../lib/households-api';
 import * as usersApi from '../../lib/users-api';
@@ -187,6 +187,22 @@ function MemberRow({
   onChanged: (user: UserDto) => void;
 }) {
   const [mode, setMode] = useState<'idle' | 'confirm' | 'reset' | 'move'>('idle');
+  const row = useRef<HTMLLIElement>(null);
+  const previous = useRef(mode);
+  // Opening a panel moves the focus into it; closing it brings the focus back to the actions.
+  useEffect(() => {
+    if (previous.current === mode) return;
+    previous.current = mode;
+    const panel = row.current?.querySelector<HTMLElement>('[data-row-panel]');
+    const target =
+      mode === 'idle'
+        ? row.current?.querySelector<HTMLElement>('[data-row-actions] button')
+        : mode === 'confirm'
+          ? // A destructive confirmation: « Annuler » first.
+            [...(panel?.querySelectorAll<HTMLElement>('button') ?? [])].at(-1)
+          : panel?.querySelector<HTMLElement>('select, input, button');
+    target?.focus();
+  }, [mode]);
   const [password, setPassword] = useState('');
   const [target, setTarget] = useState('');
   const others = households.filter((h) => h.id !== user.household.id);
@@ -225,6 +241,7 @@ function MemberRow({
 
   return (
     <li
+      ref={row}
       aria-label={user.username}
       className="border-line flex flex-col gap-2 rounded-xl border bg-white p-3"
     >
@@ -245,7 +262,7 @@ function MemberRow({
         </p>
       ) : null}
       {mode === 'confirm' ? (
-        <div className="flex flex-col gap-2">
+        <div data-row-panel="" className="flex flex-col gap-2">
           <p className="text-small">
             Désactiver {user.username} ? Ses sessions seront coupées, son historique est gardé.
           </p>
@@ -268,7 +285,7 @@ function MemberRow({
         </div>
       ) : null}
       {mode === 'reset' ? (
-        <form onSubmit={reset} noValidate className="flex flex-col gap-2">
+        <form data-row-panel="" onSubmit={reset} noValidate className="flex flex-col gap-2">
           <label className="flex flex-col gap-1">
             <span className="text-label">Nouveau mot de passe temporaire de {user.username}</span>
             <input
@@ -290,7 +307,7 @@ function MemberRow({
         </form>
       ) : null}
       {mode === 'move' ? (
-        <div className="flex flex-col gap-2">
+        <div data-row-panel="" className="flex flex-col gap-2">
           <div className="flex flex-col gap-1">
             <label htmlFor={`deplacer-${user.id}`} className="text-label">
               Nouveau foyer de {user.username}
@@ -311,7 +328,7 @@ function MemberRow({
           </div>
           {targetName ? (
             <p className="text-small">
-              {user.username} verra alors l’inventaire de {targetName}, plus celui de{' '}
+              {user.username} verra alors l’inventaire de {targetName} et non plus celui de{' '}
               {user.household.name}. Ses sessions ouvertes seront coupées.
             </p>
           ) : null}
@@ -334,7 +351,7 @@ function MemberRow({
         </div>
       ) : null}
       {mode === 'idle' ? (
-        <div className="flex flex-wrap gap-2">
+        <div data-row-actions="" className="flex flex-wrap gap-2">
           {!isSelf && others.length > 0 ? (
             <Button variant="secondary" onClick={() => setMode('move')}>
               Changer de foyer

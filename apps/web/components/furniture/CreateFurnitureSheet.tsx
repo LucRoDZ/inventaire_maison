@@ -177,7 +177,7 @@ export function CreateFurnitureSheet({
             }}
           />
           {nameError ? (
-            <p id={nameErrorId} className="text-small text-alert">
+            <p id={nameErrorId} role="alert" className="text-small text-alert">
               {nameError}
             </p>
           ) : null}
@@ -191,12 +191,14 @@ export function CreateFurnitureSheet({
             <button
               type="button"
               aria-label={stepLabel(kind, false)}
-              disabled={shelfCount <= 1}
+              // aria-disabled, not disabled: the focus stays on the button at the limit.
+              aria-disabled={shelfCount <= 1}
               onClick={() => {
+                if (shelfCount <= 1) return;
                 setShelfCount((n) => Math.max(1, n - 1));
                 setCountEdited(true);
               }}
-              className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full disabled:opacity-50"
+              className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full aria-disabled:opacity-50"
             >
               <Minus size={20} aria-hidden="true" />
             </button>
@@ -206,12 +208,13 @@ export function CreateFurnitureSheet({
             <button
               type="button"
               aria-label={stepLabel(kind, true)}
-              disabled={shelfCount >= MAX_SHELVES_PER_LOCATION}
+              aria-disabled={shelfCount >= MAX_SHELVES_PER_LOCATION}
               onClick={() => {
+                if (shelfCount >= MAX_SHELVES_PER_LOCATION) return;
                 setShelfCount((n) => Math.min(MAX_SHELVES_PER_LOCATION, n + 1));
                 setCountEdited(true);
               }}
-              className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full disabled:opacity-50"
+              className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full aria-disabled:opacity-50"
             >
               <Plus size={20} aria-hidden="true" />
             </button>
@@ -226,7 +229,7 @@ export function CreateFurnitureSheet({
         ) : null}
 
         <div className="flex flex-col gap-2">
-          <Button type="submit" variant="add" disabled={busy}>
+          <Button type="submit" variant="add" aria-disabled={busy}>
             {busy ? 'Ajout…' : 'Ajouter le meuble'}
           </Button>
           <Button variant="secondary" onClick={onClose}>
