@@ -68,6 +68,7 @@ export class SessionService {
         userId: users.id,
         username: users.username,
         role: users.role,
+        householdId: users.householdId,
         disabledAt: users.disabledAt,
       })
       .from(sessions)
@@ -85,6 +86,7 @@ export class SessionService {
       id: row.userId,
       username: row.username,
       role: row.role as RequestUser['role'],
+      householdId: row.householdId,
       sessionId: id,
     };
     if (now.getTime() - row.lastSeenAt.getTime() > SESSION_REFRESH_AFTER_MS) {

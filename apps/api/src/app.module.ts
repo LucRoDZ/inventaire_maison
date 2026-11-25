@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ClockModule } from './common/clock';
+import { HouseholdScopeMiddleware } from './common/household-context';
 import { ProductsModule } from './products/products.module';
 import { ScanModule } from './scan/scan.module';
 import { StockModule } from './stock/stock.module';
@@ -9,9 +10,9 @@ import { RateLimitModule } from './common/rate-limit.module';
 import { NotFoundModule } from './common/not-found.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
-import { SeedModule } from './database/seed/seed.module';
 import { HealthController } from './health/health.controller';
 import { HomeModule } from './home/home.module';
+import { HouseholdsModule } from './households/households.module';
 import { ImagesModule } from './images/images.module';
 import { LocationsModule } from './locations/locations.module';
 import { UsersModule } from './users/users.module';
@@ -21,9 +22,9 @@ import { UsersModule } from './users/users.module';
     ConfigModule,
     ClockModule,
     DatabaseModule,
-    SeedModule,
     RateLimitModule,
     AuthModule,
+    HouseholdsModule,
     UsersModule,
     LocationsModule,
     CategoriesModule,
@@ -36,4 +37,8 @@ import { UsersModule } from './users/users.module';
   ],
   controllers: [HealthController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(HouseholdScopeMiddleware).forRoutes('{*path}');
+  }
+}

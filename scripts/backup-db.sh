@@ -40,7 +40,9 @@ tmp="$target.partial"
 trap 'rm -f "$tmp"' EXIT
 
 # The container reads its own credentials: nothing secret is passed on the command line.
-docker compose exec -T db sh -c 'pg_dump --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' | gzip > "$tmp"
+# --no-privileges: the dump does not depend on the runtime role; the API grants its privileges
+# again at every start.
+docker compose exec -T db sh -c 'pg_dump --no-owner --no-privileges -U "$POSTGRES_USER" -d "$POSTGRES_DB"' | gzip > "$tmp"
 
 if ! gzip -t "$tmp" || [ ! -s "$tmp" ]; then
   echo "backup-db : la sauvegarde est vide ou corrompue." >&2

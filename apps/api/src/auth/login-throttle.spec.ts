@@ -3,8 +3,15 @@ import { count } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { createUser, FakeClock, MINUTE, HOUR, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, type Database } from '../database/database.module';
+import {
+  createUser,
+  FakeClock,
+  HOUR,
+  MINUTE,
+  ORIGIN,
+  ownerDb,
+  resetAuth,
+} from '../../test/helpers';
 import { loginAttempts } from '../database/schema';
 import {
   LoginThrottleService,
@@ -38,7 +45,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
+  await resetAuth();
   await createUser(app, { username: 'lucas', password: 'motdepasse1' });
   await createUser(app, { username: 'bob', password: 'motdepasse1' });
 });
@@ -121,7 +128,7 @@ describe('login throttling', () => {
     const statuses = responses.map((res) => res.status);
     expect(statuses.filter((s) => s === 401)).toHaveLength(5);
     expect(statuses.filter((s) => s === 429)).toHaveLength(5);
-    const [row] = await app.get<Database>(DB).select({ n: count() }).from(loginAttempts);
+    const [row] = await ownerDb().select({ n: count() }).from(loginAttempts);
     expect(row!.n).toBeLessThanOrEqual(5);
     expect((await login('lucas', 'motdepasse1')).status).toBe(429);
   });
@@ -130,7 +137,7 @@ describe('login throttling', () => {
     await fail(2);
     clock.advance(25 * HOUR);
     await app.get(LoginThrottleService).purge();
-    const [row] = await app.get<Database>(DB).select({ n: count() }).from(loginAttempts);
+    const [row] = await ownerDb().select({ n: count() }).from(loginAttempts);
     expect(row!.n).toBe(0);
   });
 });

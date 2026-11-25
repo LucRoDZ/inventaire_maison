@@ -1,10 +1,15 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { households } from './households';
 
 export const users = pgTable(
   'users',
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    /** Every account belongs to exactly one household (D1); a household with accounts cannot be deleted. */
+    householdId: integer('household_id')
+      .notNull()
+      .references(() => households.id),
     username: text().notNull(),
     passwordHash: text('password_hash').notNull(),
     role: text().notNull().default('member'),
@@ -14,6 +19,7 @@ export const users = pgTable(
   (t) => [
     // Usernames are unique whatever their case.
     uniqueIndex('users_username_lower_key').on(sql`lower(${t.username})`),
+    index('users_household_idx').on(t.householdId),
     check('users_role_check', sql`${t.role} in ('admin', 'member')`),
   ],
 );

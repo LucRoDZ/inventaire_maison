@@ -1,9 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
-import type { Pool } from 'pg';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { PG_POOL } from '../database/database.module';
+import type { Pool } from 'pg';
 import { createTestApp } from '../../test/create-test-app';
+import { PG_POOL } from '../database/database.module';
 
 describe('GET /api/health', () => {
   let app: INestApplication;

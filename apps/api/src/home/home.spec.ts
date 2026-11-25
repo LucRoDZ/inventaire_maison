@@ -1,13 +1,18 @@
 import type { INestApplication } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
-import type { Pool } from 'pg';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, FakeClock, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, PG_POOL, type Database } from '../database/database.module';
+import {
+  cookieValue,
+  createUser,
+  FakeClock,
+  ORIGIN,
+  ownerDb,
+  resetAll,
+  seedHousehold,
+} from '../../test/helpers';
 import { categories, locations, products, shelves } from '../database/schema';
-import { SeedService } from '../database/seed/seed.service';
 
 let app: INestApplication;
 let cookie: string;
@@ -16,7 +21,7 @@ let fridgeId: number;
 let fridgeShelves: number[];
 const clock = new FakeClock(new Date('2026-06-01T10:00:00.000Z'));
 const server = () => app.getHttpServer();
-const db = () => app.get<Database>(DB);
+const db = () => ownerDb();
 const get = () => request(server()).get('/api/home').set('Cookie', cookie);
 const adjust = (body: Record<string, unknown>) =>
   request(server())
@@ -34,13 +39,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
-  await app
-    .get<Pool>(PG_POOL)
-    .query(
-      'TRUNCATE stock_movements, stock_items, products, off_category_map, categories, shelves, locations RESTART IDENTITY CASCADE',
-    );
-  await app.get(SeedService).seed();
+  await resetAll();
+  await seedHousehold(app);
   await createUser(app, { username: 'membre', password: 'motdepasse1' });
   const res = await request(server())
     .post('/api/auth/login')

@@ -10,3 +10,14 @@ export function pgErrorCode(error: unknown): string | undefined {
 }
 
 export const isUniqueViolation = (error: unknown): boolean => pgErrorCode(error) === '23505';
+
+/** Name of the constraint a PostgreSQL error is about, whether drizzle wrapped it or not. */
+export function pgConstraint(error: unknown): string | undefined {
+  let current: unknown = error;
+  for (let depth = 0; depth < 3 && current && typeof current === 'object'; depth++) {
+    const constraint = (current as { constraint?: unknown }).constraint;
+    if (typeof constraint === 'string') return constraint;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return undefined;
+}

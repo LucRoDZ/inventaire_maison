@@ -10,15 +10,31 @@ import { MembersAdmin } from './MembersAdmin';
 let current: AuthUser | null = null;
 vi.mock('../auth/AuthProvider', () => ({ useCurrentUser: () => current }));
 
-const root: UserDto = { id: 1, username: 'root', role: 'admin', disabled: false, createdAt: 'x' };
+const famille = { id: 1, name: 'Famille' };
+const root: UserDto = {
+  id: 1,
+  username: 'root',
+  role: 'admin',
+  disabled: false,
+  createdAt: 'x',
+  household: famille,
+};
 const marie: UserDto = {
   id: 2,
   username: 'marie',
   role: 'member',
   disabled: false,
   createdAt: 'x',
+  household: famille,
 };
-const paul: UserDto = { id: 3, username: 'paul', role: 'member', disabled: true, createdAt: 'x' };
+const paul: UserDto = {
+  id: 3,
+  username: 'paul',
+  role: 'member',
+  disabled: true,
+  createdAt: 'x',
+  household: famille,
+};
 
 function makeApi(over: Partial<typeof UsersApi> = {}): typeof UsersApi {
   return {

@@ -9,12 +9,14 @@ import {
   FakeClock,
   HOUR,
   ORIGIN,
+  ownerDb,
   resetAuth,
   setCookieLine,
 } from '../../test/helpers';
 import { createTestApp } from '../../test/create-test-app';
 import { parseEnv } from '../config/env.schema';
 import { DB, MigrationRunner, type Database } from '../database/database.module';
+import { HouseholdsService } from '../households/households.service';
 import { sessions, users } from '../database/schema';
 import { BootstrapAdminService } from '../users/bootstrap-admin.service';
 import { SESSION_TTL_MS } from './auth.constants';
@@ -37,7 +39,7 @@ async function loginCookie(username: string, password: string): Promise<string> 
 beforeAll(async () => {
   clock = new FakeClock();
   app = await createTestApp({ clock });
-  db = app.get<Database>(DB);
+  db = ownerDb();
 });
 
 afterAll(async () => {
@@ -45,7 +47,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
+  await resetAuth();
   await createUser(app, { username: 'lucas', password: 'motdepasse1', role: 'admin' });
 });
 
@@ -200,7 +202,7 @@ describe('global guard', () => {
 
 describe('first admin', () => {
   it('is created from the environment when no user exists, and only once', async () => {
-    await resetAuth(app);
+    await resetAuth();
     const bootstrap = app.get(BootstrapAdminService);
     expect(await bootstrap.bootstrap()).toBe(true);
     expect(await bootstrap.bootstrap()).toBe(false);
@@ -212,11 +214,12 @@ describe('first admin', () => {
   });
 
   it('stores the first admin username in lowercase', async () => {
-    await resetAuth(app);
+    await resetAuth();
     const config = parseEnv({ ...process.env, ADMIN_USERNAME: ' Lucas.Z ' });
     const bootstrap = new BootstrapAdminService(
-      db,
+      app.get(DB),
       app.get(PasswordService),
+      app.get(HouseholdsService),
       config,
       app.get(MigrationRunner),
     );

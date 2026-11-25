@@ -13,8 +13,9 @@ import type {
   StockMovementDto,
 } from '@inventaire/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import { DB, type Database, type Transaction } from '../database/database.module';
+import type { Transaction } from '../database/database.module';
 import { locations, products, shelves, stockItems, stockMovements } from '../database/schema';
+import { TenantDb } from '../database/tenant-db';
 
 export const toStockLine = (row: typeof stockItems.$inferSelect): StockLineDto => ({
   id: row.id,
@@ -48,16 +49,25 @@ export async function lockProductLocation(
   await tx.execute(sql`select pg_advisory_xact_lock(${productId}::int, ${locationId}::int)`);
 }
 
-/** The line matching a stock identity, locked; null when there is none. */
+export interface StockKey {
+  productId: number;
+  locationId: number;
+  shelfId: number | null;
+  expiryDate: string | null;
+}
+
+/** The line matching a stock identity in the household, locked; null when there is none. */
 export async function findLine(
   tx: Transaction,
-  key: { productId: number; locationId: number; shelfId: number | null; expiryDate: string | null },
+  householdId: number,
+  key: StockKey,
 ): Promise<typeof stockItems.$inferSelect | null> {
   const [row] = await tx
     .select()
     .from(stockItems)
     .where(
       and(
+        eq(stockItems.householdId, householdId),
         eq(stockItems.productId, key.productId),
         eq(stockItems.locationId, key.locationId),
         key.shelfId === null ? isNull(stockItems.shelfId) : eq(stockItems.shelfId, key.shelfId),
@@ -70,9 +80,44 @@ export async function findLine(
   return row ?? null;
 }
 
+/** Names written with each movement, so that the history stays readable after a deletion. */
+export async function placeNames(
+  tx: Transaction,
+  householdId: number,
+  locationId: number,
+  shelfId: number | null,
+): Promise<{ locationName: string; shelfName: string | null }> {
+  const [location] = await tx
+    .select({ name: locations.name })
+    .from(locations)
+    .where(and(eq(locations.id, locationId), eq(locations.householdId, householdId)));
+  const [shelf] =
+    shelfId === null
+      ? []
+      : await tx
+          .select({ name: shelves.name })
+          .from(shelves)
+          .where(and(eq(shelves.id, shelfId), eq(shelves.householdId, householdId)));
+  return { locationName: location?.name ?? '', shelfName: shelf?.name ?? null };
+}
+
+/** True when the shelf exists in the household and belongs to the location. */
+export async function shelfBelongs(
+  tx: Transaction,
+  householdId: number,
+  shelfId: number,
+  locationId: number,
+): Promise<boolean> {
+  const [shelf] = await tx
+    .select({ locationId: shelves.locationId })
+    .from(shelves)
+    .where(and(eq(shelves.id, shelfId), eq(shelves.householdId, householdId)));
+  return shelf?.locationId === locationId;
+}
+
 @Injectable()
 export class StockService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(@Inject(TenantDb) private readonly tenant: TenantDb) {}
 
   async adjust(input: StockAdjustInput, userId: number): Promise<StockAdjustResponse> {
     const shelfId = input.shelfId ?? null;
@@ -86,30 +131,24 @@ export class StockService {
       throw new BadRequestException('La raison ne correspond pas au sens du mouvement');
     }
 
-    return this.db.transaction(async (tx) => {
+    return this.tenant.run(async (tx, householdId) => {
       const [product] = await tx
         .select({ id: products.id, defaultLocationId: products.defaultLocationId })
         .from(products)
-        .where(eq(products.id, input.productId));
+        .where(and(eq(products.id, input.productId), eq(products.householdId, householdId)));
       if (!product) throw new NotFoundException('Produit introuvable');
       const [location] = await tx
         .select({ id: locations.id })
         .from(locations)
-        .where(eq(locations.id, input.locationId));
+        .where(and(eq(locations.id, input.locationId), eq(locations.householdId, householdId)));
       if (!location) throw new NotFoundException('Lieu introuvable');
-      if (shelfId !== null) {
-        const [shelf] = await tx
-          .select({ locationId: shelves.locationId })
-          .from(shelves)
-          .where(eq(shelves.id, shelfId));
-        if (!shelf || shelf.locationId !== input.locationId) {
-          throw new BadRequestException('Cette étagère n’appartient pas à ce lieu');
-        }
+      if (shelfId !== null && !(await shelfBelongs(tx, householdId, shelfId, input.locationId))) {
+        throw new BadRequestException('Cette étagère n’appartient pas à ce lieu');
       }
 
       await lockProductLocation(tx, input.productId, input.locationId);
       const key = { productId: input.productId, locationId: input.locationId, shelfId, expiryDate };
-      const current = await findLine(tx, key);
+      const current = await findLine(tx, householdId, key);
 
       let item: typeof stockItems.$inferSelect | null | undefined;
       if (input.delta > 0) {
@@ -117,38 +156,48 @@ export class StockService {
           [item] = await tx
             .update(stockItems)
             .set({ quantity: current.quantity + input.delta, updatedAt: sql`now()` })
-            .where(eq(stockItems.id, current.id))
+            .where(and(eq(stockItems.id, current.id), eq(stockItems.householdId, householdId)))
             .returning();
         } else {
           [item] = await tx
             .insert(stockItems)
-            .values({ ...key, quantity: input.delta })
+            .values({ ...key, householdId, quantity: input.delta })
             .returning();
         }
         if (product.defaultLocationId === null) {
           await tx
             .update(products)
             .set({ defaultLocationId: input.locationId })
-            .where(eq(products.id, product.id));
+            .where(and(eq(products.id, product.id), eq(products.householdId, householdId)));
         }
       } else {
         const remaining = (current?.quantity ?? 0) + input.delta;
         if (!current || remaining < 0) throw new ConflictException(INSUFFICIENT_STOCK);
         if (remaining === 0) {
-          await tx.delete(stockItems).where(eq(stockItems.id, current.id));
+          await tx
+            .delete(stockItems)
+            .where(and(eq(stockItems.id, current.id), eq(stockItems.householdId, householdId)));
           item = null;
         } else {
           [item] = await tx
             .update(stockItems)
             .set({ quantity: remaining, updatedAt: sql`now()` })
-            .where(eq(stockItems.id, current.id))
+            .where(and(eq(stockItems.id, current.id), eq(stockItems.householdId, householdId)))
             .returning();
         }
       }
 
+      const names = await placeNames(tx, householdId, input.locationId, shelfId);
       const [movement] = await tx
         .insert(stockMovements)
-        .values({ ...key, delta: input.delta, reason: input.reason, userId })
+        .values({
+          ...key,
+          ...names,
+          householdId,
+          delta: input.delta,
+          reason: input.reason,
+          userId,
+        })
         .returning();
       return { item: item ? toStockLine(item) : null, movement: toMovement(movement!) };
     });

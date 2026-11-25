@@ -1,11 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import type { Pool } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, PG_POOL, type Database } from '../database/database.module';
+import {
+  cookieValue,
+  createUser,
+  ORIGIN,
+  ownerDb,
+  ownerPool,
+  resetAll,
+  seedHousehold,
+} from '../../test/helpers';
 import {
   categories,
   locations,
@@ -14,14 +20,13 @@ import {
   stockItems,
   stockMovements,
 } from '../database/schema';
-import { SeedService } from '../database/seed/seed.service';
 
 let app: INestApplication;
 let admin: string;
 let member: string;
 let adminId: number;
 const server = () => app.getHttpServer();
-const db = () => app.get<Database>(DB);
+const db = () => ownerDb();
 
 async function login(username: string): Promise<string> {
   const res = await request(server())
@@ -83,13 +88,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
-  await app
-    .get<Pool>(PG_POOL)
-    .query(
-      'TRUNCATE stock_movements, stock_items, products, shelves, locations RESTART IDENTITY CASCADE',
-    );
-  await app.get(SeedService).seed();
+  await resetAll();
+  await seedHousehold(app);
   adminId = await createUser(app, { username: 'root', password: 'motdepasse1', role: 'admin' });
   await createUser(app, { username: 'membre', password: 'motdepasse1', role: 'member' });
   admin = await login('root');
@@ -128,10 +128,10 @@ describe('PATCH /api/locations/:id', () => {
     expect(list.body.at(-1).name).toBe('Réfrigérateur');
   });
 
-  it('answers 403 for a member, 404 for an unknown id, 400 for a bad body', async () => {
+  it('answers 404 for a member, for an unknown id, 400 for a bad body', async () => {
     const frigo = await locationByName('Frigo');
     expect((await as(member).patch(`/api/locations/${frigo.id}`).send({ name: 'X' })).status).toBe(
-      403,
+      404,
     );
     expect((await as(admin).patch('/api/locations/99999').send({ name: 'X' })).status).toBe(404);
     expect((await as(admin).patch('/api/locations/abc').send({ name: 'X' })).status).toBe(404);
@@ -170,7 +170,7 @@ describe('POST /api/shelves', () => {
   it('refuses a member, an unknown location and invalid fields', async () => {
     const cave = await locationByName('Cave');
     const ok = { locationId: cave.id, name: 'Haut', kind: 'plain' };
-    expect((await as(member).post('/api/shelves').send(ok)).status).toBe(403);
+    expect((await as(member).post('/api/shelves').send(ok)).status).toBe(404);
     expect(
       (
         await as(admin)
@@ -218,11 +218,11 @@ describe('PATCH /api/shelves/:id', () => {
     expect(unknown.status).toBe(404);
   });
 
-  it('answers 403, 404 and 400 where due', async () => {
+  it('answers 404 to a member and for an unknown id, 400 for a bad body', async () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 1');
     expect((await as(member).patch(`/api/shelves/${shelf.id}`).send({ name: 'X' })).status).toBe(
-      403,
+      404,
     );
     expect((await as(admin).patch('/api/shelves/99999').send({ name: 'X' })).status).toBe(404);
     expect((await as(admin).patch(`/api/shelves/${shelf.id}`).send({ name: '' })).status).toBe(400);
@@ -231,10 +231,10 @@ describe('PATCH /api/shelves/:id', () => {
 });
 
 describe('DELETE /api/shelves/:id', () => {
-  it('answers 403 for a member, 404 for an unknown shelf, 204 for the admin', async () => {
+  it('answers 404 for a member and for an unknown shelf, 204 for the admin', async () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 3');
-    expect((await as(member).delete(`/api/shelves/${shelf.id}`)).status).toBe(403);
+    expect((await as(member).delete(`/api/shelves/${shelf.id}`)).status).toBe(404);
     expect((await as(admin).delete('/api/shelves/99999')).status).toBe(404);
     expect((await as(admin).delete(`/api/shelves/${shelf.id}`)).status).toBe(204);
     expect((await as(admin).delete(`/api/shelves/${shelf.id}`)).status).toBe(404);
@@ -300,7 +300,9 @@ describe('DELETE /api/shelves/:id', () => {
     await db().insert(stockMovements).values({
       productId: lait,
       locationId: frigo.id,
+      locationName: frigo.name,
       shelfId: shelf.id,
+      shelfName: shelf.name,
       delta: 2,
       reason: 'scan_add',
       userId: adminId,
@@ -316,7 +318,7 @@ describe('DELETE /api/shelves/:id', () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 2');
     await stock(await makeProduct('Lait'), frigo.id, shelf.id, 3);
-    const pool = app.get<Pool>(PG_POOL);
+    const pool = ownerPool();
     // A trigger makes the final DELETE fail after the stock was already moved.
     await pool.query(
       `CREATE FUNCTION fail_shelf_delete() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'boom'; END $$ LANGUAGE plpgsql`,

@@ -4,7 +4,10 @@ import { z } from 'zod';
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+  /** Runtime connections: the application role, without superuser nor BYPASSRLS. */
   DATABASE_URL: z.string().min(1).startsWith('postgres'),
+  /** Owner of the schema: migrations, and setup of the application role, at start only. */
+  DATABASE_MIGRATION_URL: z.string().min(1).startsWith('postgres'),
   SESSION_SECRET: z.string().min(32),
   // Same rules as the accounts created later (M6) and as the login form: usable to sign in.
   ADMIN_USERNAME: z.string().trim().toLowerCase().regex(USERNAME_PATTERN),
@@ -47,6 +50,7 @@ export function parseEnv(raw: Record<string, string | undefined>): AppConfig {
         ['SESSION_SECRET', config.SESSION_SECRET],
         ['ADMIN_PASSWORD', config.ADMIN_PASSWORD],
         ['DATABASE_URL', config.DATABASE_URL],
+        ['DATABASE_MIGRATION_URL', config.DATABASE_MIGRATION_URL],
         ['PROXY_SECRET', config.PROXY_SECRET],
       ] as const
     )

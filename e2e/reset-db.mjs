@@ -1,9 +1,12 @@
 // Recreates the e2e database so every run starts empty (the API then migrates, seeds and creates the admin).
-// DATABASE_URL points at the e2e database; the maintenance database "postgres" is used to drop and create it.
+// DATABASE_MIGRATION_URL (the owner, a superuser of the test cluster) points at the e2e database; the
+// maintenance database "postgres" is used to drop and create it.
 import pg from 'pg';
 
 const url = new URL(
-  process.env.DATABASE_URL ?? 'postgres://test:test@localhost:5432/inventaire_e2e',
+  process.env.DATABASE_MIGRATION_URL ??
+    process.env.DATABASE_URL ??
+    'postgres://test:test@localhost:5432/inventaire_e2e',
 );
 const name = url.pathname.slice(1);
 if (!/^[a-z0-9_]+$/.test(name) || !name.includes('e2e')) {

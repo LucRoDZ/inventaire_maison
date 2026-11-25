@@ -9,8 +9,9 @@ import {
 } from '@inventaire/shared';
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { CLOCK, type Clock } from '../common/clock';
-import { DB, type Database } from '../database/database.module';
 import { categories, locations, products, shelves, stockItems } from '../database/schema';
+import { TenantDb } from '../database/tenant-db';
+import type { Transaction } from '../database/database.module';
 import { normalizeSearch } from '../products/search-text';
 
 export interface StockFilters {
@@ -41,16 +42,24 @@ export function expiryStatus(daysLeft: number | null): ExpiryStatus | null {
 @Injectable()
 export class StockQuery {
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(TenantDb) private readonly tenant: TenantDb,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   async list(filters: StockFilters): Promise<StockListResponse> {
+    return this.tenant.run((tx, householdId) => this.listIn(tx, householdId, filters));
+  }
+
+  private async listIn(
+    tx: Transaction,
+    householdId: number,
+    filters: StockFilters,
+  ): Promise<StockListResponse> {
     const today = parisToday(this.clock.now());
     const term = filters.q ? normalizeSearch(filters.q) : '';
 
     // Filters shared by the lines and the per-location counters.
-    const shared: SQL[] = [];
+    const shared: SQL[] = [eq(stockItems.householdId, householdId)];
     if (filters.category !== undefined) shared.push(eq(products.categoryId, filters.category));
     if (term !== '') shared.push(sql`position(${term} in ${products.searchText}) > 0`);
 
@@ -70,7 +79,7 @@ export class StockQuery {
       ],
     }[filters.sort];
 
-    const rows = await this.db
+    const rows = await tx
       .select({
         line: stockItems,
         product: products,
@@ -80,10 +89,22 @@ export class StockQuery {
         daysLeft,
       })
       .from(stockItems)
-      .innerJoin(products, eq(products.id, stockItems.productId))
-      .innerJoin(categories, eq(categories.id, products.categoryId))
-      .innerJoin(locations, eq(locations.id, stockItems.locationId))
-      .leftJoin(shelves, eq(shelves.id, stockItems.shelfId))
+      .innerJoin(
+        products,
+        and(eq(products.id, stockItems.productId), eq(products.householdId, householdId)),
+      )
+      .innerJoin(
+        categories,
+        and(eq(categories.id, products.categoryId), eq(categories.householdId, householdId)),
+      )
+      .innerJoin(
+        locations,
+        and(eq(locations.id, stockItems.locationId), eq(locations.householdId, householdId)),
+      )
+      .leftJoin(
+        shelves,
+        and(eq(shelves.id, stockItems.shelfId), eq(shelves.householdId, householdId)),
+      )
       .where(and(...lineConditions))
       .orderBy(...order);
 
@@ -106,20 +127,24 @@ export class StockQuery {
       shelf: row.line.shelfId === null ? null : { id: row.line.shelfId, name: row.shelfName ?? '' },
     }));
 
-    const totals = await this.db
+    const totals = await tx
       .select({
         locationId: stockItems.locationId,
         products: sql<number>`count(distinct ${stockItems.productId})::int`,
         units: sql<number>`sum(${stockItems.quantity})::int`,
       })
       .from(stockItems)
-      .innerJoin(products, eq(products.id, stockItems.productId))
+      .innerJoin(
+        products,
+        and(eq(products.id, stockItems.productId), eq(products.householdId, householdId)),
+      )
       .where(and(...shared))
       .groupBy(stockItems.locationId);
     const byLocation = new Map(totals.map((row) => [row.locationId, row]));
-    const allLocations = await this.db
+    const allLocations = await tx
       .select({ id: locations.id })
       .from(locations)
+      .where(eq(locations.householdId, householdId))
       .orderBy(asc(locations.sortOrder), asc(locations.id));
     const counts: LocationCountDto[] = allLocations.map(({ id }) => ({
       locationId: id,

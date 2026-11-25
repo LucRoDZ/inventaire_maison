@@ -1,15 +1,19 @@
 import { readdir } from 'node:fs/promises';
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import type { Pool } from 'pg';
 import sharp from 'sharp';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, PG_POOL, type Database } from '../database/database.module';
+import {
+  cookieValue,
+  createUser,
+  ORIGIN,
+  ownerDb,
+  resetAll,
+  seedHousehold,
+} from '../../test/helpers';
 import { categories, products } from '../database/schema';
-import { SeedService } from '../database/seed/seed.service';
 import { hasImageSignature, makeThumbnail } from './image.processor';
 
 const jpeg = (width = 800, height = 600) =>
@@ -71,7 +75,7 @@ let app: INestApplication;
 let cookie: string;
 let productId: number;
 const server = () => app.getHttpServer();
-const db = () => app.get<Database>(DB);
+const db = () => ownerDb();
 
 const upload = (id: number, buf: Buffer, filename = 'photo.jpg', contentType = 'image/jpeg') =>
   request(server())
@@ -89,13 +93,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
-  await app
-    .get<Pool>(PG_POOL)
-    .query(
-      'TRUNCATE stock_movements, stock_items, products, off_category_map, categories, shelves, locations RESTART IDENTITY CASCADE',
-    );
-  await app.get(SeedService).seed();
+  await resetAll();
+  await seedHousehold(app);
   await createUser(app, { username: 'membre', password: 'motdepasse1' });
   const login = await request(server())
     .post('/api/auth/login')
@@ -127,7 +126,14 @@ describe('POST /api/products/:id/image', () => {
       });
     expect(served.status).toBe(200);
     expect(served.headers['content-type']).toBe('image/webp');
-    expect(served.headers['cache-control']).toBe('private, max-age=31536000, immutable');
+    // Kept by the browser but asked again each time: the ownership check always runs.
+    expect(served.headers['cache-control']).toBe('private, no-cache');
+    expect(served.headers['etag']).toBeTruthy();
+    const again = await request(server())
+      .get(res.body.imageUrl)
+      .set('Cookie', cookie)
+      .set('If-None-Match', served.headers['etag'] as string);
+    expect(again.status).toBe(304);
     expect(await sharp(served.body as Buffer).metadata()).toMatchObject({
       format: 'webp',
       width: 400,

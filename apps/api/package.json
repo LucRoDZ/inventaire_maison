@@ -10,7 +10,7 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "nest build && node dist/database/seed/cli.js"
+    "household:create": "nest build && node dist/households/cli.js"
   },
   "dependencies": {
     "@inventaire/shared": "*",

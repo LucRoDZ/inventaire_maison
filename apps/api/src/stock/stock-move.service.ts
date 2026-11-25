@@ -6,44 +6,43 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { StockMoveInput, StockMoveResponse } from '@inventaire/shared';
-import { eq, sql } from 'drizzle-orm';
-import { DB, type Database } from '../database/database.module';
-import { locations, shelves, stockItems, stockMovements } from '../database/schema';
+import { and, eq, sql } from 'drizzle-orm';
+import { locations, stockItems, stockMovements } from '../database/schema';
+import { TenantDb } from '../database/tenant-db';
 import {
   findLine,
   INSUFFICIENT_STOCK,
   lockProductLocation,
+  placeNames,
+  shelfBelongs,
   toMovement,
   toStockLine,
 } from './stock.service';
 
 @Injectable()
 export class StockMoveService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(@Inject(TenantDb) private readonly tenant: TenantDb) {}
 
   async move(input: StockMoveInput, userId: number): Promise<StockMoveResponse> {
     const toShelfId = input.toShelfId ?? null;
 
-    return this.db.transaction(async (tx) => {
+    return this.tenant.run(async (tx, householdId) => {
       const [probe] = await tx
         .select()
         .from(stockItems)
-        .where(eq(stockItems.id, input.stockItemId));
+        .where(and(eq(stockItems.id, input.stockItemId), eq(stockItems.householdId, householdId)));
       if (!probe) throw new NotFoundException('Ligne de stock introuvable');
 
       const [location] = await tx
         .select({ id: locations.id })
         .from(locations)
-        .where(eq(locations.id, input.toLocationId));
+        .where(and(eq(locations.id, input.toLocationId), eq(locations.householdId, householdId)));
       if (!location) throw new NotFoundException('Lieu introuvable');
-      if (toShelfId !== null) {
-        const [shelf] = await tx
-          .select({ locationId: shelves.locationId })
-          .from(shelves)
-          .where(eq(shelves.id, toShelfId));
-        if (!shelf || shelf.locationId !== input.toLocationId) {
-          throw new BadRequestException('Cette étagère n’appartient pas à ce lieu');
-        }
+      if (
+        toShelfId !== null &&
+        !(await shelfBelongs(tx, householdId, toShelfId, input.toLocationId))
+      ) {
+        throw new BadRequestException('Cette étagère n’appartient pas à ce lieu');
       }
       if (probe.locationId === input.toLocationId && probe.shelfId === toShelfId) {
         throw new BadRequestException('La destination est identique à l’origine');
@@ -56,19 +55,21 @@ export class StockMoveService {
         await lockProductLocation(tx, probe.productId, locationId);
       }
 
-      const source = await findLine(tx, probe);
+      const source = await findLine(tx, householdId, probe);
       if (!source) throw new NotFoundException('Ligne de stock introuvable');
       if (input.quantity > source.quantity) throw new ConflictException(INSUFFICIENT_STOCK);
 
       const remaining = source.quantity - input.quantity;
       let from: typeof stockItems.$inferSelect | null = null;
       if (remaining === 0) {
-        await tx.delete(stockItems).where(eq(stockItems.id, source.id));
+        await tx
+          .delete(stockItems)
+          .where(and(eq(stockItems.id, source.id), eq(stockItems.householdId, householdId)));
       } else {
         [from = null] = await tx
           .update(stockItems)
           .set({ quantity: remaining, updatedAt: sql`now()` })
-          .where(eq(stockItems.id, source.id))
+          .where(and(eq(stockItems.id, source.id), eq(stockItems.householdId, householdId)))
           .returning();
       }
 
@@ -78,31 +79,35 @@ export class StockMoveService {
         shelfId: toShelfId,
         expiryDate: source.expiryDate,
       };
-      const existing = await findLine(tx, destKey);
+      const existing = await findLine(tx, householdId, destKey);
       const [to] = existing
         ? await tx
             .update(stockItems)
             .set({ quantity: existing.quantity + input.quantity, updatedAt: sql`now()` })
-            .where(eq(stockItems.id, existing.id))
+            .where(and(eq(stockItems.id, existing.id), eq(stockItems.householdId, householdId)))
             .returning()
         : await tx
             .insert(stockItems)
-            .values({ ...destKey, quantity: input.quantity })
+            .values({ ...destKey, householdId, quantity: input.quantity })
             .returning();
 
+      const fromNames = await placeNames(tx, householdId, source.locationId, source.shelfId);
+      const toNames = await placeNames(tx, householdId, input.toLocationId, toShelfId);
       const [out, into] = await tx
         .insert(stockMovements)
         .values([
           {
+            householdId,
             productId: source.productId,
             locationId: source.locationId,
             shelfId: source.shelfId,
+            ...fromNames,
             expiryDate: source.expiryDate,
             delta: -input.quantity,
             reason: 'move',
             userId,
           },
-          { ...destKey, delta: input.quantity, reason: 'move', userId },
+          { ...destKey, ...toNames, householdId, delta: input.quantity, reason: 'move', userId },
         ])
         .returning();
       return {
