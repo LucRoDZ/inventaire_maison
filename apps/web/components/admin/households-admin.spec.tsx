@@ -20,6 +20,7 @@ const households: HouseholdDto[] = [
     name: 'Dupont',
     createdAt: 'x',
     locationCount: 4,
+    isOwn: false,
     members: [],
   },
   {
@@ -27,6 +28,7 @@ const households: HouseholdDto[] = [
     name: 'Famille',
     createdAt: 'x',
     locationCount: 6,
+    isOwn: true,
     members: [
       { id: 1, username: 'lucas', role: 'admin', disabled: false },
       { id: 2, username: 'marie', role: 'member', disabled: true },
@@ -114,7 +116,7 @@ describe('HouseholdsAdmin', () => {
 });
 
 describe('HouseholdScope', () => {
-  it('shows the first household by default and keeps the choice in the address', async () => {
+  it('shows the household of the admin by default and keeps the choice in the address', async () => {
     search = new URLSearchParams();
     const user = userEvent.setup();
     render(
@@ -122,18 +124,18 @@ describe('HouseholdScope', () => {
         {(household) => <p>Écran de {household.name}</p>}
       </HouseholdScope>,
     );
-    expect(await screen.findByText('Écran de Dupont')).toBeVisible();
-    await user.selectOptions(screen.getByLabelText('Foyer concerné'), 'Famille');
-    expect(replace).toHaveBeenCalledWith('/plus/administration/categories?foyer=1');
+    expect(await screen.findByText('Écran de Famille')).toBeVisible();
+    await user.selectOptions(screen.getByLabelText('Foyer concerné'), 'Dupont');
+    expect(replace).toHaveBeenCalledWith('/plus/administration/categories?foyer=2');
   });
 
   it('opens the household of the address', async () => {
-    search = new URLSearchParams('foyer=1');
+    search = new URLSearchParams('foyer=2');
     render(
       <HouseholdScope load={async () => households}>
         {(household) => <p>Écran de {household.name}</p>}
       </HouseholdScope>,
     );
-    expect(await screen.findByText('Écran de Famille')).toBeVisible();
+    expect(await screen.findByText('Écran de Dupont')).toBeVisible();
   });
 });

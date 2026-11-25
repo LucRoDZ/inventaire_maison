@@ -46,7 +46,8 @@ export function HouseholdScope({ children, load = fetchHouseholds }: HouseholdSc
     );
   }
   const wanted = Number(params.get('foyer'));
-  const chosen = households.find((h) => h.id === wanted) ?? households[0];
+  const chosen =
+    households.find((h) => h.id === wanted) ?? households.find((h) => h.isOwn) ?? households[0];
   if (!chosen) return <Callout>Aucun foyer pour l’instant.</Callout>;
 
   return (
@@ -63,7 +64,7 @@ export function HouseholdScope({ children, load = fetchHouseholds }: HouseholdSc
         >
           {households.map((household) => (
             <option key={household.id} value={household.id}>
-              {household.name}
+              {household.isOwn ? `${household.name} (le vôtre)` : household.name}
             </option>
           ))}
         </select>

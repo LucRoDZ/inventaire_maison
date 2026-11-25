@@ -76,11 +76,18 @@ describe('households (admin console)', () => {
     const res = await as(admin).get('/api/admin/households');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
-      expect.objectContaining({ id: other, name: 'Dupont', members: [], locationCount: 4 }),
+      expect.objectContaining({
+        id: other,
+        name: 'Dupont',
+        members: [],
+        locationCount: 4,
+        isOwn: false,
+      }),
       expect.objectContaining({
         id: HOUSEHOLD,
         name: 'Famille',
         locationCount: 4,
+        isOwn: true,
         members: [
           { id: memberId, username: 'membre', role: 'member', disabled: false },
           { id: adminId, username: 'root', role: 'admin', disabled: false },
@@ -91,6 +98,7 @@ describe('households (admin console)', () => {
     expect(Object.keys(res.body[0]).sort()).toEqual([
       'createdAt',
       'id',
+      'isOwn',
       'locationCount',
       'members',
       'name',

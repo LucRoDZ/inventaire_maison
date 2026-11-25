@@ -80,10 +80,10 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   useEffect(() => {
     if (focusId === null || !home) return;
     const location = home.locations.find((l) => l.id === focusId);
-    if (location) {
-      document.getElementById(furnitureCardId(focusId))?.focus();
-      setAnnouncement(`${location.name} est ajouté à la maison.`);
-    }
+    // The house may not be loaded again yet: wait for the card to exist.
+    if (!location) return;
+    document.getElementById(furnitureCardId(focusId))?.focus();
+    setAnnouncement(`${location.name} est ajouté à la maison.`);
     setFocusId(null);
     if (params.has(NEW_FURNITURE_PARAM)) {
       const rest = new URLSearchParams(params);

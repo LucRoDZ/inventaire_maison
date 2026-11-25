@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, request, type Page } from '@playwright/test';
 import * as argon2 from 'argon2';
 import pg from 'pg';
 
@@ -51,13 +51,16 @@ export async function pushCode(page: Page, code: string) {
   await page.evaluate((value) => (window as E2EWindow).__e2eScan?.(value), code);
 }
 
+/** Owner connection to the e2e database (fixtures only; the application has its own role). */
+export const e2eDatabaseUrl = () =>
+  process.env['E2E_DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_e2e';
+
 /**
- * Inserts a member straight into the e2e database (same Argon2id parameters as the API). Used
- * until the tests can create one through the administration screen.
+ * Inserts a member straight into the e2e database (same Argon2id parameters as the API), in the
+ * household of the admin: both see the same inventory.
  */
 export async function createMember(username: string, password: string): Promise<void> {
-  const url =
-    process.env['E2E_DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_e2e';
+  const url = e2eDatabaseUrl();
   const hash = await argon2.hash(password, {
     type: argon2.argon2id,
     memoryCost: 19456,
@@ -68,8 +71,10 @@ export async function createMember(username: string, password: string): Promise<
   await client.connect();
   try {
     await client.query(
-      "insert into users (username, password_hash, role) values ($1, $2, 'member') on conflict do nothing",
-      [username, hash],
+      `insert into users (username, password_hash, role, household_id)
+       values ($1, $2, 'member', (select household_id from users where username = $3))
+       on conflict do nothing`,
+      [username, hash, USERNAME],
     );
   } finally {
     await client.end();
@@ -121,4 +126,46 @@ export async function furnitureScenery(page: Page) {
       drawers: opacity('.fx-drawer'),
     };
   });
+}
+
+/**
+ * An account alone in a household of its own (created with the furniture and categories of the
+ * model), made through the admin console API. Tests that build big fixtures use one per browser,
+ * so that they never share the furniture of the admin (12 at most per household). Idempotent.
+ */
+export async function ensureAccountInOwnHousehold(
+  baseURL: string,
+  username: string,
+  password: string,
+  householdName: string,
+): Promise<void> {
+  const api = await request.newContext({ baseURL, extraHTTPHeaders: { Origin: baseURL } });
+  try {
+    const login = await api.post('/api/auth/login', {
+      data: { username: USERNAME, password: PASSWORD },
+    });
+    expect(login.ok()).toBe(true);
+    const created = await api.post('/api/users', {
+      data: { username, password, role: 'member', newHouseholdName: householdName },
+    });
+    // 409: made by an earlier test of the same run.
+    expect([201, 409]).toContain(created.status());
+  } finally {
+    await api.dispose();
+  }
+}
+
+/** Household of an account, for fixtures written straight into the e2e database. */
+export async function householdOf(username: string): Promise<number> {
+  const client = new pg.Client({ connectionString: e2eDatabaseUrl() });
+  await client.connect();
+  try {
+    const { rows } = await client.query<{ household_id: number }>(
+      'select household_id from users where username = $1',
+      [username],
+    );
+    return rows[0]!.household_id;
+  } finally {
+    await client.end();
+  }
 }

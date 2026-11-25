@@ -117,9 +117,16 @@ function CreateForm({
           onChange={(e) => setPassword(e.target.value)}
         />
       </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-label">Foyer</span>
-        <select className={field} value={household} onChange={(e) => setHousehold(e.target.value)}>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="foyer-du-compte" className="text-label">
+          Foyer
+        </label>
+        <select
+          id="foyer-du-compte"
+          className={field}
+          value={household}
+          onChange={(e) => setHousehold(e.target.value)}
+        >
           <option value="">Choisir un foyer</option>
           {households.map((h) => (
             <option key={h.id} value={h.id}>
@@ -128,7 +135,7 @@ function CreateForm({
           ))}
           <option value={NEW_HOUSEHOLD}>Nouveau foyer…</option>
         </select>
-      </label>
+      </div>
       {household === NEW_HOUSEHOLD ? (
         <div className="flex flex-col gap-1">
           <label htmlFor="nouveau-foyer" className="text-label">
@@ -284,9 +291,16 @@ function MemberRow({
       ) : null}
       {mode === 'move' ? (
         <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-label">Nouveau foyer de {user.username}</span>
-            <select className={field} value={target} onChange={(e) => setTarget(e.target.value)}>
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`deplacer-${user.id}`} className="text-label">
+              Nouveau foyer de {user.username}
+            </label>
+            <select
+              id={`deplacer-${user.id}`}
+              className={field}
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+            >
               <option value="">Choisir un foyer</option>
               {others.map((h) => (
                 <option key={h.id} value={h.id}>
@@ -294,7 +308,7 @@ function MemberRow({
                 </option>
               ))}
             </select>
-          </label>
+          </div>
           {targetName ? (
             <p className="text-small">
               {user.username} verra alors l’inventaire de {targetName}, plus celui de{' '}

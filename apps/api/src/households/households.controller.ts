@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
 } from '@nestjs/common';
 import {
   CATEGORY_ICONS,
@@ -18,6 +19,7 @@ import {
   type HouseholdDto,
   type OffCategoryMapDto,
 } from '@inventaire/shared';
+import type { Request } from 'express';
 import { z } from 'zod';
 import { Roles } from '../auth/roles.decorator';
 import { CategoriesService } from '../categories/categories.service';
@@ -67,8 +69,8 @@ export class HouseholdsController {
   ) {}
 
   @Get()
-  list(): Promise<HouseholdDto[]> {
-    return this.households.list();
+  list(@Req() req: Request): Promise<HouseholdDto[]> {
+    return this.households.list(req.user!.householdId);
   }
 
   @Post()

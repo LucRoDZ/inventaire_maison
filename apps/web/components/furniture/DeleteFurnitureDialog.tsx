@@ -53,9 +53,11 @@ export function DeleteFurnitureDialog({
     ? 'Il est vide : il disparaît avec ses étagères.'
     : others.length === 0
       ? `Il contient ${products(location.productCount)} et c’est votre seul meuble : ajoutez d’abord un autre meuble pour les recevoir.`
-      : `Ses ${products(location.productCount)} seront rangés dans le plateau « Non rangé » ${
-          target ? `de ${target.name}` : 'du meuble choisi ci-dessous'
-        }.`;
+      : `${
+          location.productCount > 1
+            ? `Ses ${location.productCount} produits seront rangés`
+            : 'Son produit sera rangé'
+        } dans le plateau « Non rangé » ${target ? `de ${target.name}` : 'du meuble choisi ci-dessous'}.`;
 
   async function confirm() {
     if (busy) return;

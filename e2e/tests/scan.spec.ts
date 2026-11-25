@@ -738,9 +738,10 @@ test('administration : l’admin crée un membre qui se connecte, puis le désac
   const member = MEMBER_ADMIN[testInfo.project.name as keyof typeof MEMBER_ADMIN];
   await signIn(page);
   await page.goto('/plus/administration/membres');
-  await expect(page.getByRole('heading', { name: 'Membres', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Comptes', level: 1 })).toBeVisible();
   await page.getByLabel('Pseudo du nouveau membre').fill(member);
   await page.getByLabel('Mot de passe temporaire').fill('temporaire-1234');
+  await page.getByLabel('Foyer', { exact: true }).selectOption({ label: 'Famille' });
   await page.getByRole('button', { name: 'Créer le membre' }).click();
   const row = page.getByRole('listitem', { name: member });
   await expect(row).toContainText('Membre · Actif');

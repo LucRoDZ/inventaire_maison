@@ -21,4 +21,6 @@ export interface HouseholdDto {
   members: HouseholdMemberDto[];
   /** Pieces of furniture: a count, never their content (the console does not read inventories). */
   locationCount: number;
+  /** The household of the admin who asks (chosen by default in the console). */
+  isOwn: boolean;
 }

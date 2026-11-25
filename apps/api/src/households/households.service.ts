@@ -32,7 +32,7 @@ export class HouseholdsService {
     @Inject(ImageStore) private readonly images: ImageStore,
   ) {}
 
-  async list(): Promise<HouseholdDto[]> {
+  async list(ownHouseholdId?: number): Promise<HouseholdDto[]> {
     const rows = await this.db
       .select()
       .from(households)
@@ -53,6 +53,7 @@ export class HouseholdsService {
             disabled: u.disabledAt !== null,
           })),
         locationCount: await this.locations.countIn(row.id),
+        isOwn: row.id === ownHouseholdId,
       });
     }
     return result;
