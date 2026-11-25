@@ -18,6 +18,7 @@ import { CreateFurnitureSheet } from '../furniture/CreateFurnitureSheet';
 import { DeleteFurnitureDialog } from '../furniture/DeleteFurnitureDialog';
 import { NEW_FURNITURE_PARAM } from '../home/HomeView';
 import { Button } from '../ui/Button';
+import { iconLabel } from '../ui/icon-labels';
 import { Callout } from '../ui/Callout';
 
 type Api = typeof placesApi;
@@ -298,7 +299,7 @@ function LocationCard({
     setBusy(true);
     try {
       await api.updateLocation(location.id, { name: name.trim(), icon });
-      notify({ kind: 'ok', text: 'Lieu enregistré.' });
+      notify({ kind: 'ok', text: 'Meuble enregistré.' });
       onChanged();
     } catch (caught) {
       notify({ kind: 'error', text: messageOf(caught) });
@@ -315,12 +316,20 @@ function LocationCard({
 
   return (
     <section
-      aria-label={`Lieu ${location.name}`}
+      aria-label={`Meuble ${location.name}`}
       className="border-line rounded-card shadow-card flex flex-col gap-3 border bg-white p-4"
     >
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-card-title min-w-0 truncate">{location.name}</h2>
+        <span className="text-small shrink-0">
+          {location.productCount === 0
+            ? 'Vide'
+            : `${location.productCount} ${location.productCount > 1 ? 'produits' : 'produit'}`}
+        </span>
+      </div>
       <div className="flex flex-col gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-label">Nom du lieu</span>
+          <span className="text-label">Nom du meuble</span>
           <input
             className={field}
             value={name}
@@ -329,18 +338,18 @@ function LocationCard({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-label">Icône du lieu</span>
+          <span className="text-label">Icône du meuble</span>
           <select className={field} value={icon} onChange={(e) => setIcon(e.target.value)}>
             {icons.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {iconLabel(value)}
               </option>
             ))}
           </select>
         </label>
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={!dirty || busy || name.trim() === ''} onClick={() => void save()}>
-            Enregistrer le lieu
+            Enregistrer le meuble
           </Button>
           <MoveButtons label={location.name} index={index} count={count} onMove={onMove} />
           <Button
@@ -443,7 +452,7 @@ export function LocationsAdmin({ api = placesApi }: { api?: Api }) {
         <Callout role={notice.kind === 'error' ? 'alert' : 'status'}>{notice.text}</Callout>
       ) : null}
       {loadError ? (
-        <Callout role="alert">Impossible de charger les lieux : vérifiez la connexion.</Callout>
+        <Callout role="alert">Impossible de charger les meubles : vérifiez la connexion.</Callout>
       ) : null}
       {locations === null && !loadError ? (
         <p role="status" className="text-small">

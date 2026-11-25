@@ -179,8 +179,9 @@ function HouseholdCard({
       </form>
       {accounts > 0 ? (
         <p className="text-help">
-          Pour supprimer ce foyer, déplacez d’abord ses {accounts}{' '}
-          {accounts > 1 ? 'comptes' : 'compte'} dans un autre foyer (écran Comptes).
+          Pour supprimer ce foyer, déplacez d’abord{' '}
+          {accounts > 1 ? `ses ${accounts} comptes` : 'son compte'} dans un autre foyer (écran
+          Comptes).
         </p>
       ) : (
         <Button variant="secondary" aria-haspopup="dialog" onClick={onDelete}>

@@ -34,6 +34,12 @@ function shelfWord(kind: LocationKind, count: number): string {
   return count > 1 ? `${word}s` : word;
 }
 
+/** « Nombre d’étagères », « Nombre de tiroirs », « Nombre de rangées ». */
+function stepperTitle(kind: LocationKind): string {
+  const word = shelfWord(kind, 2);
+  return /^[aeiouyéè]/.test(word) ? `Nombre d’${word}` : `Nombre de ${word}`;
+}
+
 /** « Une étagère de plus », « Un tiroir de moins »… */
 function stepLabel(kind: LocationKind, more: boolean): string {
   const label = LOCATION_KIND_DEFAULTS[kind].shelfLabel;
@@ -179,7 +185,7 @@ export function CreateFurnitureSheet({
 
         <div className="flex flex-col gap-1">
           <span id={stepperLabelId} className="text-label">
-            Nombre de {shelfWord(kind, 2)}
+            {stepperTitle(kind)}
           </span>
           <div role="group" aria-labelledby={stepperLabelId} className="flex items-center gap-3">
             <button
@@ -209,9 +215,7 @@ export function CreateFurnitureSheet({
             >
               <Plus size={20} aria-hidden="true" />
             </button>
-            <span className="text-small">
-              {shelfWord(kind, shelfCount)}, {MAX_SHELVES_PER_LOCATION} au plus
-            </span>
+            <span className="text-small">{MAX_SHELVES_PER_LOCATION} au plus</span>
           </div>
         </div>
 

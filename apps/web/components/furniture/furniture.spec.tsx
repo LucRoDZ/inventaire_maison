@@ -110,7 +110,7 @@ describe('CreateFurnitureSheet', () => {
     expect(name).toHaveValue('Frigo 2');
     expect(name).toHaveClass('text-base');
     expect(name).toHaveAttribute('enterkeyhint', 'done');
-    expect(screen.getByRole('group', { name: 'Nombre de étagères' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Nombre d’étagères' })).toBeInTheDocument();
     await user.click(screen.getByRole('radio', { name: 'Congélateur' }));
     expect(name).toHaveValue('Congélateur 2');
     const drawers = screen.getByRole('group', { name: 'Nombre de tiroirs' });

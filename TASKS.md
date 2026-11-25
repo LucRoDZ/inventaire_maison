@@ -582,9 +582,9 @@
 - [x] **F.8 API meubles** : `POST`/`DELETE /locations`, `PATCH` et étagères pour les deux rôles, limites D6 (`locations.spec.ts`).
 - [x] **F.9 Interface des meubles** : tuile d'ajout, état vide, feuille de création, suppression en `alertdialog`, écran « Meubles et étagères », sélecteurs regroupés, `BottomSheet` commun.
 - [x] **F.10 Interface de la console** : écrans Foyers et Comptes, sélecteur de foyer des catégories et correspondances ; service worker en réseau seul pour l'API.
-- [ ] **F.11 E2E** : `foyers-meubles.spec.ts` (Frigo 2, transfert, deux foyers y compris hors ligne, Foyer Dupont, axe, clavier) et suite existante sur les deux navigateurs.
-- [ ] **F.12 Finition (`unslop`)** : audit `docs/audit-finition.md`, passes du skill dans le cadre Indigo Ambre, captures avant et après.
-- [ ] **F.13 Documentation** : cahier des charges, README (variables, rôles, déploiement, sauvegarde, retour arrière, crédit du skill), `TASKS.md`.
+- [x] **F.11 E2E** : `foyers-meubles.spec.ts` (Frigo 2, transfert, deux foyers y compris hors ligne, Foyer Dupont, axe, clavier) et suite existante sur les deux navigateurs.
+- [x] **F.12 Finition (`unslop`)** : audit `docs/audit-finition.md`, passes du skill dans le cadre Indigo Ambre, captures avant et après.
+- [x] **F.13 Documentation** : cahier des charges, README (variables, rôles, déploiement, sauvegarde, retour arrière, crédit du skill), `TASKS.md`.
 - [ ] **F.14 Revue indépendante, PR, CI et fusion**.
 
 ## Critères de fin de phase

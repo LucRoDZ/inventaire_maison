@@ -411,7 +411,7 @@ export function MembersAdmin({
     <div className="flex flex-col gap-6">
       <section aria-labelledby="membres" className="flex flex-col gap-2">
         <h2 id="membres" className="text-label">
-          Comptes
+          Tous les comptes
         </h2>
         {loadError ? (
           <Callout role="alert">Impossible de charger les comptes : vérifiez la connexion.</Callout>

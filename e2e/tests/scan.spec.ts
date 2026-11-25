@@ -779,7 +779,7 @@ test('administration : une étagère ajoutée apparaît dans la vue Maison ; sup
   const origin = { Origin: testInfo.project.use.baseURL! };
   await signIn(page);
   await page.goto('/plus/administration/lieux');
-  const cellar = page.getByRole('region', { name: 'Lieu Cave' });
+  const cellar = page.getByRole('region', { name: 'Meuble Cave' });
   await expect(cellar).toBeVisible();
 
   await cellar.getByLabel('Nom de la nouvelle étagère').fill(shelf);
@@ -820,7 +820,7 @@ test('administration : une étagère ajoutée apparaît dans la vue Maison ; sup
 
   await page.goto('/plus/administration/lieux');
   const row = page
-    .getByRole('region', { name: 'Lieu Cave' })
+    .getByRole('region', { name: 'Meuble Cave' })
     .getByRole('listitem', { name: shelf });
   await row.getByRole('button', { name: 'Supprimer' }).click();
   await expect(row).toContainText('Les produits iront dans Non rangé.');
