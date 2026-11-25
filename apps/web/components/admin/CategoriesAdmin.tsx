@@ -9,13 +9,13 @@ import {
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
-import * as categoriesApi from '../../lib/categories-api';
+import type { CategoriesApi } from '../../lib/categories-api';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
 import { IconPicker } from './IconPicker';
 
-type Api = typeof categoriesApi;
+type Api = CategoriesApi;
 type Notify = (notice: { kind: 'ok' | 'error'; text: string }) => void;
 
 const field = 'tap-target border-line rounded-xl border bg-white px-3 text-base text-ink w-full';
@@ -225,7 +225,7 @@ function AddCategoryForm({
 }
 
 /** Categories: name, Lucide icon, order; deletion sends the products to « Autre ». */
-export function CategoriesAdmin({ api = categoriesApi }: { api?: Api }) {
+export function CategoriesAdmin({ api }: { api: Api }) {
   const [categories, setCategories] = useState<CategoryDto[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);

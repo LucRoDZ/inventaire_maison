@@ -2,8 +2,11 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { AdminGate } from '../../../../../components/admin/AdminGate';
 import { CategoriesAdmin } from '../../../../../components/admin/CategoriesAdmin';
+import { HouseholdScope } from '../../../../../components/admin/HouseholdScope';
+import { categoriesApiFor } from '../../../../../lib/categories-api';
 
 export default function Page() {
   return (
@@ -17,7 +20,11 @@ export default function Page() {
       </Link>
       <h1 className="text-title">Catégories</h1>
       <AdminGate>
-        <CategoriesAdmin />
+        <Suspense>
+          <HouseholdScope>
+            {(household) => <CategoriesAdmin api={categoriesApiFor(household.id)} />}
+          </HouseholdScope>
+        </Suspense>
       </AdminGate>
     </main>
   );

@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
-import type * as CategoriesApi from '../../lib/categories-api';
+import type { CategoriesApi } from '../../lib/categories-api';
 import { CategoriesAdmin } from './CategoriesAdmin';
 import { MappingsAdmin } from './MappingsAdmin';
 
@@ -17,7 +17,7 @@ const mappings: OffCategoryMapDto[] = [
   { id: 21, offTag: 'en:beers', categoryId: 2 },
 ];
 
-function makeApi(over: Partial<typeof CategoriesApi> = {}): typeof CategoriesApi {
+function makeApi(over: Partial<CategoriesApi> = {}): CategoriesApi {
   return {
     fetchCategories: vi.fn(async () => categories),
     createCategory: vi.fn(async (input) => ({ id: 9, sortOrder: 3, isFallback: false, ...input })),

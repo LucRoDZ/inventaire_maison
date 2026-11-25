@@ -1,6 +1,14 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, MapPin, Tag, Users, type LucideIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  House,
+  Refrigerator,
+  Tag,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { AdminGate } from '../../../../components/admin/AdminGate';
 
@@ -32,8 +40,9 @@ export default function AdministrationPage() {
       <h1 className="text-title">Administration</h1>
       <AdminGate>
         <ul className="flex flex-col gap-2">
-          <Entry href="/plus/administration/membres" label="Membres" icon={Users} />
-          <Entry href="/plus/administration/lieux" label="Lieux et étagères" icon={MapPin} />
+          <Entry href="/plus/administration/foyers" label="Foyers" icon={House} />
+          <Entry href="/plus/administration/membres" label="Comptes" icon={Users} />
+          <Entry href="/plus/meubles" label="Meubles et étagères" icon={Refrigerator} />
           <Entry href="/plus/administration/categories" label="Catégories" icon={Tag} />
           <Entry
             href="/plus/administration/correspondances"

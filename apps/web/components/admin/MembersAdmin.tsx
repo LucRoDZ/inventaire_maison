@@ -1,19 +1,25 @@
 'use client';
 
 import {
+  HOUSEHOLD_NAME_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_PATTERN,
+  type HouseholdDto,
   type UserDto,
   type UserRole,
 } from '@inventaire/shared';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
+import { fetchHouseholds } from '../../lib/households-api';
 import * as usersApi from '../../lib/users-api';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 
 type Api = typeof usersApi;
+type Household = Pick<HouseholdDto, 'id' | 'name'>;
+/** Value of the household select that asks for a new household. */
+const NEW_HOUSEHOLD = 'nouveau';
 
 const field = 'tap-target border-line rounded-xl border bg-white px-3 text-base text-ink w-full';
 
@@ -27,10 +33,20 @@ const passwordProblem = (value: string): string | null =>
     ? `Le mot de passe doit faire de ${PASSWORD_MIN_LENGTH} à ${PASSWORD_MAX_LENGTH} caractères.`
     : null;
 
-function CreateForm({ api, onCreated }: { api: Api; onCreated: (user: UserDto) => void }) {
+function CreateForm({
+  api,
+  households,
+  onCreated,
+}: {
+  api: Api;
+  households: Household[];
+  onCreated: (user: UserDto) => void;
+}) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('member');
+  const [household, setHousehold] = useState('');
+  const [newName, setNewName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -47,13 +63,30 @@ function CreateForm({ api, onCreated }: { api: Api; onCreated: (user: UserDto) =
       setError(problem);
       return;
     }
+    if (household === '') {
+      setError('Choisissez le foyer du compte, ou « Nouveau foyer ».');
+      return;
+    }
+    const name = newName.trim();
+    if (household === NEW_HOUSEHOLD && (name === '' || name.length > HOUSEHOLD_NAME_MAX_LENGTH)) {
+      setError(`Nom du nouveau foyer : 1 à ${HOUSEHOLD_NAME_MAX_LENGTH} caractères.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      onCreated(await api.createUser({ username: pseudo, password, role }));
+      onCreated(
+        await api.createUser(
+          household === NEW_HOUSEHOLD
+            ? { username: pseudo, password, role, newHouseholdName: name }
+            : { username: pseudo, password, role, householdId: Number(household) },
+        ),
+      );
       setUsername('');
       setPassword('');
       setRole('member');
+      setHousehold('');
+      setNewName('');
     } catch (caught) {
       setError(messageOf(caught));
     }
@@ -85,6 +118,37 @@ function CreateForm({ api, onCreated }: { api: Api; onCreated: (user: UserDto) =
         />
       </label>
       <label className="flex flex-col gap-1">
+        <span className="text-label">Foyer</span>
+        <select className={field} value={household} onChange={(e) => setHousehold(e.target.value)}>
+          <option value="">Choisir un foyer</option>
+          {households.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.name}
+            </option>
+          ))}
+          <option value={NEW_HOUSEHOLD}>Nouveau foyer…</option>
+        </select>
+      </label>
+      {household === NEW_HOUSEHOLD ? (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="nouveau-foyer" className="text-label">
+            Nom du nouveau foyer
+          </label>
+          <input
+            id="nouveau-foyer"
+            className={field}
+            autoComplete="off"
+            maxLength={HOUSEHOLD_NAME_MAX_LENGTH}
+            aria-describedby="nouveau-foyer-aide"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+          <p id="nouveau-foyer-aide" className="text-help">
+            Le foyer est créé avec le compte, avec les meubles et les catégories du modèle.
+          </p>
+        </div>
+      ) : null}
+      <label className="flex flex-col gap-1">
         <span className="text-label">Rôle</span>
         <select
           className={field}
@@ -106,15 +170,20 @@ function MemberRow({
   user,
   isSelf,
   api,
+  households,
   onChanged,
 }: {
   user: UserDto;
   isSelf: boolean;
   api: Api;
+  households: Household[];
   onChanged: (user: UserDto) => void;
 }) {
-  const [mode, setMode] = useState<'idle' | 'confirm' | 'reset'>('idle');
+  const [mode, setMode] = useState<'idle' | 'confirm' | 'reset' | 'move'>('idle');
   const [password, setPassword] = useState('');
+  const [target, setTarget] = useState('');
+  const others = households.filter((h) => h.id !== user.household.id);
+  const targetName = others.find((h) => String(h.id) === target)?.name;
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -162,6 +231,7 @@ function MemberRow({
           {user.disabled ? 'Désactivé' : 'Actif'}
         </span>
       </div>
+      <p className="text-small">Foyer : {user.household.name}</p>
       {notice ? (
         <p role={notice.kind === 'error' ? 'alert' : 'status'} className="text-small">
           {notice.text}
@@ -212,8 +282,50 @@ function MemberRow({
           </div>
         </form>
       ) : null}
+      {mode === 'move' ? (
+        <div className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-label">Nouveau foyer de {user.username}</span>
+            <select className={field} value={target} onChange={(e) => setTarget(e.target.value)}>
+              <option value="">Choisir un foyer</option>
+              {others.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {targetName ? (
+            <p className="text-small">
+              {user.username} verra alors l’inventaire de {targetName}, plus celui de{' '}
+              {user.household.name}. Ses sessions ouvertes seront coupées.
+            </p>
+          ) : null}
+          <div className="flex gap-2">
+            <Button
+              disabled={busy || !targetName}
+              onClick={() =>
+                void run(
+                  () => api.moveUser(user.id, Number(target)),
+                  `Compte déplacé dans ${targetName ?? ''}, sessions coupées.`,
+                )
+              }
+            >
+              Déplacer {user.username}
+            </Button>
+            <Button variant="secondary" onClick={() => setMode('idle')}>
+              Annuler
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {mode === 'idle' ? (
         <div className="flex flex-wrap gap-2">
+          {!isSelf && others.length > 0 ? (
+            <Button variant="secondary" onClick={() => setMode('move')}>
+              Changer de foyer
+            </Button>
+          ) : null}
           {!isSelf ? (
             <Button variant="secondary" onClick={() => setMode('reset')}>
               Nouveau mot de passe
@@ -238,15 +350,22 @@ function MemberRow({
   );
 }
 
-/** Accounts of the household: list, creation, password reset, deactivation, reactivation. */
+/**
+ * Every account of the instance with its household (admin console): list, creation in an existing
+ * or a new household, change of household, password reset, deactivation, reactivation.
+ */
 export function MembersAdmin({
   currentUserId,
   api = usersApi,
+  loadHouseholds = fetchHouseholds,
 }: {
   currentUserId: number;
   api?: Api;
+  /** Test seam. */
+  loadHouseholds?: () => Promise<Household[]>;
 }) {
   const [users, setUsers] = useState<UserDto[] | null>(null);
+  const [households, setHouseholds] = useState<Household[]>([]);
   const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(() => {
@@ -254,24 +373,34 @@ export function MembersAdmin({
       .fetchUsers()
       .then((list) => setUsers(list))
       .catch(() => setLoadError(true));
-  }, [api]);
+    loadHouseholds()
+      .then((list) => setHouseholds(list.map(({ id, name }) => ({ id, name }))))
+      .catch(() => setLoadError(true));
+  }, [api, loadHouseholds]);
   useEffect(load, [load]);
 
-  const replace = (user: UserDto) =>
+  const replace = (user: UserDto) => {
     setUsers((list) =>
       (list ?? []).some((u) => u.id === user.id)
         ? (list ?? []).map((u) => (u.id === user.id ? user : u))
         : [...(list ?? []), user].sort((a, b) => a.username.localeCompare(b.username)),
     );
+    // A new household may have been created with the account.
+    setHouseholds((list) =>
+      list.some((h) => h.id === user.household.id)
+        ? list
+        : [...list, user.household].sort((a, b) => a.name.localeCompare(b.name)),
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <section aria-labelledby="membres" className="flex flex-col gap-2">
         <h2 id="membres" className="text-label">
-          Membres
+          Comptes
         </h2>
         {loadError ? (
-          <Callout role="alert">Impossible de charger les membres : vérifiez la connexion.</Callout>
+          <Callout role="alert">Impossible de charger les comptes : vérifiez la connexion.</Callout>
         ) : null}
         {users === null && !loadError ? (
           <p role="status" className="text-small">
@@ -285,6 +414,7 @@ export function MembersAdmin({
               user={user}
               isSelf={user.id === currentUserId}
               api={api}
+              households={households}
               onChanged={replace}
             />
           ))}
@@ -292,9 +422,9 @@ export function MembersAdmin({
       </section>
       <section aria-labelledby="creer" className="flex flex-col gap-2">
         <h2 id="creer" className="text-label">
-          Ajouter un membre
+          Ajouter un compte
         </h2>
-        <CreateForm api={api} onCreated={replace} />
+        <CreateForm api={api} households={households} onCreated={replace} />
       </section>
     </div>
   );

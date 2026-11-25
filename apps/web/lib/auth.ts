@@ -2,12 +2,18 @@ import type { AuthUser } from '@inventaire/shared';
 import { ApiError, apiFetch } from './api';
 import { clearAppCaches } from './clear-caches';
 
-export function login(username: string, password: string): Promise<AuthUser> {
-  return apiFetch<AuthUser>('/auth/login', {
+/**
+ * Signs in. The caches of the device are emptied first: another account, maybe of another
+ * household, may have used it before (decision A.5).
+ */
+export async function login(username: string, password: string): Promise<AuthUser> {
+  const user = await apiFetch<AuthUser>('/auth/login', {
     method: 'POST',
     body: { username, password },
     skipLoginRedirect: true,
   });
+  await clearAppCaches().catch(() => undefined);
+  return user;
 }
 
 export async function logout(): Promise<void> {

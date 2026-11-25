@@ -4,11 +4,11 @@ import type { CategoryDto, OffCategoryMapDto } from '@inventaire/shared';
 import { OFF_TAG_PATTERN } from '@inventaire/shared';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
-import * as categoriesApi from '../../lib/categories-api';
+import type { CategoriesApi } from '../../lib/categories-api';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 
-type Api = typeof categoriesApi;
+type Api = CategoriesApi;
 type Notify = (notice: { kind: 'ok' | 'error'; text: string }) => void;
 
 const field = 'tap-target border-line rounded-xl border bg-white px-3 text-base text-ink w-full';
@@ -230,7 +230,7 @@ function AddMappingForm({
 }
 
 /** The Open Food Facts tag table: filter, add, edit, delete; a duplicate tag is reported. */
-export function MappingsAdmin({ api = categoriesApi }: { api?: Api }) {
+export function MappingsAdmin({ api }: { api: Api }) {
   const [mappings, setMappings] = useState<OffCategoryMapDto[] | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [loadError, setLoadError] = useState(false);

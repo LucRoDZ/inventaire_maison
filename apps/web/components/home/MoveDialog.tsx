@@ -5,6 +5,8 @@ import { useId, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { moveStock } from '../../lib/stock-api';
 import { QuantityStepper } from '../add/QuantityStepper';
+import { LocationOptions } from '../ui/LocationOptions';
+import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 
@@ -77,82 +79,69 @@ export function MoveDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end bg-indigo/40" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.key === 'Escape' && onClose()}
-        className="rounded-card mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-      >
-        <h2 id={titleId} className="text-card-title">
-          Déplacer {source.productName} vers…
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-label flex flex-col gap-1">
-            Meuble
-            <select
-              className={select}
-              value={locationId}
-              onChange={(event) => {
-                setLocationId(Number(event.target.value));
-                setShelfId(null);
-              }}
-            >
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-label flex flex-col gap-1">
-            Étagère
-            <select
-              className={select}
-              value={shelfId ?? ''}
-              onChange={(event) =>
-                setShelfId(event.target.value === '' ? null : Number(event.target.value))
-              }
-            >
-              <option value="">Non rangé</option>
-              {target?.shelves.map((shelf) => (
-                <option key={shelf.id} value={shelf.id}>
-                  {shelf.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        {source.quantity > 1 ? (
-          <div className="flex flex-col gap-1">
-            <span className="text-label">Quantité à déplacer</span>
-            <QuantityStepper value={quantity} onChange={setQuantity} max={source.quantity} />
-          </div>
-        ) : null}
-
-        {same ? (
-          <p role="status" className="text-small">
-            C’est déjà là : choisissez une autre destination.
-          </p>
-        ) : null}
-        {error ? (
-          <Callout role="alert" title="Déplacement impossible">
-            {error}
-          </Callout>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <Button variant="add" disabled={same || busy} onClick={() => void submit()}>
-            Déplacer
-          </Button>
-          <Button variant="secondary" onClick={onClose}>
-            Annuler
-          </Button>
-        </div>
+    <BottomSheet labelledBy={titleId} onClose={onClose} layer="top">
+      <h2 id={titleId} className="text-card-title">
+        Déplacer {source.productName} vers…
+      </h2>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-label flex flex-col gap-1">
+          Meuble
+          <select
+            className={select}
+            value={locationId}
+            onChange={(event) => {
+              setLocationId(Number(event.target.value));
+              setShelfId(null);
+            }}
+          >
+            <LocationOptions locations={locations} />
+          </select>
+        </label>
+        <label className="text-label flex flex-col gap-1">
+          Étagère
+          <select
+            className={select}
+            value={shelfId ?? ''}
+            onChange={(event) =>
+              setShelfId(event.target.value === '' ? null : Number(event.target.value))
+            }
+          >
+            <option value="">Non rangé</option>
+            {target?.shelves.map((shelf) => (
+              <option key={shelf.id} value={shelf.id}>
+                {shelf.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
-    </div>
+
+      {source.quantity > 1 ? (
+        <div className="flex flex-col gap-1">
+          <span className="text-label">Quantité à déplacer</span>
+          <QuantityStepper value={quantity} onChange={setQuantity} max={source.quantity} />
+        </div>
+      ) : null}
+
+      {same ? (
+        <p role="status" className="text-small">
+          C’est déjà là : choisissez une autre destination.
+        </p>
+      ) : null}
+      {error ? (
+        <Callout role="alert" title="Déplacement impossible">
+          {error}
+        </Callout>
+      ) : null}
+
+      <div className="flex flex-col gap-2">
+        <Button variant="add" disabled={same || busy} onClick={() => void submit()}>
+          Déplacer
+        </Button>
+        <Button variant="secondary" onClick={onClose}>
+          Annuler
+        </Button>
+      </div>
+    </BottomSheet>
   );
 }

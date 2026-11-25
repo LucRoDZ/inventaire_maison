@@ -2,15 +2,21 @@
 
 import {
   CATEGORY_ICONS,
+  MAX_LOCATIONS_PER_HOUSEHOLD,
+  MAX_SHELVES_PER_LOCATION,
   PLACE_NAME_MAX_LENGTH,
   type LocationDto,
   type ShelfDto,
   type ShelfKind,
 } from '@inventaire/shared';
-import { ArrowDown, ArrowUp } from 'lucide-react';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import * as placesApi from '../../lib/places-api';
+import { CreateFurnitureSheet } from '../furniture/CreateFurnitureSheet';
+import { DeleteFurnitureDialog } from '../furniture/DeleteFurnitureDialog';
+import { NEW_FURNITURE_PARAM } from '../home/HomeView';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 
@@ -179,12 +185,15 @@ function ShelfRow({
 function AddShelfForm({
   locationId,
   locationName,
+  full,
   api,
   onChanged,
   notify,
 }: {
   locationId: number;
   locationName: string;
+  /** Already MAX_SHELVES_PER_LOCATION shelves. */
+  full: boolean;
   api: Api;
   onChanged: () => void;
   notify: Notify;
@@ -212,6 +221,13 @@ function AddShelfForm({
     setBusy(false);
   }
 
+  if (full) {
+    return (
+      <p className="text-small">
+        {MAX_SHELVES_PER_LOCATION} étagères ou tiroirs au plus : ce meuble est complet.
+      </p>
+    );
+  }
   return (
     <form
       onSubmit={(e) => void submit(e)}
@@ -256,6 +272,7 @@ function LocationCard({
   api,
   onChanged,
   onMove,
+  onDelete,
   notify,
 }: {
   location: LocationDto;
@@ -264,8 +281,10 @@ function LocationCard({
   api: Api;
   onChanged: () => void;
   onMove: (direction: -1 | 1) => void;
+  onDelete: (opener: HTMLButtonElement | null) => void;
   notify: Notify;
 }) {
+  const deleteButton = useRef<HTMLButtonElement>(null);
   const [name, setName] = useState(location.name);
   const [icon, setIcon] = useState(location.icon);
   const [busy, setBusy] = useState(false);
@@ -324,6 +343,15 @@ function LocationCard({
             Enregistrer le lieu
           </Button>
           <MoveButtons label={location.name} index={index} count={count} onMove={onMove} />
+          <Button
+            ref={deleteButton}
+            variant="secondary"
+            aria-haspopup="dialog"
+            onClick={() => onDelete(deleteButton.current)}
+          >
+            <Trash2 size={18} aria-hidden="true" />
+            Supprimer ce meuble
+          </Button>
         </div>
       </div>
       <h3 className="text-label">Étagères</h3>
@@ -344,6 +372,7 @@ function LocationCard({
       <AddShelfForm
         locationId={location.id}
         locationName={location.name}
+        full={location.shelves.length >= MAX_SHELVES_PER_LOCATION}
         api={api}
         onChanged={onChanged}
         notify={notify}
@@ -352,11 +381,19 @@ function LocationCard({
   );
 }
 
-/** Rename and reorder the locations, manage their shelves. */
+/**
+ * The furniture of the house, for every account: add (same sheet as the home screen), rename,
+ * reorder and delete pieces of furniture, manage their shelves. Reordering is shown at once and
+ * undone if the server refuses.
+ */
 export function LocationsAdmin({ api = placesApi }: { api?: Api }) {
+  const router = useRouter();
   const [locations, setLocations] = useState<LocationDto[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<LocationDto | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
 
   const load = useCallback(() => {
     api
@@ -370,14 +407,38 @@ export function LocationsAdmin({ api = placesApi }: { api?: Api }) {
   useEffect(load, [load]);
 
   function moveLocation(index: number, direction: -1 | 1) {
-    const changes = reorder(locations ?? [], index, direction);
+    const before = locations ?? [];
+    const changes = reorder(before, index, direction);
+    if (changes.length === 0) return;
+    // Optimistic: the new order shows at once, and comes back if the server refuses.
+    const order = new Map(changes.map((c) => [c.id, c.sortOrder]));
+    setLocations(
+      before
+        .map((l) => ({ ...l, sortOrder: order.get(l.id) ?? l.sortOrder }))
+        .sort((x, y) => x.sortOrder - y.sortOrder || x.id - y.id),
+    );
     void Promise.all(changes.map((c) => api.updateLocation(c.id, { sortOrder: c.sortOrder })))
       .then(load)
-      .catch((caught) => setNotice({ kind: 'error', text: messageOf(caught) }));
+      .catch((caught) => {
+        setLocations(before);
+        setNotice({ kind: 'error', text: messageOf(caught) });
+      });
   }
 
+  const count = (locations ?? []).length;
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <h2 ref={heading} tabIndex={-1} className="text-label outline-none">
+          {count} {count > 1 ? 'meubles' : 'meuble'} sur {MAX_LOCATIONS_PER_HOUSEHOLD} possibles
+        </h2>
+        {locations !== null && count < MAX_LOCATIONS_PER_HOUSEHOLD ? (
+          <Button variant="add" aria-haspopup="dialog" onClick={() => setCreating(true)}>
+            <Plus size={20} aria-hidden="true" />
+            Ajouter un meuble
+          </Button>
+        ) : null}
+      </div>
       {notice ? (
         <Callout role={notice.kind === 'error' ? 'alert' : 'status'}>{notice.text}</Callout>
       ) : null}
@@ -398,9 +459,34 @@ export function LocationsAdmin({ api = placesApi }: { api?: Api }) {
           api={api}
           onChanged={load}
           onMove={(direction) => moveLocation(index, direction)}
+          onDelete={() => setDeleting(location)}
           notify={setNotice}
         />
       ))}
+      {creating ? (
+        <CreateFurnitureSheet
+          existingNames={(locations ?? []).map((l) => l.name)}
+          create={api.createLocation}
+          onClose={() => setCreating(false)}
+          // Back to the house: the new card gets the focus there, and it is announced.
+          onCreated={(created) => router.push(`/inventaire?${NEW_FURNITURE_PARAM}=${created.id}`)}
+        />
+      ) : null}
+      {deleting ? (
+        <DeleteFurnitureDialog
+          location={deleting}
+          locations={locations ?? []}
+          remove={api.deleteLocation}
+          onClose={() => setDeleting(null)}
+          onDeleted={(message) => {
+            setDeleting(null);
+            setNotice({ kind: 'ok', text: message });
+            load();
+            // The card is gone: the focus goes to the top of the list.
+            requestAnimationFrame(() => heading.current?.focus());
+          }}
+        />
+      ) : null}
     </div>
   );
 }
