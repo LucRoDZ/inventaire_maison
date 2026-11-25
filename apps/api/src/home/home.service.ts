@@ -7,9 +7,9 @@ import type {
   ShelfKind,
   StockListItemDto,
 } from '@inventaire/shared';
-import { asc } from 'drizzle-orm';
-import { DB, type Database } from '../database/database.module';
+import { asc, eq } from 'drizzle-orm';
 import { locations, shelves } from '../database/schema';
+import { TenantDb } from '../database/tenant-db';
 import { StockQuery } from '../stock/stock.query';
 
 const toTile = (item: StockListItemDto): HomeTileDto => ({
@@ -27,17 +27,33 @@ const toTile = (item: StockListItemDto): HomeTileDto => ({
 @Injectable()
 export class HomeService {
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(TenantDb) private readonly tenant: TenantDb,
     @Inject(StockQuery) private readonly stock: StockQuery,
   ) {}
 
   async get(): Promise<HomeResponse> {
-    const [places, shelfRows, { items }] = await Promise.all([
-      this.db.select().from(locations).orderBy(asc(locations.sortOrder), asc(locations.id)),
-      this.db.select().from(shelves).orderBy(asc(shelves.sortOrder), asc(shelves.id)),
-      this.stock.list({ sort: 'name' }),
-    ]);
+    // One transaction for the three reads: the stock query joins it.
+    return this.tenant.run(async (tx, householdId) => {
+      const places = await tx
+        .select()
+        .from(locations)
+        .where(eq(locations.householdId, householdId))
+        .orderBy(asc(locations.sortOrder), asc(locations.id));
+      const shelfRows = await tx
+        .select()
+        .from(shelves)
+        .where(eq(shelves.householdId, householdId))
+        .orderBy(asc(shelves.sortOrder), asc(shelves.id));
+      const { items } = await this.stock.list({ sort: 'name' });
+      return HomeService.build(places, shelfRows, items);
+    });
+  }
 
+  private static build(
+    places: (typeof locations.$inferSelect)[],
+    shelfRows: (typeof shelves.$inferSelect)[],
+    items: StockListItemDto[],
+  ): HomeResponse {
     return {
       locations: places.map((place): HomeLocationDto => {
         const lines = items.filter((item) => item.location.id === place.id);

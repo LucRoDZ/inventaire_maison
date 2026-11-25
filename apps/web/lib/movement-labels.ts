@@ -29,7 +29,12 @@ export interface MovementSentence {
 export function describeMovement(item: MovementHistoryItemDto): MovementSentence {
   const count = Math.abs(item.delta);
   const units = `${count} ${count > 1 ? 'unités' : 'unité'}`;
-  const place = `${item.location.name}${item.shelf ? `, ${lowerFirst(item.shelf.name)}` : ', non rangé'}`;
+  // The names are those of the place now, or the ones kept with the movement once it was deleted;
+  // a shelf deleted before names were kept has none.
+  const shelf = item.shelf
+    ? `, ${item.shelf.name ? lowerFirst(item.shelf.name) : 'étagère supprimée'}`
+    : ', non rangé';
+  const place = `${item.location.name || 'Meuble supprimé'}${shelf}`;
   const who = item.user.username;
   const incoming = item.delta > 0;
   const headline =

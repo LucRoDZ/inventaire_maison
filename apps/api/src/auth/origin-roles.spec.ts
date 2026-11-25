@@ -3,8 +3,7 @@ import request from 'supertest';
 import { count, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, type Database } from '../database/database.module';
+import { cookieValue, createUser, ORIGIN, ownerDb, resetAuth } from '../../test/helpers';
 import { sessions, users } from '../database/schema';
 import { PasswordService } from './password.service';
 import { Roles } from './roles.decorator';
@@ -49,7 +48,7 @@ afterEach(() => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
+  await resetAuth();
   await createUser(app, { username: 'root', password: 'motdepasse1', role: 'admin' });
   await createUser(app, { username: 'membre', password: 'motdepasse1', role: 'member' });
 });
@@ -92,11 +91,14 @@ describe('origin guard', () => {
 });
 
 describe('roles guard', () => {
-  it('lets the admin through and refuses a member with 403', async () => {
+  it('lets the admin through and answers 404 to a member, like an unknown route', async () => {
     const admin = await loginAs('root');
     const member = await loginAs('membre');
     expect((await request(server()).get('/api/test-admin').set('Cookie', admin)).status).toBe(200);
-    expect((await request(server()).get('/api/test-admin').set('Cookie', member)).status).toBe(403);
+    const refused = await request(server()).get('/api/test-admin').set('Cookie', member);
+    const unknown = await request(server()).get('/api/route-inconnue').set('Cookie', member);
+    expect(refused.status).toBe(404);
+    expect(refused.body).toEqual(unknown.body);
   });
 
   it('answers 401 without a session before looking at the role', async () => {
@@ -207,7 +209,7 @@ describe('POST /api/auth/password', () => {
   });
 
   it('refuses a login whose password changed while it was being checked', async () => {
-    const db = app.get<Database>(DB);
+    const db = ownerDb();
     const passwords = app.get(PasswordService);
     const newHash = await passwords.hash('nouveau-mdp-9');
     const verify = passwords.verify.bind(passwords);

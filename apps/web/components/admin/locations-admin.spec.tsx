@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
 import type * as PlacesApi from '../../lib/places-api';
+
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 import { LocationsAdmin } from './LocationsAdmin';
 
 const locations: LocationDto[] = [
@@ -12,13 +15,22 @@ const locations: LocationDto[] = [
     name: 'Garde-manger',
     kind: 'pantry',
     icon: 'archive',
+    productCount: 0,
     sortOrder: 0,
     shelves: [
       { id: 10, locationId: 1, name: 'Haut', kind: 'plain', sortOrder: 0 },
       { id: 11, locationId: 1, name: 'Bas', kind: 'rack', sortOrder: 1 },
     ],
   },
-  { id: 2, name: 'Frigo', kind: 'fridge', icon: 'snowflake', sortOrder: 1, shelves: [] },
+  {
+    id: 2,
+    name: 'Frigo',
+    kind: 'fridge',
+    icon: 'snowflake',
+    productCount: 0,
+    sortOrder: 1,
+    shelves: [],
+  },
 ];
 
 function makeApi(over: Partial<typeof PlacesApi> = {}): typeof PlacesApi {
@@ -28,28 +40,38 @@ function makeApi(over: Partial<typeof PlacesApi> = {}): typeof PlacesApi {
     createShelf: vi.fn(async (input) => ({ id: 99, sortOrder: 2, ...input })),
     updateShelf: vi.fn(async (id) => locations[0]!.shelves.find((s) => s.id === id)!),
     deleteShelf: vi.fn(async () => undefined),
+    createLocation: vi.fn(async (input) => ({
+      id: 3,
+      icon: 'refrigerator',
+      sortOrder: 2,
+      shelves: [],
+      productCount: 0,
+      kind: input.kind,
+      name: input.name,
+    })),
+    deleteLocation: vi.fn(async () => undefined),
     ...over,
   };
 }
 
 async function setup(api = makeApi()) {
   render(<LocationsAdmin api={api} />);
-  const pantry = await screen.findByRole('region', { name: 'Lieu Garde-manger' });
+  const pantry = await screen.findByRole('region', { name: 'Meuble Garde-manger' });
   return { api, pantry, user: userEvent.setup() };
 }
 
 describe('LocationsAdmin', () => {
   it('renames a location and changes its icon', async () => {
     const { api, pantry, user } = await setup();
-    const save = within(pantry).getByRole('button', { name: 'Enregistrer le lieu' });
+    const save = within(pantry).getByRole('button', { name: 'Enregistrer le meuble' });
     expect(save).toBeDisabled();
-    const name = within(pantry).getByLabelText('Nom du lieu');
+    const name = within(pantry).getByLabelText('Nom du meuble');
     await user.clear(name);
     await user.type(name, 'Cellier');
-    await user.selectOptions(within(pantry).getByLabelText('Icône du lieu'), 'wine');
+    await user.selectOptions(within(pantry).getByLabelText('Icône du meuble'), 'wine');
     await user.click(save);
     expect(api.updateLocation).toHaveBeenCalledWith(1, { name: 'Cellier', icon: 'wine' });
-    expect(await screen.findByRole('status')).toHaveTextContent('Lieu enregistré.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Meuble enregistré.');
   });
 
   it('moves a location down by renumbering only what changed', async () => {
@@ -107,11 +129,85 @@ describe('LocationsAdmin', () => {
 
   it('shows the API message when an action fails', async () => {
     const api = makeApi({
-      updateLocation: vi.fn().mockRejectedValue(new ApiError(400, 'Lieu invalide')),
+      updateLocation: vi.fn().mockRejectedValue(new ApiError(400, 'Meuble invalide')),
     });
     const { pantry, user } = await setup(api);
-    await user.type(within(pantry).getByLabelText('Nom du lieu'), 'x');
-    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer le lieu' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Lieu invalide');
+    await user.type(within(pantry).getByLabelText('Nom du meuble'), 'x');
+    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer le meuble' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Meuble invalide');
+  });
+
+  it('moves a piece of furniture at once and puts it back when the server refuses', async () => {
+    const api = makeApi({
+      updateLocation: vi.fn(async () => {
+        throw new ApiError(500, 'Erreur du serveur');
+      }),
+    });
+    const { user } = await setup(api);
+    const names = () => screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(names()).toEqual(['Meuble Garde-manger', 'Meuble Frigo']);
+    await user.click(screen.getByRole('button', { name: 'Descendre Garde-manger' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Erreur du serveur');
+    expect(names()).toEqual(['Meuble Garde-manger', 'Meuble Frigo']);
+  });
+
+  it('adds a piece of furniture from the same sheet as the home screen, then goes back home', async () => {
+    const { api, user } = await setup();
+    await user.click(screen.getByRole('button', { name: 'Ajouter un meuble' }));
+    const sheet = screen.getByRole('dialog', { name: 'Ajouter un meuble' });
+    expect(within(sheet).getByLabelText('Nom du meuble')).toHaveValue('Frigo 2');
+    await user.click(within(sheet).getByRole('button', { name: 'Ajouter le meuble' }));
+    expect(api.createLocation).toHaveBeenCalledWith({
+      name: 'Frigo 2',
+      kind: 'fridge',
+      shelfCount: 4,
+    });
+    expect(push).toHaveBeenCalledWith('/inventaire?nouveau=3');
+  });
+
+  it('deletes an empty piece of furniture after a confirmation that names it', async () => {
+    const { api, user } = await setup();
+    const frigo = screen.getByRole('region', { name: 'Meuble Frigo' });
+    await user.click(within(frigo).getByRole('button', { name: 'Supprimer ce meuble' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Supprimer Frigo ?' });
+    expect(dialog).toHaveAccessibleDescription('Il est vide : il disparaît avec ses étagères.');
+    expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer Frigo' }));
+    expect(api.deleteLocation).toHaveBeenCalledWith(2, undefined);
+    expect(await screen.findByRole('status')).toHaveTextContent('Meuble « Frigo » supprimé.');
+  });
+
+  it('requires the destination of the products and says where they go', async () => {
+    const full = locations.map((l) => (l.id === 2 ? { ...l, productCount: 12 } : l));
+    const api = makeApi({ fetchLocations: vi.fn(async () => full) });
+    const { user } = await setup(api);
+    const frigo = screen.getByRole('region', { name: 'Meuble Frigo' });
+    await user.click(within(frigo).getByRole('button', { name: 'Supprimer ce meuble' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Supprimer Frigo ?' });
+    expect(dialog).toHaveAccessibleDescription(
+      'Ses 12 produits seront rangés dans le plateau « Non rangé » du meuble choisi ci-dessous.',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer Frigo' }));
+    expect(
+      within(dialog).getByText('Choisissez le meuble qui recevra les produits.'),
+    ).toBeVisible();
+    expect(api.deleteLocation).not.toHaveBeenCalled();
+    await user.selectOptions(within(dialog).getByLabelText('Meuble qui reçoit les produits'), '1');
+    expect(dialog).toHaveAccessibleDescription(
+      'Ses 12 produits seront rangés dans le plateau « Non rangé » de Garde-manger.',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer Frigo' }));
+    expect(api.deleteLocation).toHaveBeenCalledWith(2, 1);
+  });
+
+  it('cancels with Échap and gives the focus back to the button', async () => {
+    const { api, user } = await setup();
+    const frigo = screen.getByRole('region', { name: 'Meuble Frigo' });
+    const button = within(frigo).getByRole('button', { name: 'Supprimer ce meuble' });
+    await user.click(button);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(button).toHaveFocus();
+    expect(api.deleteLocation).not.toHaveBeenCalled();
   });
 });

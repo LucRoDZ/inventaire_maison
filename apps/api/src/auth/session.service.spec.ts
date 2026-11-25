@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { FakeClock, DAY, HOUR } from '../../test/helpers';
+import { DAY, FakeClock, HOUR } from '../../test/helpers';
 import { createTempDatabase, type TempDatabase } from '../../test/temp-database';
 import { sessions, users } from '../database/schema';
 import { SESSION_TTL_MS } from './auth.constants';
@@ -23,12 +23,13 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await tmp.pool.query('TRUNCATE sessions, users RESTART IDENTITY CASCADE');
+  await tmp.pool.query('TRUNCATE sessions, users, households RESTART IDENTITY CASCADE');
+  await tmp.pool.query("INSERT INTO households (name) VALUES ('Famille')");
   clock = new FakeClock();
   service = new SessionService(tmp.db, clock, { SESSION_SECRET: SECRET });
   const [user] = await tmp.db
     .insert(users)
-    .values({ username: 'lucas', passwordHash: 'x' })
+    .values({ username: 'lucas', passwordHash: 'x', householdId: 1 })
     .returning();
   userId = user!.id;
 });

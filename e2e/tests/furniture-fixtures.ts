@@ -2,9 +2,9 @@ import { expect, type Page } from '@playwright/test';
 import pg from 'pg';
 
 /**
- * Furniture built for a test, straight in the e2e database (the API cannot create a furniture),
- * then stocked through the API. Each browser project builds its own (tag A or B): both share one
- * database. Product names use a word no other test searches for.
+ * Furniture built for a test, straight in the e2e database (exact shelf names and kinds), then
+ * stocked through the API. Each browser project builds its own (tag A or B), in the household of
+ * its own account: both share one database. Product names use a word no other test searches for.
  */
 
 export interface FurnitureSpec {
@@ -72,23 +72,25 @@ export async function ensureFurniture(
   baseURL: string,
   spec: FurnitureSpec,
   word: string,
+  householdId: number,
 ): Promise<number> {
   const client = new pg.Client({ connectionString: databaseUrl() });
   await client.connect();
   let created = false;
   try {
-    const found = await client.query<{ id: number }>('select id from locations where name = $1', [
-      spec.name,
-    ]);
+    const found = await client.query<{ id: number }>(
+      'select id from locations where name = $1 and household_id = $2',
+      [spec.name, householdId],
+    );
     if (!found.rowCount) {
       const { rows } = await client.query<{ id: number }>(
-        "insert into locations (name, kind, icon, sort_order) values ($1, $2, 'warehouse', 80) returning id",
-        [spec.name, spec.kind],
+        "insert into locations (household_id, name, kind, icon, sort_order) values ($1, $2, $3, 'warehouse', 80) returning id",
+        [householdId, spec.name, spec.kind],
       );
       for (const [i, shelf] of spec.shelves.entries()) {
         await client.query(
-          'insert into shelves (location_id, name, kind, sort_order) values ($1, $2, $3, $4)',
-          [rows[0]!.id, shelf, spec.kind === 'cellar' ? 'rack' : 'plain', i],
+          'insert into shelves (household_id, location_id, name, kind, sort_order) values ($1, $2, $3, $4, $5)',
+          [householdId, rows[0]!.id, shelf, spec.kind === 'cellar' ? 'rack' : 'plain', i],
         );
       }
       created = true;

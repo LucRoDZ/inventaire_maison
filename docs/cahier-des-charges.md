@@ -11,7 +11,7 @@ Une application web familiale (PWA, utilisable depuis le téléphone) qui tient 
 - Ajouter un produit en moins de 5 secondes : scan, quantité, valider.
 - Un produit inconnu n'est décrit qu'une seule fois ; tous les scans suivants le reconnaissent.
 - Parcourir le stock comme on ouvre un meuble : cave, frigo, congélateur et garde-manger dessinés avec leurs étagères, et une vue Liste par catégorie.
-- Un stock partagé par toute la famille, avec un compte par personne.
+- Un stock partagé par toute la famille, avec un compte par personne ; plusieurs familles (foyers) peuvent partager l'instance sans jamais voir les données les unes des autres.
 - Installer l'application sur l'écran d'accueil du téléphone, avec une invitation à le faire tant qu'elle ne l'est pas.
 
 **Principes**
@@ -23,11 +23,11 @@ Une application web familiale (PWA, utilisable depuis le téléphone) qui tient 
 
 ## Utilisateurs et authentification
 
-Un seul foyer partagé : tous les comptes voient et modifient le même stock, et chaque action garde le nom de son auteur.
+Chaque compte appartient à exactement un **foyer** : les comptes d'un foyer voient et modifient le même stock, et chaque action garde le nom de son auteur. Deux foyers ne voient jamais rien l'un de l'autre (inventaire, catalogue, catégories, photos, historique). Un utilisateur seul forme un foyer d'une personne. Le foyer est invisible pour les membres : aucun écran ni aucune réponse de l'API qui leur est destinée ne le nomme.
 
-- **Compte** : pseudo (unique, insensible à la casse) + mot de passe. Pas d'e-mail, pas de connexion tierce.
-- **Pas d'inscription publique.** Le premier compte admin est créé au premier démarrage (variables d'environnement ou commande CLI). L'admin crée ensuite les autres comptes depuis un écran Membres, avec un mot de passe temporaire.
-- **Rôles** : `admin` (gère membres, lieux et catégories) et `membre` (tout le reste). Chacun peut changer son propre mot de passe ; l'admin peut réinitialiser ou supprimer un compte.
+- **Compte** : pseudo (unique sur toute l'instance, insensible à la casse) + mot de passe. Pas d'e-mail, pas de connexion tierce.
+- **Pas d'inscription publique.** Le premier compte admin est créé au premier démarrage, avec le foyer « Famille » (variables d'environnement), ou par la commande `npm run household:create -- --name "…" --admin "pseudo"`. Foyers et comptes se créent ensuite uniquement dans la console d'administration, avec un mot de passe temporaire.
+- **Rôles** : `admin` (l'administrateur de l'instance : foyers, comptes, et catégories et correspondances de n'importe quel foyer choisi explicitement ; il appartient lui aussi à un foyer et ne lit jamais l'inventaire d'un autre) et `membre` (l'inventaire de son foyer, ses meubles et étagères, son mot de passe). Chacun peut changer son propre mot de passe ; l'admin peut réinitialiser, désactiver ou changer de foyer un compte (ses sessions sont alors coupées). Une route réservée à l'admin répond 404 à un membre.
 - **Mots de passe** : hachés avec argon2id, 8 caractères minimum, jamais journalisés.
 - **Session** : cookie `httpOnly`, `Secure`, `SameSite=Lax`, valable 30 jours glissants pour ne pas se reconnecter à chaque scan. Les sessions sont stockées en base afin de pouvoir les révoquer.
 - **Anti-force-brute** : 5 échecs de connexion en 15 minutes bloquent le couple pseudo + adresse IP pendant 15 minutes.
@@ -75,11 +75,11 @@ L'écran a été retiré le 16 novembre 2026 : la catégorie proposée par Open 
 
 ### 7. Administration (rôle admin)
 
-Membres, lieux et leurs étagères (nom, ordre), catégories (nom, icône, ordre) et table de correspondance Open Food Facts vers catégories.
+Console de l'instance : **Foyers** (liste avec leurs comptes et leur nombre de meubles, création, renommage, suppression d'un foyer sans compte après avoir retapé son nom), **Comptes** (tous les comptes avec leur foyer ; création dans un foyer existant ou dans un nouveau foyer créé dans la même transaction ; changement de foyer, désactivation, réinitialisation du mot de passe ; le dernier admin ne peut être ni désactivé, ni rétrogradé), **Catégories** et **Correspondances Open Food Facts** d'un foyer choisi en haut de l'écran. Les meubles et leurs étagères se gèrent dans **Plus > Meubles et étagères**, ouvert à tous les comptes pour leur propre foyer.
 
 ### Catégories et lieux par défaut
 
-Les valeurs ci-dessous sont créées au premier démarrage et modifiables ensuite.
+Les valeurs ci-dessous forment le modèle copié dans chaque nouveau foyer (au premier démarrage pour « Famille », puis à chaque création de foyer) ; chaque foyer les modifie ensuite sans toucher aux autres.
 
 | Catégories | Lieux |
 | --- | --- |
@@ -91,7 +91,9 @@ L'image Open Food Facts est téléchargée une fois, redimensionnée (400 px de 
 
 ## Vue Maison : cave, frigo, congélateur, garde-manger
 
-L'inventaire s'ouvre sur la maison : quatre meubles dessinés, chacun avec ses étagères et ses produits posés dessus. Un bouton en haut bascule vers la vue Liste (par lieu et par catégorie, décrite plus haut). La maison est la vue par défaut.
+L'inventaire s'ouvre sur la maison : les meubles du foyer dessinés, chacun avec ses étagères et ses produits posés dessus (quatre dans le modèle : garde-manger, frigo, congélateur, cave). Un bouton en haut bascule vers la vue Liste (par lieu et par catégorie, décrite plus haut). La maison est la vue par défaut.
+
+**Meubles modulables.** Chaque compte ajoute et supprime les meubles de son foyer (12 au plus), par exemple trois frigos, deux congélateurs et une cave. Un meuble a un type (garde-manger, frigo, congélateur, cave ou placard), un nom unique dans le foyer sans tenir compte de la casse, et de 1 à 8 étagères, tiroirs ou rangées : au nombre par défaut, celles du modèle ; sinon « Étagère n », « Tiroir n » ou « Rangée n ». Supprimer un meuble qui contient des produits demande de choisir le meuble qui les reçoit, dans son plateau « Non rangé » (quantités additionnées, mouvements `move` écrits) ; la boîte de confirmation nomme le meuble et la conséquence, sans annulation différée. Le journal garde le nom du meuble et de l'étagère de chaque mouvement : l'historique reste lisible après une suppression.
 
 > Schéma non inclus dans cet export (maquette · vue Maison, 4 meubles). La description textuelle autour fait foi.
 
@@ -108,7 +110,7 @@ Les étagères sont des données, pas du dessin : l'admin peut les renommer, les
 
 **Comportement**
 
-1. **Écran Maison** : les meubles en grille (2 colonnes sur téléphone, 4 en ligne sur ordinateur), dessinés fermés : porte(s) blanche(s) avec poignée et reflet. Chaque meuble affiche son nombre d'articles et une pastille ambre « n bientôt périmés » quand c'est le cas. À l'appui, la porte s'entrouvre (20°, 120 ms) et un halo ambre apparaît : c'est un retour tactile, la navigation part immédiatement.
+1. **Écran Maison** : les meubles en grille (2 colonnes sur téléphone, la page défile quand ils sont nombreux ; 4 en ligne sur ordinateur), dessinés fermés : porte(s) blanche(s) avec poignée et reflet, le nom toujours visible sous la carte. Chaque meuble affiche son nombre d'articles et une pastille ambre « n bientôt périmés » quand c'est le cas. À l'appui, la porte s'entrouvre (20°, 120 ms) et un halo ambre apparaît : c'est un retour tactile, la navigation part immédiatement. Une dernière tuile « Ajouter un meuble » ouvre la feuille de création (type en cartes, nom proposé comme « Frigo 2 », nombre d'étagères) ; après la création, le focus va sur la nouvelle carte. Sans meuble, un message et un seul bouton « Ajouter votre premier meuble ».
 2. **Ouvrir un meuble** : un toucher l'ouvre et il occupe l'écran. Ses portes pivotent en 600 ms puis restent ouvertes sur le côté, sans recouvrir les étagères : une porte articulée à gauche pour le frigo et le congélateur, deux battants pour le garde-manger, la cave et tout autre meuble. Ouverte, chaque porte est une lamelle de 20 px accolée au bord du corps et aussi haute que lui ; le corps prend toute la largeur utile. Hors congélateur, une fine barre de lumière ambre s'allume sur le bord haut intérieur (260 ms, après 200 ms, opacité 0,6 au plus) et les tiroirs du congélateur coulissent l'un après l'autre (320 ms, 60 ms de décalage), puis restent ouverts : leur contenu est toujours visible. Il n'y a pas de bouton « Ouvrir » ou « Fermer » : le retour se fait par le lien « Maison ». Le cadre du meuble épouse son contenu et ne dépasse jamais l'espace disponible ; toutes ses étagères ont la même hauteur (120 px au plus, partagée sur téléphone), le plateau « Non rangé » fait 56 px quand il est vide. Les étagères sont empilées : en haut les vignettes, en bas le nom de l'étagère puis sa planche ; chaque produit est une vignette carrée avec sa photo, ou le pictogramme de sa catégorie, et une pastille ambre de quantité ; une pile décorative derrière la vignette grandit avec la quantité (jusqu'à 4 cartes à partir de 5 unités). Une étagère trop pleine défile horizontalement, sans barre de défilement visible.
 3. **Toucher un produit** : un panneau remonte du bas avec la photo, le nom, la quantité (− / +), la date limite, un bouton **Déplacer vers…** (autre étagère ou autre meuble) et un lien vers la fiche produit.
 4. **Glisser-déposer** : appui long puis glisser une vignette vers une autre étagère. L'étagère survolée s'entoure d'un anneau et d'un halo ambre. Pendant le glissement, une barre de meubles reste visible en haut pour déposer dans un autre meuble. Le bouton **Déplacer vers…** reste l'alternative sans glisser.
@@ -144,8 +146,8 @@ L'application s'installe depuis le navigateur sur l'écran d'accueil, s'ouvre en
 
 **Service worker**
 
-- Précache la coquille (JS, CSS, polices, icônes) ; images produits en `stale-while-revalidate` ; appels `/api` en réseau d'abord, sans aucune écriture hors ligne.
-- Hors connexion : la coquille s'ouvre et un encadré « Pas de connexion » explique que l'ajout et le retrait sont indisponibles.
+- Précache la coquille (JS, CSS, polices, icônes) ; appels `/api` en réseau seul, photos comprises : aucune donnée d'un foyer n'est gardée par le service worker, si bien qu'un autre foyer sur le même téléphone ne voit jamais rien en cache. Les photos sont gardées par le navigateur (`Cache-Control: private, no-cache` et ETag : le serveur vérifie le foyer à chaque affichage). Les caches sont vidés à la connexion et à la déconnexion.
+- Hors connexion : la coquille s'ouvre et un encadré « Pas de connexion » explique que l'ajout et le retrait sont indisponibles et que l'inventaire ne s'affiche pas.
 - Cache versionné, **mise à jour silencieuse** : l'application ne demande jamais rien pour se mettre à jour (aucun message, aucun bouton).
   - Le service worker d'une nouvelle version prend la main tout seul (`skipWaiting`, `clientsClaim`) et supprime le précache de la version précédente.
   - L'application cherche une mise à jour au lancement et à chaque retour au premier plan (`visibilitychange`).
@@ -258,19 +260,22 @@ Contrastes calculés : blanc sur indigo 12,8 pour 1 ; indigo sur ambre 8,6 pour 
 
 ## Modèle de données
 
-PostgreSQL 16, migrations versionnées (Prisma ou Drizzle au choix de l'implémentation). Le catalogue de produits est séparé du stock : un produit existe une fois, son stock peut être réparti sur plusieurs lieux et plusieurs dates limites.
+PostgreSQL 16, migrations versionnées (Prisma ou Drizzle au choix de l'implémentation). Le catalogue de produits est séparé du stock : un produit existe une fois par foyer, son stock peut être réparti sur plusieurs lieux et plusieurs dates limites.
+
+Chaque table de données porte `household_id` (le foyer), indexé et obligatoire ; un enfant référence son parent par une clé composite `(id, household_id)`, si bien qu'une ligne ne peut jamais pointer vers l'objet d'un autre foyer. La sécurité par ligne de PostgreSQL (activée et forcée) filtre sur `household_id = app.household_id`, valeur posée par l'API au début de chaque transaction ; sans foyer, aucune ligne n'est visible. L'application tourne sous un rôle sans superutilisateur ni `BYPASSRLS`, les migrations sous le propriétaire.
 
 | Table | Colonnes clés | Rôle |
 | --- | --- | --- |
-| `users` | id, username (unique, minuscules), password\_hash, role (`admin` ou `member`), created\_at | Comptes de la famille |
+| `households` | id, name (unique, insensible à la casse), created\_at | Foyers |
+| `users` | id, household\_id, username (unique, minuscules), password\_hash, role (`admin` ou `member`), created\_at | Comptes, chacun dans un foyer |
 | `sessions` | id (hash du jeton), user\_id, expires\_at, created\_at, user\_agent | Sessions révocables |
-| `locations` | id, name, kind (`pantry`, `fridge`, `freezer`, `cellar` ou `other`), icon, sort\_order | Garde-manger, Frigo, Congélateur, Cave ; `kind` choisit le dessin du meuble |
+| `locations` | id, household\_id, name (unique par foyer, sans casse), kind (`pantry`, `fridge`, `freezer`, `cellar` ou `other`), icon, sort\_order | Meubles du foyer (12 au plus) ; `kind` choisit le dessin du meuble |
 | `shelves` | id, location\_id, name, kind (rack ou plain), sort\_order | Étagères, tiroirs, rangées et bacs d'un meuble ; le type (casier ou étagère) choisit le dessin |
 | `categories` | id, name, icon, sort\_order | Catégories d'affichage |
-| `off_category_map` | off\_tag (unique), category\_id | Tag Open Food Facts vers catégorie, ex. `en:beverages` vers Boissons |
-| `products` | id, barcode (unique, nullable), name, brand, size\_label, image\_path, category\_id, default\_location\_id, source (`off` ou `manual`), category\_guessed (bool), off\_payload (jsonb), created\_by, created\_at, updated\_at | Catalogue partagé |
+| `off_category_map` | off\_tag (unique par foyer), category\_id | Tag Open Food Facts vers catégorie, ex. `en:beverages` vers Boissons |
+| `products` | id, barcode (unique par foyer, nullable), name, brand, size\_label, image\_path, category\_id, default\_location\_id, source (`off` ou `manual`), category\_guessed (bool), off\_payload (jsonb), created\_by, created\_at, updated\_at | Catalogue du foyer : un même code-barres donne une fiche par foyer |
 | `stock_items` | id, product\_id, location\_id, shelf\_id (nullable), quantity (entier ≥ 0), expiry\_date (nullable), updated\_at | Stock courant ; unique sur (product\_id, location\_id, shelf\_id, expiry\_date) ; `shelf_id` nul = plateau « Non rangé » |
-| `stock_movements` | id, product\_id, location\_id, shelf\_id (nullable), delta (entier signé), reason (`scan_add`, `scan_remove`, `manual`, `move`, `correction`), user\_id, created\_at | Journal, jamais modifié |
+| `stock_movements` | id, product\_id, location\_id et shelf\_id (entiers simples), location\_name et shelf\_name (noms au moment du mouvement), delta (entier signé), reason (`scan_add`, `scan_remove`, `manual`, `move`, `correction`), user\_id, created\_at | Journal, jamais modifié, qui survit à la suppression d'un meuble |
 
 **Règles**
 
@@ -320,15 +325,17 @@ TypeScript de bout en bout. Le navigateur ne parle qu'au reverse proxy, qui rout
 | Route | Rôle |
 | --- | --- |
 | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/password` | Session et mot de passe |
-| `GET/POST/PATCH/DELETE /users` | Membres (admin) |
+| `GET/POST/PATCH/DELETE /users` | Comptes de l'instance avec leur foyer (admin) |
+| `GET/POST/PATCH/DELETE /admin/households`, `/admin/households/{id}/categories`, `/admin/households/{id}/off-category-map` | Console : foyers, et catégories et correspondances d'un foyer explicite (admin) |
 | `GET /scan/{barcode}` | Résout un code : réponse `known`, `suggested` (fiche Open Food Facts) ou `unknown` |
 | `GET /products?q=`, `POST /products`, `PATCH /products/{id}`, `POST /products/{id}/image` | Catalogue |
 | `GET /stock?location=&shelf=&category=&q=`, `POST /stock/adjust`, `POST /stock/move` | Inventaire ; `adjust` reçoit produit, lieu, étagère, delta et date limite facultative ; `move` reçoit l'origine, la destination et la quantité |
 | `GET /home` | Vue Maison : meubles, étagères et vignettes des produits en un seul appel |
 | `GET /products/{id}/movements` | Historique d'un produit |
-| `GET/POST/PATCH/DELETE /locations`, `/shelves`, `/categories`, `/off-category-map` | Référentiels (écriture réservée à l'admin) |
+| `GET/POST/PATCH/DELETE /locations` (`DELETE …?moveStockTo=`), `/shelves` | Meubles et étagères du foyer (tous les comptes) |
+| `GET /categories` | Catégories du foyer (lecture) |
 
-Toute route hors `/auth/login` exige une session valide ; les routes d'administration exigent le rôle `admin`.
+Toute route hors `/auth/login` (et `/health`) exige une session valide et ne voit que le foyer du compte ; une ressource d'un autre foyer répond 404. Les routes d'administration exigent le rôle `admin` et répondent 404 à un membre.
 
 ## Conteneurisation et déploiement
 
@@ -350,8 +357,8 @@ Un seul `docker-compose.yml` décrit toute l'application ; `docker compose up -d
 
 **Configuration et démarrage**
 
-- Variables dans un fichier `.env` hors du dépôt, avec un `.env.example` versionné : `APP_DOMAIN`, `POSTGRES_PASSWORD`, `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `OFF_USER_AGENT`.
-- Au démarrage, l'API applique les migrations, remplit lieux, étagères, catégories et table de correspondance si elles sont vides, et crée l'admin si aucun compte n'existe.
+- Variables dans un fichier `.env` hors du dépôt, avec un `.env.example` versionné : `APP_DOMAIN`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `DATABASE_URL` (rôle d'exécution), `DATABASE_MIGRATION_URL` (propriétaire), `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `OFF_USER_AGENT`.
+- Au démarrage, l'API applique les migrations avec le propriétaire, crée le rôle d'exécution et lui donne ses droits, puis, si aucun compte n'existe, crée le foyer « Famille » avec le modèle et son admin.
 - `restart: unless-stopped` et un `healthcheck` sur chaque service ; logs sur la sortie standard avec rotation Docker (10 Mo, 3 fichiers).
 
 **Livraison**
@@ -450,7 +457,7 @@ Le MVP (phases 0 et 1) livre un inventaire utilisable par toute la famille ; cha
 - Lecture des tickets de caisse : retirée de la V1, à reconsidérer après la mise en service.
 - Applications natives iOS et Android.
 - Synchronisation et écriture hors ligne.
-- Plusieurs foyers, inscription publique, connexion par e-mail ou réseau social.
+- Inscription publique, connexion par e-mail ou réseau social (plusieurs foyers sont gérés depuis le 25 novembre 2026, créés par l'administrateur).
 - Prix, budgets et suivi des dépenses.
 - Recettes et reconnaissance d'un produit par photo, sans code-barres.
 - Impression d'étiquettes.
@@ -461,11 +468,11 @@ La colonne du milieu est le choix pris dans ce document ; à modifier directemen
 
 | Question | Choix retenu | Alternative |
 | --- | --- | --- |
-| Stock partagé ou par personne | Un stock partagé pour tout le foyer | Un stock par utilisateur |
+| Stock partagé ou par personne | Un stock partagé pour tout le foyer, plusieurs foyers isolés | Un stock par utilisateur |
 | Back-end | NestJS séparé du front | Next.js seul avec ses route handlers, un conteneur de moins |
 | Reverse proxy | Caddy dans le compose, ou le proxy déjà présent sur le VPS | Traefik ou nginx |
 | Quantités | Entiers (nombre d'unités) | Unité par produit (g, L) |
-| Meubles de la vue Maison | Quatre meubles fixes dessinés en SVG, étagères paramétrables | Meubles ajoutables et dessin générique pour les autres |
+| Meubles de la vue Maison | Meubles ajoutables (12 au plus par foyer), dessinés selon leur type, étagères paramétrables (8 au plus) | Quatre meubles fixes |
 | ORM | Prisma ou Drizzle, au choix de l'implémentation | — |
 | Nom de l'application et sous-domaine | À définir | — |
 

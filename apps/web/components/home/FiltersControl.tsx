@@ -2,8 +2,9 @@
 
 import type { CategoryDto } from '@inventaire/shared';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useId, useRef, useState } from 'react';
 import { isFiltering, NO_FILTER, type HomeFilters as Filters } from '../../lib/home-filters';
+import { BottomSheet } from '../ui/BottomSheet';
 import { HomeFilters } from './HomeFilters';
 
 interface FiltersControlProps {
@@ -12,8 +13,6 @@ interface FiltersControlProps {
   categories: CategoryDto[];
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea';
-
 interface FiltersSheetProps extends FiltersControlProps {
   onClose: () => void;
 }
@@ -21,44 +20,17 @@ interface FiltersSheetProps extends FiltersControlProps {
 /** Bottom sheet holding the search, the category chips and « Effacer les filtres ». */
 export function FiltersSheet({ filters, onChange, categories, onClose }: FiltersSheetProps) {
   const titleId = useId();
-  const dialog = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    dialog.current?.querySelector<HTMLElement>('input[type=search]')?.focus();
-  }, []);
-
-  /** Échap closes; Tab and Maj+Tab go round inside the sheet. */
-  const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onClose();
-      return;
-    }
-    if (event.key !== 'Tab' || !dialog.current) return;
-    const items = [...dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
-    const first = items[0];
-    const last = items.at(-1);
-    if (!first || !last) return;
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
+  const holder = useRef<HTMLDivElement>(null);
+  // The search field of HomeFilters receives the focus when the sheet opens.
+  const initialFocus = {
+    get current() {
+      return holder.current?.querySelector<HTMLElement>('input[type=search]') ?? null;
+    },
   };
 
   return (
-    <div className="bg-indigo/40 fixed inset-0 z-30 flex items-end" onClick={onClose}>
-      <div
-        ref={dialog}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={keyDown}
-        className="rounded-card mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-      >
+    <BottomSheet labelledBy={titleId} onClose={onClose} initialFocus={initialFocus}>
+      <div ref={holder} className="contents">
         <div className="flex items-center justify-between gap-2">
           <h2 id={titleId} className="text-card-title">
             Filtres
@@ -82,7 +54,7 @@ export function FiltersSheet({ filters, onChange, categories, onClose }: Filters
           Effacer les filtres
         </button>
       </div>
-    </div>
+    </BottomSheet>
   );
 }
 

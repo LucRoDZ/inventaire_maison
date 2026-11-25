@@ -16,6 +16,7 @@ import { createProduct, uploadProductImage, type NewProductInput } from '../../l
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { PhotoField } from './PhotoField';
+import { LocationOptions } from '../ui/LocationOptions';
 
 export const PHOTO_FAILED_NOTICE =
   'Produit enregistré, mais la photo n’a pas pu être envoyée. Vous pourrez la remettre depuis la fiche produit.';
@@ -194,11 +195,7 @@ export function ProductForm({
             }
           >
             <option value="">Aucun</option>
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.name}
-              </option>
-            ))}
+            <LocationOptions locations={locations} />
           </select>
         </label>
 

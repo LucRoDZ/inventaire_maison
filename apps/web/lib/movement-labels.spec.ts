@@ -27,6 +27,15 @@ describe('describeMovement', () => {
     );
   });
 
+  it('names a shelf deleted before its name was kept, and a place without a name', () => {
+    expect(describeMovement(item({ shelf: { id: 999, name: '' } })).headline).toBe(
+      'lucas a ajouté 2 unités dans Frigo, étagère supprimée',
+    );
+    expect(describeMovement(item({ location: { id: 7, name: '' }, shelf: null })).headline).toBe(
+      'lucas a ajouté 2 unités dans Meuble supprimé, non rangé',
+    );
+  });
+
   it('writes a move in both directions', () => {
     expect(describeMovement(item({ delta: -3, reason: 'move' })).headline).toBe(
       'lucas a déplacé 3 unités depuis Frigo, étagère 2',

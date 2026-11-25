@@ -1,6 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import type { Pool } from 'pg';
 import request from 'supertest';
 import {
   afterAll,
@@ -14,10 +13,16 @@ import {
   type MockInstance,
 } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, PG_POOL, type Database } from '../database/database.module';
+import {
+  cookieValue,
+  createUser,
+  ORIGIN,
+  ownerDb,
+  resetAll,
+  seedHousehold,
+  HOUSEHOLD,
+} from '../../test/helpers';
 import { categories, offCategoryMap, products } from '../database/schema';
-import { SeedService } from '../database/seed/seed.service';
 import { RemoteImageService } from '../images/remote-image.service';
 import { OffClient, type OffResult } from '../off/off.client';
 import { ScanService } from './scan.service';
@@ -29,7 +34,7 @@ let app: INestApplication;
 let cookie: string;
 let mappedTag: { offTag: string; categoryId: number };
 const server = () => app.getHttpServer();
-const db = () => app.get<Database>(DB);
+const db = () => ownerDb();
 const scan = (code: string) => request(server()).get(`/api/scan/${code}`).set('Cookie', cookie);
 
 const found = (
@@ -59,13 +64,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
-  await app
-    .get<Pool>(PG_POOL)
-    .query(
-      'TRUNCATE stock_movements, stock_items, products, off_category_map, categories, shelves, locations RESTART IDENTITY CASCADE',
-    );
-  await app.get(SeedService).seed();
+  await resetAll();
+  await seedHousehold(app);
   await createUser(app, { username: 'membre', password: 'motdepasse1', role: 'member' });
   const res = await request(server())
     .post('/api/auth/login')
@@ -150,7 +150,7 @@ describe('GET /api/scan/:barcode', () => {
     download.mockResolvedValue('a'.repeat(32) + '.webp');
     const res = await scan(NUTELLA);
     await app.get(ScanService).idle();
-    expect(download).toHaveBeenCalledWith(IMAGE_URL);
+    expect(download).toHaveBeenCalledWith(HOUSEHOLD, IMAGE_URL);
     const [row] = await db().select().from(products).where(eq(products.id, res.body.product.id));
     expect(row?.imagePath).toBe('a'.repeat(32) + '.webp');
   });

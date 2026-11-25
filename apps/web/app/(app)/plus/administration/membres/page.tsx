@@ -17,7 +17,7 @@ export default function MembresPage() {
         <ChevronLeft size={18} aria-hidden="true" />
         Administration
       </Link>
-      <h1 className="text-title">Membres</h1>
+      <h1 className="text-title">Comptes</h1>
       <AdminGate>{user ? <MembersAdmin currentUserId={user.id} /> : null}</AdminGate>
     </main>
   );

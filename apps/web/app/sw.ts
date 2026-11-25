@@ -5,9 +5,8 @@ import {
   type PrecacheEntry,
   Serwist,
   type SerwistGlobalConfig,
-  StaleWhileRevalidate,
 } from 'serwist';
-import { API_CACHE, IMAGES_CACHE, PAGES_CACHE } from '../lib/cache-names';
+import { PAGES_CACHE, RETIRED_CACHES } from '../lib/cache-names';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -31,25 +30,10 @@ const serwist = new Serwist({
   navigationPreload: false,
   // Only GET requests are matched: writes (POST, PATCH, DELETE) are never intercepted.
   runtimeCaching: [
-    // Never cached: authentication.
-    { matcher: ({ url }) => url.pathname.startsWith('/api/auth/'), handler: new NetworkOnly() },
-    // Product pictures: instant from the cache, refreshed in the background.
-    {
-      matcher: ({ url }) => url.pathname.startsWith('/api/images/'),
-      handler: new StaleWhileRevalidate({
-        cacheName: IMAGES_CACHE,
-        plugins: [new ExpirationPlugin({ maxEntries: 300, maxAgeSeconds: 30 * 24 * 60 * 60 })],
-      }),
-    },
-    // Other reads: network first, cache as a fallback when offline.
-    {
-      matcher: ({ url }) => url.pathname.startsWith('/api/'),
-      handler: new NetworkFirst({
-        cacheName: API_CACHE,
-        networkTimeoutSeconds: 4,
-        plugins: [new ExpirationPlugin({ maxEntries: 100 })],
-      }),
-    },
+    // The API is never cached by the service worker, pictures included: on a shared phone, a cache
+    // keyed by address would show the data of one household to another (decision A.5). Pictures
+    // are kept by the browser itself (`no-cache` + ETag: the server checks the household each time).
+    { matcher: ({ url }) => url.pathname.startsWith('/api/'), handler: new NetworkOnly() },
     // Pages (the app shell): network first, so a visited page opens offline.
     {
       matcher: ({ request }) => request.mode === 'navigate',
@@ -73,6 +57,11 @@ serwist.setCatchHandler(async ({ request }) => {
     });
   }
   return Response.error();
+});
+
+// Caches of the versions that kept API reads and pictures: removed for good.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(Promise.all(RETIRED_CACHES.map((name) => caches.delete(name))));
 });
 
 serwist.addEventListeners();

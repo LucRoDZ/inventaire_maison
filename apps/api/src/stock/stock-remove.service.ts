@@ -1,25 +1,31 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { StockRemoveResponse } from '@inventaire/shared';
-import { asc, eq, sql } from 'drizzle-orm';
-import { DB, type Database } from '../database/database.module';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { locations, products, shelves, stockItems, stockMovements } from '../database/schema';
-import { findLine, lockProductLocation, toMovement, toStockLine } from './stock.service';
+import { TenantDb } from '../database/tenant-db';
+import {
+  findLine,
+  lockProductLocation,
+  placeNames,
+  toMovement,
+  toStockLine,
+} from './stock.service';
 
 export const NOT_IN_STOCK = 'Pas en stock';
 const MAX_ATTEMPTS = 5;
 
 @Injectable()
 export class StockRemoveService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(@Inject(TenantDb) private readonly tenant: TenantDb) {}
 
   /** Removes one unit: nearest expiry date first, then the oldest line. */
   async removeOne(productId: number, userId: number): Promise<StockRemoveResponse> {
-    return this.db.transaction(async (tx) => {
+    return this.tenant.run(async (tx, householdId) => {
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
         const [candidate] = await tx
           .select()
           .from(stockItems)
-          .where(eq(stockItems.productId, productId))
+          .where(and(eq(stockItems.productId, productId), eq(stockItems.householdId, householdId)))
           .orderBy(
             sql`${stockItems.expiryDate} asc nulls last`,
             asc(stockItems.createdAt),
@@ -29,25 +35,30 @@ export class StockRemoveService {
         if (!candidate) throw new NotFoundException(NOT_IN_STOCK);
 
         await lockProductLocation(tx, productId, candidate.locationId);
-        const line = await findLine(tx, candidate);
+        const line = await findLine(tx, householdId, candidate);
         if (!line) continue; // consumed by a concurrent change: choose again
 
         let item: typeof stockItems.$inferSelect | null = null;
         if (line.quantity === 1) {
-          await tx.delete(stockItems).where(eq(stockItems.id, line.id));
+          await tx
+            .delete(stockItems)
+            .where(and(eq(stockItems.id, line.id), eq(stockItems.householdId, householdId)));
         } else {
           [item = null] = await tx
             .update(stockItems)
             .set({ quantity: line.quantity - 1, updatedAt: sql`now()` })
-            .where(eq(stockItems.id, line.id))
+            .where(and(eq(stockItems.id, line.id), eq(stockItems.householdId, householdId)))
             .returning();
         }
+        const names = await placeNames(tx, householdId, line.locationId, line.shelfId);
         const [movement] = await tx
           .insert(stockMovements)
           .values({
+            householdId,
             productId,
             locationId: line.locationId,
             shelfId: line.shelfId,
+            ...names,
             expiryDate: line.expiryDate,
             delta: -1,
             reason: 'scan_remove',
@@ -58,18 +69,18 @@ export class StockRemoveService {
         const [product] = await tx
           .select({ id: products.id, name: products.name })
           .from(products)
-          .where(eq(products.id, productId));
+          .where(and(eq(products.id, productId), eq(products.householdId, householdId)));
         const [location] = await tx
           .select({ id: locations.id, name: locations.name })
           .from(locations)
-          .where(eq(locations.id, line.locationId));
+          .where(and(eq(locations.id, line.locationId), eq(locations.householdId, householdId)));
         const [shelf] =
           line.shelfId === null
             ? []
             : await tx
                 .select({ id: shelves.id, name: shelves.name })
                 .from(shelves)
-                .where(eq(shelves.id, line.shelfId));
+                .where(and(eq(shelves.id, line.shelfId), eq(shelves.householdId, householdId)));
         return {
           item: item ? toStockLine(item) : null,
           movement: toMovement(movement!),

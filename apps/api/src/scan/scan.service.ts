@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ProductDto, ScanResponse } from '@inventaire/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { isUniqueViolation } from '../common/pg-errors';
-import { DB, type Database } from '../database/database.module';
 import { products } from '../database/schema';
+import { TenantDb } from '../database/tenant-db';
 import { RemoteImageService, isAllowedImageUrl } from '../images/remote-image.service';
 import { CategoryGuessService } from '../off/category-guess.service';
 import { OffClient } from '../off/off.client';
@@ -11,15 +11,20 @@ import type { OffProduct } from '../off/off.mapper';
 import { ProductsService, toProductDto } from '../products/products.service';
 import { buildSearchText } from '../products/search-text';
 
+/**
+ * Resolves a barcode within the household of the request: its own catalog first, then Open Food
+ * Facts. Two households scanning the same code get two independent products (D5): a household
+ * never starts from the card of another one.
+ */
 @Injectable()
 export class ScanService {
   private readonly logger = new Logger(ScanService.name);
-  /** Concurrent scans of the same unknown code share one lookup, hence one created product. */
+  /** Concurrent scans of the same unknown code in one household share one lookup and one product. */
   private readonly inFlight = new Map<string, Promise<ScanResponse>>();
   private readonly background = new Set<Promise<void>>();
 
   constructor(
-    @Inject(DB) private readonly db: Database,
+    @Inject(TenantDb) private readonly tenant: TenantDb,
     @Inject(ProductsService) private readonly catalog: ProductsService,
     @Inject(OffClient) private readonly off: OffClient,
     @Inject(CategoryGuessService) private readonly guesser: CategoryGuessService,
@@ -32,17 +37,18 @@ export class ScanService {
     userId: number,
     options: { catalogOnly?: boolean } = {},
   ): Promise<ScanResponse> {
-    const [existing] = await this.db
-      .select({ id: products.id })
-      .from(products)
-      .where(eq(products.barcode, barcode));
-    if (existing) return { status: 'known', product: await this.catalog.get(existing.id) };
+    const known = await this.tenant.run(async (tx, householdId) => {
+      const id = await this.catalog.findByBarcode(tx, householdId, barcode);
+      return { id, householdId };
+    });
+    if (known.id !== null) return { status: 'known', product: await this.catalog.get(known.id) };
     if (options.catalogOnly) return { status: 'unknown', reason: 'not_found' };
 
-    let pending = this.inFlight.get(barcode);
+    const key = `${known.householdId}:${barcode}`;
+    let pending = this.inFlight.get(key);
     if (!pending) {
-      pending = this.lookup(barcode, userId).finally(() => this.inFlight.delete(barcode));
-      this.inFlight.set(barcode, pending);
+      pending = this.lookup(barcode, userId).finally(() => this.inFlight.delete(key));
+      this.inFlight.set(key, pending);
     }
     return pending;
   }
@@ -71,18 +77,24 @@ export class ScanService {
     }
 
     const categoryId = await this.guesser.guess(card.categoriesTags);
-    let product: ProductDto;
+    let created: { product: ProductDto; householdId: number };
     try {
-      product = await this.insert(barcode, card, card.name, categoryId, userId);
+      created = await this.insert(barcode, card, card.name, categoryId, userId);
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
-      // Another process created it in the meantime.
-      const [row] = await this.db.select().from(products).where(eq(products.barcode, barcode));
+      // Another request of the household created it in the meantime.
+      const row = await this.tenant.run(async (tx, householdId) => {
+        const [found] = await tx
+          .select()
+          .from(products)
+          .where(and(eq(products.householdId, householdId), eq(products.barcode, barcode)));
+        return found;
+      });
       if (!row) throw error;
       return { status: 'suggested', product: toProductDto(row) };
     }
-    this.fetchImageInBackground(product.id, card.imageUrl);
-    return { status: 'suggested', product };
+    this.fetchImageInBackground(created.householdId, created.product.id, card.imageUrl);
+    return { status: 'suggested', product: created.product };
   }
 
   private async insert(
@@ -91,31 +103,40 @@ export class ScanService {
     name: string,
     categoryId: number,
     userId: number,
-  ): Promise<ProductDto> {
-    const [row] = await this.db
-      .insert(products)
-      .values({
-        barcode,
-        name,
-        brand: card.brand,
-        sizeLabel: card.quantity,
-        categoryId,
-        source: 'off',
-        categoryGuessed: true,
-        offPayload: card.payload,
-        searchText: buildSearchText(name, card.brand),
-        createdBy: userId,
-      })
-      .returning();
-    return toProductDto(row!);
+  ): Promise<{ product: ProductDto; householdId: number }> {
+    return this.tenant.run(async (tx, householdId) => {
+      const [row] = await tx
+        .insert(products)
+        .values({
+          householdId,
+          barcode,
+          name,
+          brand: card.brand,
+          sizeLabel: card.quantity,
+          categoryId,
+          source: 'off',
+          categoryGuessed: true,
+          offPayload: card.payload,
+          searchText: buildSearchText(name, card.brand),
+          createdBy: userId,
+        })
+        .returning();
+      return { product: toProductDto(row!), householdId };
+    });
   }
 
-  private fetchImageInBackground(productId: number, url: string | null): void {
+  /** After the answer: its own transaction, bound to the household of the scan. */
+  private fetchImageInBackground(householdId: number, productId: number, url: string | null): void {
     if (!url) return;
     const task = (async () => {
-      const imagePath = await this.remoteImages.download(url);
+      const imagePath = await this.remoteImages.download(householdId, url);
       if (imagePath) {
-        await this.db.update(products).set({ imagePath }).where(eq(products.id, productId));
+        await this.tenant.detached(householdId, (tx) =>
+          tx
+            .update(products)
+            .set({ imagePath })
+            .where(and(eq(products.id, productId), eq(products.householdId, householdId))),
+        );
       }
     })()
       .catch((error: unknown) =>

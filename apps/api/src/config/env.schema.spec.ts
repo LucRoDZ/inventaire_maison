@@ -3,6 +3,7 @@ import { EnvError, parseEnv } from './env.schema';
 
 const valid = {
   DATABASE_URL: 'postgres://u:p@localhost:5432/db',
+  DATABASE_MIGRATION_URL: 'postgres://owner:p@localhost:5432/db',
   SESSION_SECRET: 'x'.repeat(32),
   ADMIN_USERNAME: 'admin',
   ADMIN_PASSWORD: 'longenough',
@@ -21,16 +22,20 @@ describe('parseEnv', () => {
       ...valid,
       SESSION_SECRET: 'change-me-change-me-change-me-change-me',
       ADMIN_PASSWORD: 'change-me-now',
-      DATABASE_URL: 'postgres://inventaire:change-me@db:5432/inventaire',
+      DATABASE_URL: 'postgres://inventaire_app:change-me@db:5432/inventaire',
+      DATABASE_MIGRATION_URL: 'postgres://inventaire:change-me@db:5432/inventaire',
     };
     expect(() => parseEnv({ ...placeholders, NODE_ENV: 'production' })).toThrow(
-      /SESSION_SECRET, ADMIN_PASSWORD, DATABASE_URL/,
+      /SESSION_SECRET, ADMIN_PASSWORD, DATABASE_URL, DATABASE_MIGRATION_URL/,
     );
     expect(() => parseEnv({ ...placeholders, NODE_ENV: 'development' })).not.toThrow();
   });
 
   it('names a missing variable', () => {
     expect(() => parseEnv({ ...valid, ADMIN_USERNAME: undefined })).toThrow(/ADMIN_USERNAME/);
+    expect(() => parseEnv({ ...valid, DATABASE_MIGRATION_URL: undefined })).toThrow(
+      /DATABASE_MIGRATION_URL/,
+    );
   });
 
   it('rejects a SESSION_SECRET shorter than 32 characters without printing it', () => {

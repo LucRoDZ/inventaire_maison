@@ -1,11 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import type { Pool } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, PG_POOL, type Database } from '../database/database.module';
+import {
+  cookieValue,
+  createUser,
+  ORIGIN,
+  ownerDb,
+  ownerPool,
+  resetAll,
+  seedHousehold,
+} from '../../test/helpers';
 import {
   categories,
   locations,
@@ -14,14 +20,13 @@ import {
   stockItems,
   stockMovements,
 } from '../database/schema';
-import { SeedService } from '../database/seed/seed.service';
 
 let app: INestApplication;
 let admin: string;
 let member: string;
 let adminId: number;
 const server = () => app.getHttpServer();
-const db = () => app.get<Database>(DB);
+const db = () => ownerDb();
 
 async function login(username: string): Promise<string> {
   const res = await request(server())
@@ -83,13 +88,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
-  await app
-    .get<Pool>(PG_POOL)
-    .query(
-      'TRUNCATE stock_movements, stock_items, products, shelves, locations RESTART IDENTITY CASCADE',
-    );
-  await app.get(SeedService).seed();
+  await resetAll();
+  await seedHousehold(app);
   adminId = await createUser(app, { username: 'root', password: 'motdepasse1', role: 'admin' });
   await createUser(app, { username: 'membre', password: 'motdepasse1', role: 'member' });
   admin = await login('root');
@@ -128,10 +128,10 @@ describe('PATCH /api/locations/:id', () => {
     expect(list.body.at(-1).name).toBe('Réfrigérateur');
   });
 
-  it('answers 403 for a member, 404 for an unknown id, 400 for a bad body', async () => {
+  it('lets a member rename its furniture; 404 for an unknown id, 400 for a bad body', async () => {
     const frigo = await locationByName('Frigo');
     expect((await as(member).patch(`/api/locations/${frigo.id}`).send({ name: 'X' })).status).toBe(
-      403,
+      200,
     );
     expect((await as(admin).patch('/api/locations/99999').send({ name: 'X' })).status).toBe(404);
     expect((await as(admin).patch('/api/locations/abc').send({ name: 'X' })).status).toBe(404);
@@ -143,6 +143,7 @@ describe('PATCH /api/locations/:id', () => {
       { icon: 'Pas Valide' },
       { sortOrder: -1 },
       { kind: 'fridge' },
+      { householdId: 2 },
     ]) {
       expect((await as(admin).patch(`/api/locations/${frigo.id}`).send(body)).status).toBe(400);
     }
@@ -167,10 +168,10 @@ describe('POST /api/shelves', () => {
     expect(after.at(-1).id).toBe(res.body.id);
   });
 
-  it('refuses a member, an unknown location and invalid fields', async () => {
+  it('lets a member add a shelf; refuses an unknown location and invalid fields', async () => {
     const cave = await locationByName('Cave');
     const ok = { locationId: cave.id, name: 'Haut', kind: 'plain' };
-    expect((await as(member).post('/api/shelves').send(ok)).status).toBe(403);
+    expect((await as(member).post('/api/shelves').send(ok)).status).toBe(201);
     expect(
       (
         await as(admin)
@@ -218,11 +219,11 @@ describe('PATCH /api/shelves/:id', () => {
     expect(unknown.status).toBe(404);
   });
 
-  it('answers 403, 404 and 400 where due', async () => {
+  it('lets a member rename a shelf; 404 for an unknown id, 400 for a bad body', async () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 1');
     expect((await as(member).patch(`/api/shelves/${shelf.id}`).send({ name: 'X' })).status).toBe(
-      403,
+      200,
     );
     expect((await as(admin).patch('/api/shelves/99999').send({ name: 'X' })).status).toBe(404);
     expect((await as(admin).patch(`/api/shelves/${shelf.id}`).send({ name: '' })).status).toBe(400);
@@ -231,12 +232,11 @@ describe('PATCH /api/shelves/:id', () => {
 });
 
 describe('DELETE /api/shelves/:id', () => {
-  it('answers 403 for a member, 404 for an unknown shelf, 204 for the admin', async () => {
+  it('lets a member delete a shelf; 404 for an unknown shelf', async () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 3');
-    expect((await as(member).delete(`/api/shelves/${shelf.id}`)).status).toBe(403);
     expect((await as(admin).delete('/api/shelves/99999')).status).toBe(404);
-    expect((await as(admin).delete(`/api/shelves/${shelf.id}`)).status).toBe(204);
+    expect((await as(member).delete(`/api/shelves/${shelf.id}`)).status).toBe(204);
     expect((await as(admin).delete(`/api/shelves/${shelf.id}`)).status).toBe(404);
     expect(await db().select().from(shelves).where(eq(shelves.id, shelf.id))).toHaveLength(0);
   });
@@ -300,7 +300,9 @@ describe('DELETE /api/shelves/:id', () => {
     await db().insert(stockMovements).values({
       productId: lait,
       locationId: frigo.id,
+      locationName: frigo.name,
       shelfId: shelf.id,
+      shelfName: shelf.name,
       delta: 2,
       reason: 'scan_add',
       userId: adminId,
@@ -316,7 +318,7 @@ describe('DELETE /api/shelves/:id', () => {
     const frigo = await locationByName('Frigo');
     const shelf = await shelfByName(frigo.id, 'Étagère 2');
     await stock(await makeProduct('Lait'), frigo.id, shelf.id, 3);
-    const pool = app.get<Pool>(PG_POOL);
+    const pool = ownerPool();
     // A trigger makes the final DELETE fail after the stock was already moved.
     await pool.query(
       `CREATE FUNCTION fail_shelf_delete() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'boom'; END $$ LANGUAGE plpgsql`,
@@ -333,5 +335,209 @@ describe('DELETE /api/shelves/:id', () => {
     const [line] = await db().select().from(stockItems);
     expect(line!.shelfId).toBe(shelf.id);
     expect(await db().select().from(stockMovements)).toHaveLength(0);
+  });
+});
+
+describe('POST /api/locations', () => {
+  const create = (cookie: string, body: object) => as(cookie).post('/api/locations').send(body);
+  const shelfNames = (body: { shelves: { name: string; kind: string }[] }) =>
+    body.shelves.map((s) => `${s.name}/${s.kind}`);
+
+  it('lets a member create a piece of furniture with the default shelves of its kind, last in order', async () => {
+    const res = await create(member, { name: ' Frigo garage ', kind: 'fridge' });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      name: 'Frigo garage',
+      kind: 'fridge',
+      icon: 'refrigerator',
+      sortOrder: 4,
+      productCount: 0,
+    });
+    expect(shelfNames(res.body)).toEqual([
+      'Étagère 1/plain',
+      'Étagère 2/plain',
+      'Étagère 3/plain',
+      'Bac à légumes/plain',
+    ]);
+    const list = await as(member).get('/api/locations');
+    expect(list.body.at(-1).name).toBe('Frigo garage');
+  });
+
+  it('names the shelves after the kind when a count is given', async () => {
+    const freezer = await create(member, { name: 'Coffre', kind: 'freezer', shelfCount: 5 });
+    expect(shelfNames(freezer.body)).toEqual([1, 2, 3, 4, 5].map((n) => `Tiroir ${n}/plain`));
+    expect(freezer.body.icon).toBe('snowflake');
+    const cellar = await create(member, { name: 'Cellier', kind: 'cellar', shelfCount: 2 });
+    expect(shelfNames(cellar.body)).toEqual(['Rangée 1/rack', 'Rangée 2/rack']);
+    const fridge = await create(member, { name: 'Frigo 3', kind: 'fridge', shelfCount: 1 });
+    expect(shelfNames(fridge.body)).toEqual(['Étagère 1/plain']);
+    const other = await create(member, { name: 'Buffet', kind: 'other' });
+    expect(shelfNames(other.body)).toEqual([1, 2, 3, 4].map((n) => `Étagère ${n}/plain`));
+    const defaults = await create(member, { name: 'Cave 2', kind: 'cellar' });
+    expect(shelfNames(defaults.body)).toEqual([
+      'Rangée 1/rack',
+      'Rangée 2/rack',
+      'Rangée 3/rack',
+      'Caisses et packs/plain',
+    ]);
+  });
+
+  it('keeps three fridges side by side', async () => {
+    await create(member, { name: 'Frigo 2', kind: 'fridge' });
+    await create(member, { name: 'Frigo garage', kind: 'fridge' });
+    const list = await as(member).get('/api/locations');
+    const fridges = list.body.filter((l: { kind: string }) => l.kind === 'fridge');
+    expect(fridges.map((l: { name: string }) => l.name)).toEqual([
+      'Frigo',
+      'Frigo 2',
+      'Frigo garage',
+    ]);
+    expect(new Set(fridges.map((l: { id: number }) => l.id)).size).toBe(3);
+  });
+
+  it('refuses a name already used whatever its case (409), and invalid fields (400)', async () => {
+    expect((await create(member, { name: 'FRIGO', kind: 'fridge' })).status).toBe(409);
+    for (const body of [
+      { name: '', kind: 'fridge' },
+      { name: 'x'.repeat(41), kind: 'fridge' },
+      { name: 'Frigo 2', kind: 'buffet' },
+      { name: 'Frigo 2' },
+      { name: 'Frigo 2', kind: 'fridge', shelfCount: 0 },
+      { name: 'Frigo 2', kind: 'fridge', shelfCount: 9 },
+      { name: 'Frigo 2', kind: 'fridge', shelfCount: 2.5 },
+      { name: 'Frigo 2', kind: 'fridge', householdId: 2 },
+      { name: 'Frigo 2', kind: 'fridge', icon: 'wine' },
+    ]) {
+      expect((await create(member, body)).status, JSON.stringify(body)).toBe(400);
+    }
+  });
+
+  it('refuses a 13th piece of furniture (D6) and a 9th shelf', async () => {
+    for (let n = 5; n <= 12; n++) {
+      expect((await create(member, { name: `Meuble ${n}`, kind: 'other' })).status).toBe(201);
+    }
+    const res = await create(member, { name: 'Meuble 13', kind: 'other' });
+    expect(res.status).toBe(409);
+    expect(res.body.message).toMatch(/12 meubles/);
+    expect(JSON.stringify(res.body)).not.toMatch(/foyer|household/i);
+
+    const huit = await create(admin, { name: 'Huit', kind: 'other', shelfCount: 8 });
+    expect(huit.status).toBe(409);
+    await as(admin).delete(`/api/locations/${(await locationByName('Meuble 12')).id}`);
+    const eight = await create(admin, { name: 'Huit', kind: 'other', shelfCount: 8 });
+    expect(eight.status).toBe(201);
+    const ninth = await as(member)
+      .post('/api/shelves')
+      .send({ locationId: eight.body.id, name: 'Neuvième', kind: 'plain' });
+    expect(ninth.status).toBe(409);
+    // Moving an empty shelf into a full piece of furniture is refused too.
+    const frigo = await locationByName('Frigo');
+    const shelf = await shelfByName(frigo.id, 'Étagère 1');
+    expect(
+      (await as(member).patch(`/api/shelves/${shelf.id}`).send({ locationId: eight.body.id }))
+        .status,
+    ).toBe(409);
+  });
+});
+
+describe('DELETE /api/locations/:id', () => {
+  it('deletes an empty piece of furniture with its shelves; its products lose their default location', async () => {
+    const created = await as(member).post('/api/locations').send({ name: 'Remise', kind: 'other' });
+    const id = created.body.id as number;
+    const lait = await makeProduct('Lait');
+    await db().update(products).set({ defaultLocationId: id }).where(eq(products.id, lait));
+    expect((await as(member).delete(`/api/locations/${id}`)).status).toBe(204);
+    expect(await db().select().from(shelves).where(eq(shelves.locationId, id))).toHaveLength(0);
+    const [product] = await db().select().from(products).where(eq(products.id, lait));
+    expect(product!.defaultLocationId).toBeNull();
+    expect((await as(member).delete(`/api/locations/${id}`)).status).toBe(404);
+  });
+
+  it('requires a destination when it holds stock, which must be another piece of furniture of the household', async () => {
+    const frigo = await locationByName('Frigo');
+    const cave = await locationByName('Cave');
+    await stock(await makeProduct('Lait'), frigo.id, null, 2);
+    const without = await as(member).delete(`/api/locations/${frigo.id}`);
+    expect(without.status).toBe(409);
+    expect(without.body.message).toMatch(/choisissez le meuble/i);
+    expect(
+      (await as(member).delete(`/api/locations/${frigo.id}?moveStockTo=${frigo.id}`)).status,
+    ).toBe(400);
+    expect((await as(member).delete(`/api/locations/${frigo.id}?moveStockTo=99999`)).status).toBe(
+      404,
+    );
+    expect((await as(member).delete(`/api/locations/${frigo.id}?moveStockTo=abc`)).status).toBe(
+      400,
+    );
+    expect((await as(member).delete(`/api/locations/${frigo.id}?autre=1`)).status).toBe(400);
+    // Nothing moved, nothing deleted.
+    expect(await db().select().from(stockItems)).toHaveLength(1);
+    expect((await locationByName('Frigo')).id).toBe(frigo.id);
+    expect(cave.id).toBeGreaterThan(0);
+  });
+
+  it('moves the stock into the « Non rangé » tray of the destination, adding up quantities, with two movements per line', async () => {
+    const frigo = await locationByName('Frigo');
+    const pantry = await locationByName('Garde-manger');
+    const etagere2 = await shelfByName(frigo.id, 'Étagère 2');
+    const lait = await makeProduct('Lait');
+    const beurre = await makeProduct('Beurre');
+    await stock(lait, frigo.id, etagere2.id, 3, '2026-12-01');
+    await stock(lait, frigo.id, null, 1, '2026-12-01');
+    await stock(beurre, frigo.id, etagere2.id, 2);
+    // Already in the tray of the destination: quantities add up.
+    await stock(lait, pantry.id, null, 4, '2026-12-01');
+
+    const res = await as(member).delete(`/api/locations/${frigo.id}?moveStockTo=${pantry.id}`);
+    expect(res.status).toBe(204);
+
+    const lines = await db()
+      .select()
+      .from(stockItems)
+      .orderBy(asc(stockItems.productId), asc(stockItems.expiryDate));
+    expect(
+      lines.map((l) => [l.productId, l.locationId, l.shelfId, l.quantity, l.expiryDate]),
+    ).toEqual([
+      [lait, pantry.id, null, 4 + 3 + 1, '2026-12-01'],
+      [beurre, pantry.id, null, 2, null],
+    ]);
+    const moves = await db().select().from(stockMovements).orderBy(asc(stockMovements.id));
+    expect(moves).toHaveLength(6);
+    expect(moves.every((m) => m.reason === 'move')).toBe(true);
+    expect(moves.reduce((sum, m) => sum + m.delta, 0)).toBe(0);
+    expect(moves.filter((m) => m.delta < 0).every((m) => m.locationName === 'Frigo')).toBe(true);
+
+    // The history stays readable: the deleted fridge keeps its name, the shelf too.
+    const history = await as(member).get(`/api/products/${lait}/movements`);
+    expect(history.status).toBe(200);
+    const from = history.body.items.find(
+      (i: { delta: number; shelf: { name: string } | null }) => i.delta === -3,
+    );
+    expect(from).toMatchObject({
+      location: { id: frigo.id, name: 'Frigo' },
+      shelf: { name: 'Étagère 2' },
+    });
+    expect(await db().select().from(shelves).where(eq(shelves.locationId, frigo.id))).toHaveLength(
+      0,
+    );
+  });
+
+  it('deletes the last piece of furniture of the household', async () => {
+    for (const location of await db().select().from(locations)) {
+      expect((await as(member).delete(`/api/locations/${location.id}`)).status).toBe(204);
+    }
+    expect((await as(member).get('/api/locations')).body).toEqual([]);
+    const home = await as(member).get('/api/home');
+    expect(home.body).toEqual({ locations: [] });
+  });
+
+  it('counts the distinct products of each piece of furniture', async () => {
+    const frigo = await locationByName('Frigo');
+    const lait = await makeProduct('Lait');
+    await stock(lait, frigo.id, null, 2, '2026-12-01');
+    await stock(lait, frigo.id, null, 1, '2026-12-02');
+    await stock(await makeProduct('Beurre'), frigo.id, null, 1);
+    const list = await as(member).get('/api/locations');
+    expect(list.body.find((l: { id: number }) => l.id === frigo.id).productCount).toBe(2);
   });
 });

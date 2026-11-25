@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import pg from 'pg';
-import { furnitureSettled, signIn } from './helpers';
+import {
+  e2eDatabaseUrl,
+  ensureAccountInOwnHousehold,
+  furnitureSettled,
+  householdOf,
+  signIn,
+} from './helpers';
 
 // The open furniture fits between the top of the screen and the bottom bar of a phone in portrait:
 // the page never scrolls vertically, whatever the furniture (default seed, or 8 full shelves).
@@ -34,23 +40,24 @@ async function places(page: Page): Promise<Place[]> {
   return (await (await page.request.get('/api/locations')).json()) as Place[];
 }
 
-/** The API cannot create a furniture: it goes straight into the e2e database, like createMember. */
-async function insertFurniture(name: string, kind: string): Promise<void> {
-  const url =
-    process.env['E2E_DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_e2e';
-  const client = new pg.Client({ connectionString: url });
+/** Exact shelf names and kinds: written straight into the e2e database, in the household given. */
+async function insertFurniture(name: string, kind: string, householdId: number): Promise<void> {
+  const client = new pg.Client({ connectionString: e2eDatabaseUrl() });
   await client.connect();
   try {
-    const found = await client.query('select id from locations where name = $1', [name]);
+    const found = await client.query(
+      'select id from locations where name = $1 and household_id = $2',
+      [name, householdId],
+    );
     if (found.rowCount) return;
     const { rows } = await client.query<{ id: number }>(
-      "insert into locations (name, kind, icon, sort_order) values ($1, $2, 'warehouse', 90) returning id",
-      [name, kind],
+      "insert into locations (household_id, name, kind, icon, sort_order) values ($1, $2, $3, 'warehouse', 90) returning id",
+      [householdId, name, kind],
     );
     for (let i = 0; i < SHELVES; i++) {
       await client.query(
-        'insert into shelves (location_id, name, kind, sort_order) values ($1, $2, $3, $4)',
-        [rows[0]!.id, `Rayon ${i + 1}`, i % 3 === 0 ? 'rack' : 'plain', i],
+        'insert into shelves (household_id, location_id, name, kind, sort_order) values ($1, $2, $3, $4, $5)',
+        [householdId, rows[0]!.id, `Rayon ${i + 1}`, i % 3 === 0 ? 'rack' : 'plain', i],
       );
     }
   } finally {
@@ -159,9 +166,18 @@ test.describe.configure({ mode: 'default' });
 test.describe('meuble ouvert sans défilement vertical', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const tag = TAG[testInfo.project.name as keyof typeof TAG];
-    await signIn(page);
+    // Its own account and household per browser: the furniture of the admin stays untouched.
+    const account = `ajuste-${tag.toLowerCase()}`;
+    await ensureAccountInOwnHousehold(
+      testInfo.project.use.baseURL!,
+      account,
+      'mot-de-passe-ajuste',
+      `Ajustement ${tag}`,
+    );
+    await signIn(page, account, 'mot-de-passe-ajuste');
+    const householdId = await householdOf(account);
     for (const { name, kind } of bigFurniture(tag)) {
-      await insertFurniture(name, kind);
+      await insertFurniture(name, kind, householdId);
       const place = (await places(page)).find((p) => p.name === name)!;
       const home = (await (await page.request.get('/api/home')).json()) as {
         locations: { id: number; unshelved: unknown[] }[];

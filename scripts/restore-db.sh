@@ -57,5 +57,9 @@ if [ "$force" -eq 1 ]; then
   sql "$target" "drop schema if exists public cascade; drop schema if exists drizzle cascade; create schema public"
 fi
 
+# A dump made by another tool may grant privileges to the runtime role: make sure it exists (its
+# password and attributes are set by the API at its next start).
+sql "$target" "do \$\$ begin create role inventaire_app nologin; exception when duplicate_object then null; end \$\$"
+
 gzip -dc "$file" | docker compose exec -T db sh -c 'psql -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$0" >/dev/null' "$target"
 echo "restore-db : « $file » restaurée dans « $target »."

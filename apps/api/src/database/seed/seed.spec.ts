@@ -1,27 +1,42 @@
-import { count, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTempDatabase, type TempDatabase } from '../../../test/temp-database';
-import type { MigrationRunner } from '../database.module';
-import { categories, locations, offCategoryMap, shelves } from '../schema';
+import { bindHousehold } from '../tenant-db';
+import { categories, households, locations, shelves } from '../schema';
 import { CATEGORY_SEEDS } from './categories';
+import { applyHouseholdTemplate } from './household-template';
 import { LOCATION_SEEDS, MAX_SEED_SHELVES } from './locations';
 import { OFF_CATEGORY_MAP_SEEDS } from './off-category-map';
-import { SeedService } from './seed.service';
 
 let tmp: TempDatabase;
-let service: SeedService;
 
-async function counts() {
-  const [c] = await tmp.db.select({ n: count() }).from(categories);
-  const [m] = await tmp.db.select({ n: count() }).from(offCategoryMap);
-  const [l] = await tmp.db.select({ n: count() }).from(locations);
-  const [s] = await tmp.db.select({ n: count() }).from(shelves);
-  return { categories: c!.n, map: m!.n, locations: l!.n, shelves: s!.n };
+async function counts(householdId: number) {
+  const n = async (table: string) =>
+    (
+      await tmp.pool.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM ${table} WHERE household_id = $1`,
+        [householdId],
+      )
+    ).rows[0]!.n;
+  return {
+    categories: await n('categories'),
+    map: await n('off_category_map'),
+    locations: await n('locations'),
+    shelves: await n('shelves'),
+  };
+}
+
+async function newHousehold(name: string): Promise<number> {
+  const [row] = await tmp.db.insert(households).values({ name }).returning();
+  await tmp.db.transaction(async (tx) => {
+    await bindHousehold(tx, row!.id);
+    await applyHouseholdTemplate(tx, row!.id);
+  });
+  return row!.id;
 }
 
 beforeAll(async () => {
   tmp = await createTempDatabase();
-  service = new SeedService(tmp.db, {} as MigrationRunner);
 });
 
 afterAll(async () => {
@@ -30,22 +45,36 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await tmp.pool.query(
-    'TRUNCATE off_category_map, categories, shelves, locations RESTART IDENTITY CASCADE',
+    'TRUNCATE off_category_map, categories, shelves, locations, households RESTART IDENTITY CASCADE',
   );
 });
 
-describe('SeedService', () => {
-  it('fills an empty database with 15 categories, 4 locations and 15 shelves', async () => {
-    await service.seed();
-    const result = await counts();
+describe('household template', () => {
+  it('gives a new household 15 categories, 4 pieces of furniture and 15 shelves', async () => {
+    const id = await newHousehold('Famille');
+    const result = await counts(id);
     expect(result.categories).toBe(15);
     expect(result.locations).toBe(4);
     expect(result.shelves).toBe(15);
     expect(result.map).toBeGreaterThanOrEqual(75);
   });
 
+  it('copies the model again for each household, independently', async () => {
+    const a = await newHousehold('A');
+    const b = await newHousehold('B');
+    expect(await counts(b)).toEqual(await counts(a));
+    await tmp.db
+      .update(locations)
+      .set({ name: 'Cellier' })
+      .where(and(eq(locations.householdId, a), eq(locations.name, 'Cave')));
+    const names = (await tmp.db.select().from(locations).where(eq(locations.householdId, b))).map(
+      (l) => l.name,
+    );
+    expect(names).toContain('Cave');
+  });
+
   it('marks exactly one fallback category, named "Autre"', async () => {
-    await service.seed();
+    await newHousehold('Famille');
     const fallback = await tmp.db.select().from(categories).where(eq(categories.isFallback, true));
     expect(fallback.map((c) => c.name)).toEqual(['Autre']);
   });
@@ -57,25 +86,8 @@ describe('SeedService', () => {
     }
   });
 
-  it('does not duplicate anything on a second run', async () => {
-    await service.seed();
-    const first = await counts();
-    await service.seed();
-    expect(await counts()).toEqual(first);
-  });
-
-  it('does not recreate a renamed location', async () => {
-    await service.seed();
-    await tmp.db.update(locations).set({ name: 'Cellier' }).where(eq(locations.name, 'Cave'));
-    await service.seed();
-    const names = (await tmp.db.select().from(locations)).map((l) => l.name);
-    expect(names).toContain('Cellier');
-    expect(names).not.toContain('Cave');
-    expect(names).toHaveLength(4);
-  });
-
   it('gives the cellar three racks and one plain shelf', async () => {
-    await service.seed();
+    await newHousehold('Famille');
     const [cave] = await tmp.db.select().from(locations).where(eq(locations.kind, 'cellar'));
     const rows = await tmp.db.select().from(shelves).where(eq(shelves.locationId, cave!.id));
     expect(rows.filter((s) => s.kind === 'rack')).toHaveLength(3);
@@ -90,7 +102,7 @@ describe('SeedService', () => {
   });
 
   it('gives the fridge three shelves and a vegetable drawer', async () => {
-    await service.seed();
+    await newHousehold('Famille');
     const [frigo] = await tmp.db.select().from(locations).where(eq(locations.kind, 'fridge'));
     const rows = await tmp.db.select().from(shelves).where(eq(shelves.locationId, frigo!.id));
     expect(rows.sort((a, b) => a.sortOrder - b.sortOrder).map((s) => s.name)).toEqual([

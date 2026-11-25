@@ -1,0 +1,50 @@
+/**
+ * French names of the Lucide icons offered in the pickers (categories and furniture): what a screen
+ * reader says and what a list shows, never the English file name of the icon.
+ */
+export const ICON_LABELS: Readonly<Record<string, string>> = {
+  'cup-soda': 'Gobelet',
+  wine: 'Verre de vin',
+  beer: 'Bière',
+  martini: 'Cocktail',
+  coffee: 'Café',
+  beef: 'Viande',
+  drumstick: 'Pilon',
+  ham: 'Jambon',
+  fish: 'Poisson',
+  milk: 'Lait',
+  egg: 'Œuf',
+  apple: 'Pomme',
+  carrot: 'Carotte',
+  cherry: 'Cerises',
+  citrus: 'Agrumes',
+  salad: 'Salade',
+  leaf: 'Feuille',
+  wheat: 'Blé',
+  bean: 'Haricot',
+  nut: 'Noix',
+  archive: 'Boîte',
+  candy: 'Bonbon',
+  'cake-slice': 'Part de gâteau',
+  cookie: 'Biscuit',
+  popcorn: 'Pop-corn',
+  croissant: 'Croissant',
+  pizza: 'Pizza',
+  sandwich: 'Sandwich',
+  soup: 'Soupe',
+  'ice-cream-cone': 'Glace',
+  droplets: 'Gouttes',
+  flame: 'Flamme',
+  snowflake: 'Flocon',
+  utensils: 'Couverts',
+  'shopping-basket': 'Panier',
+  baby: 'Bébé',
+  pill: 'Médicament',
+  'spray-can': 'Bombe',
+  package: 'Colis',
+  warehouse: 'Placard',
+  refrigerator: 'Réfrigérateur',
+};
+
+/** The French name of an icon, or a neutral word for an icon outside the list. */
+export const iconLabel = (name: string): string => ICON_LABELS[name] ?? 'Autre icône';

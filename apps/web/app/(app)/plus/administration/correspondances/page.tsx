@@ -2,8 +2,11 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { AdminGate } from '../../../../../components/admin/AdminGate';
 import { MappingsAdmin } from '../../../../../components/admin/MappingsAdmin';
+import { HouseholdScope } from '../../../../../components/admin/HouseholdScope';
+import { categoriesApiFor } from '../../../../../lib/categories-api';
 
 export default function Page() {
   return (
@@ -17,7 +20,11 @@ export default function Page() {
       </Link>
       <h1 className="text-title">Correspondances Open Food Facts</h1>
       <AdminGate>
-        <MappingsAdmin />
+        <Suspense>
+          <HouseholdScope>
+            {(household) => <MappingsAdmin api={categoriesApiFor(household.id)} />}
+          </HouseholdScope>
+        </Suspense>
       </AdminGate>
     </main>
   );

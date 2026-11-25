@@ -13,6 +13,7 @@ import { updateProduct, uploadProductImage, type ProductPatch } from '../../lib/
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { PhotoField } from './PhotoField';
+import { LocationOptions } from '../ui/LocationOptions';
 
 interface ProductEditProps {
   product: ProductDto;
@@ -147,11 +148,7 @@ export function ProductEdit({
           }
         >
           <option value="">Aucun</option>
-          {locations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
+          <LocationOptions locations={locations} />
         </select>
       </label>
       <PhotoField file={photo} onChange={setPhoto} />

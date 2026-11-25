@@ -36,10 +36,10 @@ export class RemoteImageService {
   constructor(private readonly store: ImageStore) {}
 
   /**
-   * Downloads a remote picture and stores its thumbnail. Returns the stored file name, or null on
+   * Downloads a remote picture and stores its thumbnail in the folder of the household. Returns the stored file name, or null on
    * any failure (the product then simply has no image). Never throws.
    */
-  async download(url: string | null | undefined): Promise<string | null> {
+  async download(householdId: number, url: string | null | undefined): Promise<string | null> {
     if (!url || !isAllowedImageUrl(url)) return null;
     try {
       const response = await fetch(url, {
@@ -49,7 +49,7 @@ export class RemoteImageService {
       if (!response.ok) return null;
       const data = await readLimited(response, MAX_UPLOAD_BYTES);
       if (!data) return null;
-      return await this.store.saveThumbnail(data);
+      return await this.store.saveThumbnail(householdId, data);
     } catch (error) {
       this.logger.warn(`Image distante ignorée : ${(error as Error).name}`);
       return null;

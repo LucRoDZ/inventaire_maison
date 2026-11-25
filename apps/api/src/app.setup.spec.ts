@@ -47,7 +47,7 @@ describe('client address with PROXY_SECRET set', () => {
     await app.close();
   });
   beforeEach(async () => {
-    await resetAuth(app);
+    await resetAuth();
     await createUser(app, { username: 'lucas', password: 'motdepasse1' });
   });
 

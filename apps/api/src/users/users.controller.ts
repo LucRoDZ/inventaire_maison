@@ -11,6 +11,7 @@ import {
   Req,
 } from '@nestjs/common';
 import {
+  HOUSEHOLD_NAME_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_PATTERN,
@@ -31,17 +32,26 @@ const username = z
   .toLowerCase()
   .refine((value) => USERNAME_PATTERN.test(value));
 
-const createSchema = z.object({ username, password, role: role.default('member') }).strict();
+const householdId = z.number().int().min(1).max(2_147_483_647);
+const householdName = z.string().trim().min(1).max(HOUSEHOLD_NAME_MAX_LENGTH);
+
+// The household is mandatory: an existing one, or a new one created with the account.
+const createSchema = z.union([
+  z.object({ username, password, role: role.default('member'), householdId }).strict(),
+  z
+    .object({ username, password, role: role.default('member'), newHouseholdName: householdName })
+    .strict(),
+]);
 
 const patchSchema = z
-  .object({ role, password, disabled: z.literal(false) })
+  .object({ role, password, disabled: z.literal(false), householdId })
   .partial()
   .strict()
   .refine((v) => Object.keys(v).length > 0);
 
-const CREATE_ERROR = `Compte invalide : pseudo de 3 à 30 caractères (a-z, 0-9, _ . -), mot de passe de ${PASSWORD_MIN_LENGTH} à ${PASSWORD_MAX_LENGTH} caractères`;
+const CREATE_ERROR = `Compte invalide : pseudo de 3 à 30 caractères (a-z, 0-9, _ . -), mot de passe de ${PASSWORD_MIN_LENGTH} à ${PASSWORD_MAX_LENGTH} caractères et un foyer`;
 
-/** Account administration: the whole controller is reserved to the admin. */
+/** Account administration: the whole controller is reserved to the admin (404 for a member). */
 @Controller('users')
 @Roles('admin')
 export class UsersController {
@@ -63,7 +73,11 @@ export class UsersController {
     return this.users.update(
       req.user!.id,
       id,
-      parseBody(patchSchema, body, 'Modification invalide : rôle, mot de passe ou réactivation'),
+      parseBody(
+        patchSchema,
+        body,
+        'Modification invalide : rôle, mot de passe, réactivation ou foyer',
+      ),
     );
   }
 

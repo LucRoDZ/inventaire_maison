@@ -3,8 +3,7 @@ import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
-import { cookieValue, createUser, ORIGIN, resetAuth } from '../../test/helpers';
-import { DB, type Database } from '../database/database.module';
+import { cookieValue, createUser, ORIGIN, ownerDb, resetAuth, HOUSEHOLD } from '../../test/helpers';
 import { sessions, users } from '../database/schema';
 
 let app: INestApplication;
@@ -13,7 +12,7 @@ let member: string;
 let adminId: number;
 let memberId: number;
 const server = () => app.getHttpServer();
-const db = () => app.get<Database>(DB);
+const db = () => ownerDb();
 
 async function loginAttempt(username: string, password = 'motdepasse1') {
   return request(server())
@@ -45,7 +44,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetAuth(app);
+  await resetAuth();
   adminId = await createUser(app, { username: 'root', password: 'motdepasse1', role: 'admin' });
   memberId = await createUser(app, { username: 'membre', password: 'motdepasse1' });
   admin = await login('root');
@@ -53,20 +52,23 @@ beforeEach(async () => {
 });
 
 describe('access', () => {
-  it('answers 401 without a session and 403 for a member, on every route', async () => {
+  it('answers 401 without a session and 404 for a member, on every route', async () => {
     expect((await request(server()).post('/api/users').set('Origin', ORIGIN).send({})).status).toBe(
       401,
     );
     expect((await request(server()).get('/api/users')).status).toBe(401);
-    expect((await as(member).get('/api/users')).status).toBe(403);
+    expect((await as(member).get('/api/users')).status).toBe(404);
     expect(
-      (await as(member).post('/api/users').send({ username: 'nouveau', password: 'motdepasse1' }))
-        .status,
-    ).toBe(403);
+      (
+        await as(member)
+          .post('/api/users')
+          .send({ username: 'nouveau', password: 'motdepasse1', householdId: HOUSEHOLD })
+      ).status,
+    ).toBe(404);
     expect((await as(member).patch(`/api/users/${memberId}`).send({ role: 'admin' })).status).toBe(
-      403,
+      404,
     );
-    expect((await as(member).delete(`/api/users/${adminId}`)).status).toBe(403);
+    expect((await as(member).delete(`/api/users/${adminId}`)).status).toBe(404);
   });
 });
 
@@ -75,7 +77,12 @@ describe('GET /api/users', () => {
     const res = await as(admin).get('/api/users');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
-      expect.objectContaining({ username: 'membre', role: 'member', disabled: false }),
+      expect.objectContaining({
+        username: 'membre',
+        role: 'member',
+        disabled: false,
+        household: { id: HOUSEHOLD, name: 'Famille' },
+      }),
       expect.objectContaining({ username: 'root', role: 'admin', disabled: false }),
     ]);
     expect(JSON.stringify(res.body)).not.toMatch(/argon2|hash/i);
@@ -86,7 +93,7 @@ describe('POST /api/users', () => {
   it('creates a member who can sign in; the pseudo is stored in lowercase', async () => {
     const res = await as(admin)
       .post('/api/users')
-      .send({ username: 'Marie', password: 'temporaire1' });
+      .send({ username: 'Marie', password: 'temporaire1', householdId: HOUSEHOLD });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ username: 'marie', role: 'member', disabled: false });
     expect(JSON.stringify(res.body)).not.toMatch(/argon2|hash/i);
@@ -96,30 +103,56 @@ describe('POST /api/users', () => {
   it('can create an admin', async () => {
     const res = await as(admin)
       .post('/api/users')
-      .send({ username: 'second', password: 'temporaire1', role: 'admin' });
+      .send({ username: 'second', password: 'temporaire1', role: 'admin', householdId: HOUSEHOLD });
     expect(res.status).toBe(201);
     expect(res.body.role).toBe('admin');
   });
 
   it('answers 409 for an existing pseudo whatever the case, even a disabled one', async () => {
     expect(
-      (await as(admin).post('/api/users').send({ username: 'MEMBRE', password: 'temporaire1' }))
-        .status,
+      (
+        await as(admin)
+          .post('/api/users')
+          .send({ username: 'MEMBRE', password: 'temporaire1', householdId: HOUSEHOLD })
+      ).status,
     ).toBe(409);
     await as(admin).delete(`/api/users/${memberId}`);
     expect(
-      (await as(admin).post('/api/users').send({ username: 'membre', password: 'temporaire1' }))
-        .status,
+      (
+        await as(admin)
+          .post('/api/users')
+          .send({ username: 'membre', password: 'temporaire1', householdId: HOUSEHOLD })
+      ).status,
     ).toBe(409);
   });
 
   it.each([
-    ['short pseudo', { username: 'ab', password: 'temporaire1' }],
-    ['bad characters', { username: 'a b c', password: 'temporaire1' }],
-    ['short password', { username: 'nouveau', password: 'court' }],
-    ['long password', { username: 'nouveau', password: 'x'.repeat(129) }],
-    ['unknown role', { username: 'nouveau', password: 'temporaire1', role: 'root' }],
-    ['extra field', { username: 'nouveau', password: 'temporaire1', passwordHash: 'x' }],
+    ['short pseudo', { username: 'ab', password: 'temporaire1', householdId: HOUSEHOLD }],
+    ['bad characters', { username: 'a b c', password: 'temporaire1', householdId: HOUSEHOLD }],
+    ['short password', { username: 'nouveau', password: 'court', householdId: HOUSEHOLD }],
+    ['long password', { username: 'nouveau', password: 'x'.repeat(129), householdId: HOUSEHOLD }],
+    [
+      'unknown role',
+      { username: 'nouveau', password: 'temporaire1', role: 'root', householdId: HOUSEHOLD },
+    ],
+    [
+      'extra field',
+      { username: 'nouveau', password: 'temporaire1', passwordHash: 'x', householdId: HOUSEHOLD },
+    ],
+    ['no household', { username: 'nouveau', password: 'temporaire1' }],
+    [
+      'both an existing and a new household',
+      {
+        username: 'nouveau',
+        password: 'temporaire1',
+        householdId: HOUSEHOLD,
+        newHouseholdName: 'Autre',
+      },
+    ],
+    [
+      'empty new household name',
+      { username: 'nouveau', password: 'temporaire1', newHouseholdName: ' ' },
+    ],
     ['no body', {}],
   ])('answers 400 for %s', async (_label, body) => {
     expect((await as(admin).post('/api/users').send(body)).status).toBe(400);

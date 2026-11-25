@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Settings, UserRound, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Refrigerator, Settings, UserRound, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentUser } from '../auth/AuthProvider';
 import { LogoutButton } from '../auth/LogoutButton';
@@ -28,6 +28,7 @@ export function PlusMenu() {
     <div className="flex flex-col gap-4">
       <ul className="flex flex-col gap-2">
         <Entry href="/plus/compte" label="Compte" icon={UserRound} />
+        <Entry href="/plus/meubles" label="Meubles et étagères" icon={Refrigerator} />
         {user?.role === 'admin' ? (
           <Entry href="/plus/administration" label="Administration" icon={Settings} />
         ) : null}

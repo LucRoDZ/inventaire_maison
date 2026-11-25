@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
-import type * as CategoriesApi from '../../lib/categories-api';
+import type { CategoriesApi } from '../../lib/categories-api';
 import { CategoriesAdmin } from './CategoriesAdmin';
 import { MappingsAdmin } from './MappingsAdmin';
 
@@ -17,7 +17,7 @@ const mappings: OffCategoryMapDto[] = [
   { id: 21, offTag: 'en:beers', categoryId: 2 },
 ];
 
-function makeApi(over: Partial<typeof CategoriesApi> = {}): typeof CategoriesApi {
+function makeApi(over: Partial<CategoriesApi> = {}): CategoriesApi {
   return {
     fetchCategories: vi.fn(async () => categories),
     createCategory: vi.fn(async (input) => ({ id: 9, sortOrder: 3, isFallback: false, ...input })),
@@ -41,8 +41,8 @@ describe('CategoriesAdmin', () => {
     const name = within(row).getByLabelText('Nom de la catégorie');
     await user.clear(name);
     await user.type(name, 'Crèmerie');
-    await user.click(within(row).getByRole('radio', { name: 'egg' }));
-    expect(within(row).getByRole('radio', { name: 'egg' })).toBeChecked();
+    await user.click(within(row).getByRole('radio', { name: 'Œuf' }));
+    expect(within(row).getByRole('radio', { name: 'Œuf' })).toBeChecked();
     await user.click(within(row).getByRole('button', { name: 'Enregistrer la catégorie' }));
     expect(api.updateCategory).toHaveBeenCalledWith(1, { name: 'Crèmerie', icon: 'egg' });
   });
@@ -82,7 +82,7 @@ describe('CategoriesAdmin', () => {
     await user.click(within(form).getByRole('button', { name: 'Ajouter la catégorie' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('obligatoire');
     await user.type(within(form).getByLabelText('Nom de la nouvelle catégorie'), 'Bébé');
-    await user.click(within(form).getByRole('radio', { name: 'baby' }));
+    await user.click(within(form).getByRole('radio', { name: 'Bébé' }));
     await user.click(within(form).getByRole('button', { name: 'Ajouter la catégorie' }));
     expect(api.createCategory).toHaveBeenCalledWith({ name: 'Bébé', icon: 'baby' });
   });

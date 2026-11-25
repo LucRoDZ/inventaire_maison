@@ -26,3 +26,4 @@ data/
 
 # Copied from zxing-wasm by scripts/copy-zxing-wasm.mjs
 apps/web/public/zxing/
+e2e/captures/out/

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { ensureFurniture, renderFurniture, TAG } from './furniture-fixtures';
-import { furnitureSettled, signIn } from './helpers';
+import { ensureAccountInOwnHousehold, furnitureSettled, householdOf, signIn } from './helpers';
 
 // Render of the open furniture (captures of Lucas): a frame that fits its content, shelves of one
 // height, drawers with their handle in its own space, no frost, no visible scrollbar.
@@ -121,10 +121,25 @@ test.describe('rendu des meubles ouverts', () => {
 
   test.beforeEach(async ({ page }, testInfo) => {
     const tag = TAG[testInfo.project.name as keyof typeof TAG];
-    await signIn(page);
+    // Its own account and household per browser: the furniture of the admin stays untouched.
+    const account = `rendu-${tag.toLowerCase()}`;
+    await ensureAccountInOwnHousehold(
+      testInfo.project.use.baseURL!,
+      account,
+      'mot-de-passe-rendu',
+      `Rendu ${tag}`,
+    );
+    await signIn(page, account, 'mot-de-passe-rendu');
+    const householdId = await householdOf(account);
     ids = [];
     for (const spec of renderFurniture(tag)) {
-      const id = await ensureFurniture(page, testInfo.project.use.baseURL!, spec, 'Rutabaga');
+      const id = await ensureFurniture(
+        page,
+        testInfo.project.use.baseURL!,
+        spec,
+        'Rutabaga',
+        householdId,
+      );
       ids.push([spec.name, id]);
     }
   });

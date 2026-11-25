@@ -8,18 +8,23 @@ import {
 import { Reflector } from '@nestjs/core';
 import { SESSION_COOKIE_NAME } from '@inventaire/shared';
 import type { Request, Response } from 'express';
+import { HouseholdContext } from '../common/household-context';
 import { UNAUTHENTICATED_MESSAGE } from './auth.constants';
 import { AuthCookieService } from './auth-cookie.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { SessionService } from './session.service';
 
-/** Global guard: every route needs a valid session unless marked @Public(). */
+/**
+ * Global guard: every route needs a valid session unless marked @Public(). It also binds the
+ * request to the household of the account (TenantDb reads it).
+ */
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(
     @Inject(Reflector) private readonly reflector: Reflector,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AuthCookieService) private readonly cookies: AuthCookieService,
+    @Inject(HouseholdContext) private readonly household: HouseholdContext,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -44,6 +49,8 @@ export class SessionGuard implements CanActivate {
     }
     if (session.refreshedExpiresAt) this.cookies.set(res, token, session.refreshedExpiresAt);
     req.user = session.user;
+    // From here on, every access to household data in this request is bound to this household.
+    this.household.set(session.user.householdId);
     return true;
   }
 }

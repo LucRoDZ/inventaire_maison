@@ -2,6 +2,7 @@
 
 import { CATEGORY_ICONS, type CategoryIcon } from '@inventaire/shared';
 import { categoryIcon } from '../ui/CategoryIcon';
+import { iconLabel } from '../ui/icon-labels';
 
 /** Closed list of Lucide icons, as a group of toggle buttons. */
 export function IconPicker({
@@ -24,7 +25,7 @@ export function IconPicker({
             type="button"
             role="radio"
             aria-checked={selected}
-            aria-label={name}
+            aria-label={iconLabel(name)}
             onClick={() => onChange(name)}
             className={`tap-target text-indigo flex w-11 items-center justify-center rounded-xl ${
               selected ? 'bg-amber' : 'bg-lavender'

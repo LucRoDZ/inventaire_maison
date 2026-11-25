@@ -1,8 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env['E2E_BASE_URL'] ?? 'http://localhost:3000';
+/** Owner of the e2e database (superuser of the test cluster): migrations and test fixtures. */
 const databaseUrl =
   process.env['E2E_DATABASE_URL'] ?? 'postgres://test:test@localhost:5432/inventaire_e2e';
+/** The application runs as its own role, under row-level security, as in production. */
+const appDatabaseUrl = (() => {
+  const url = new URL(databaseUrl);
+  url.username = 'inventaire_e2e_app';
+  url.password = 'inventaire-e2e-app';
+  return url.toString();
+})();
 
 const offPort = 4010;
 
@@ -38,7 +46,8 @@ export default defineConfig({
       reuseExistingServer: !process.env['CI'],
       timeout: 240_000,
       env: {
-        DATABASE_URL: databaseUrl,
+        DATABASE_URL: appDatabaseUrl,
+        DATABASE_MIGRATION_URL: databaseUrl,
         SESSION_SECRET: 'e2e-session-secret-e2e-session-secret-00',
         ADMIN_USERNAME,
         ADMIN_PASSWORD,

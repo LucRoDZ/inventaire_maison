@@ -46,6 +46,9 @@ export const CARD_DOORS: Record<LocationKind, CardDoor[]> = {
   other: pair(11.7, 5.7, 76.7, 88.6),
 };
 
+/** Id of the link of a card, to give it the focus (after a creation). */
+export const furnitureCardId = (locationId: number) => `meuble-${locationId}`;
+
 interface FurnitureCardProps {
   location: HomeLocationDto;
   /** Surrounds the card in amber: it holds a result of the current search. */
@@ -67,6 +70,7 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
   const release = () => setPressed(false);
   return (
     <Link
+      id={furnitureCardId(location.id)}
       href={`/inventaire/${location.id}${query}`}
       data-match={highlighted ? 'true' : undefined}
       data-pressed={pressed ? 'true' : undefined}

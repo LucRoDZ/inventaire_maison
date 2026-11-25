@@ -10,19 +10,42 @@ import { MembersAdmin } from './MembersAdmin';
 let current: AuthUser | null = null;
 vi.mock('../auth/AuthProvider', () => ({ useCurrentUser: () => current }));
 
-const root: UserDto = { id: 1, username: 'root', role: 'admin', disabled: false, createdAt: 'x' };
+const famille = { id: 1, name: 'Famille' };
+const root: UserDto = {
+  id: 1,
+  username: 'root',
+  role: 'admin',
+  disabled: false,
+  createdAt: 'x',
+  household: famille,
+};
 const marie: UserDto = {
   id: 2,
   username: 'marie',
   role: 'member',
   disabled: false,
   createdAt: 'x',
+  household: famille,
 };
-const paul: UserDto = { id: 3, username: 'paul', role: 'member', disabled: true, createdAt: 'x' };
+const paul: UserDto = {
+  id: 3,
+  username: 'paul',
+  role: 'member',
+  disabled: true,
+  createdAt: 'x',
+  household: famille,
+};
+
+const loadHouseholds = async () => [famille, { id: 2, name: 'Dupont' }];
 
 function makeApi(over: Partial<typeof UsersApi> = {}): typeof UsersApi {
   return {
     fetchUsers: vi.fn(async () => [root, marie, paul]),
+    moveUser: vi.fn(async (id, householdId) => ({
+      ...marie,
+      id,
+      household: { id: householdId, name: 'Dupont' },
+    })),
     createUser: vi.fn(async (input) => ({ ...marie, id: 9, ...input, disabled: false })),
     resetUserPassword: vi.fn(async () => marie),
     reactivateUser: vi.fn(async () => ({ ...paul, disabled: false })),
@@ -51,7 +74,7 @@ describe('AdminGate', () => {
 
 describe('MembersAdmin', () => {
   it('lists roles and states and offers no destructive action on oneself', async () => {
-    render(<MembersAdmin currentUserId={1} api={makeApi()} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={makeApi()} />);
     const self = await screen.findByRole('listitem', { name: 'root' });
     expect(self).toHaveTextContent('Administrateur · Actif');
     expect(within(self).queryByRole('button', { name: 'Désactiver' })).not.toBeInTheDocument();
@@ -60,23 +83,29 @@ describe('MembersAdmin', () => {
 
   it('creates a member with a temporary password', async () => {
     const api = makeApi();
-    render(<MembersAdmin currentUserId={1} api={api} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
     await screen.findByRole('listitem', { name: 'marie' });
     const user = userEvent.setup();
     await user.type(screen.getByLabelText('Pseudo du nouveau membre'), 'Sophie');
     await user.type(screen.getByLabelText('Mot de passe temporaire'), 'temporaire1');
     await user.click(screen.getByRole('button', { name: 'Créer le membre' }));
+    // The household is mandatory.
+    expect(screen.getByRole('alert')).toHaveTextContent('Choisissez le foyer du compte');
+    expect(api.createUser).not.toHaveBeenCalled();
+    await user.selectOptions(screen.getByLabelText('Foyer'), 'Famille');
+    await user.click(screen.getByRole('button', { name: 'Créer le membre' }));
     expect(api.createUser).toHaveBeenCalledWith({
       username: 'sophie',
       password: 'temporaire1',
       role: 'member',
+      householdId: 1,
     });
     expect(await screen.findByRole('listitem', { name: 'sophie' })).toBeInTheDocument();
   });
 
   it('validates the pseudo and the password before calling the API', async () => {
     const api = makeApi();
-    render(<MembersAdmin currentUserId={1} api={api} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
     await screen.findByRole('listitem', { name: 'marie' });
     const user = userEvent.setup();
     await user.type(screen.getByLabelText('Pseudo du nouveau membre'), 'a b');
@@ -94,18 +123,19 @@ describe('MembersAdmin', () => {
     const api = makeApi({
       createUser: vi.fn().mockRejectedValue(new ApiError(409, 'Ce pseudo existe déjà.')),
     });
-    render(<MembersAdmin currentUserId={1} api={api} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
     await screen.findByRole('listitem', { name: 'marie' });
     const user = userEvent.setup();
     await user.type(screen.getByLabelText('Pseudo du nouveau membre'), 'marie');
     await user.type(screen.getByLabelText('Mot de passe temporaire'), 'temporaire1');
+    await user.selectOptions(screen.getByLabelText('Foyer'), 'Dupont');
     await user.click(screen.getByRole('button', { name: 'Créer le membre' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Ce pseudo existe déjà.');
   });
 
   it('asks for a confirmation before deactivating', async () => {
     const api = makeApi();
-    render(<MembersAdmin currentUserId={1} api={api} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
     const row = await screen.findByRole('listitem', { name: 'marie' });
     const user = userEvent.setup();
     await user.click(within(row).getByRole('button', { name: 'Désactiver' }));
@@ -120,7 +150,7 @@ describe('MembersAdmin', () => {
 
   it('reactivates a disabled member', async () => {
     const api = makeApi();
-    render(<MembersAdmin currentUserId={1} api={api} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
     const row = await screen.findByRole('listitem', { name: 'paul' });
     await userEvent.click(within(row).getByRole('button', { name: 'Réactiver' }));
     expect(api.reactivateUser).toHaveBeenCalledWith(3);
@@ -129,7 +159,7 @@ describe('MembersAdmin', () => {
 
   it('resets a password after checking its length', async () => {
     const api = makeApi();
-    render(<MembersAdmin currentUserId={1} api={api} />);
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
     const row = await screen.findByRole('listitem', { name: 'marie' });
     const user = userEvent.setup();
     await user.click(within(row).getByRole('button', { name: 'Nouveau mot de passe' }));
@@ -140,5 +170,66 @@ describe('MembersAdmin', () => {
     await user.click(within(row).getByRole('button', { name: 'Enregistrer le mot de passe' }));
     expect(api.resetUserPassword).toHaveBeenCalledWith(2, 'court-plus-long');
     expect(await within(row).findByRole('status')).toHaveTextContent('sessions coupées');
+  });
+
+  it('shows the household of each account', async () => {
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={makeApi()} />);
+    const row = await screen.findByRole('listitem', { name: 'marie' });
+    expect(row).toHaveTextContent('Foyer : Famille');
+  });
+
+  it('creates an account in a new household named on the spot', async () => {
+    const api = makeApi();
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
+    await screen.findByRole('listitem', { name: 'marie' });
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('Pseudo du nouveau membre'), 'durand');
+    await user.type(screen.getByLabelText('Mot de passe temporaire'), 'temporaire1');
+    await user.selectOptions(screen.getByLabelText('Foyer'), 'Nouveau foyer…');
+    await user.click(screen.getByRole('button', { name: 'Créer le membre' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Nom du nouveau foyer');
+    await user.type(screen.getByLabelText('Nom du nouveau foyer'), ' Foyer Durand ');
+    await user.click(screen.getByRole('button', { name: 'Créer le membre' }));
+    expect(api.createUser).toHaveBeenCalledWith({
+      username: 'durand',
+      password: 'temporaire1',
+      role: 'member',
+      newHouseholdName: 'Foyer Durand',
+    });
+  });
+
+  it('moves an account to another household after saying what it changes', async () => {
+    const api = makeApi();
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={api} />);
+    const row = await screen.findByRole('listitem', { name: 'marie' });
+    const user = userEvent.setup();
+    await user.click(within(row).getByRole('button', { name: 'Changer de foyer' }));
+    const move = within(row).getByRole('button', { name: 'Déplacer marie' });
+    expect(move).toBeDisabled();
+    await user.selectOptions(within(row).getByLabelText('Nouveau foyer de marie'), 'Dupont');
+    expect(row).toHaveTextContent(
+      'marie verra alors l’inventaire de Dupont et non plus celui de Famille. Ses sessions ouvertes seront coupées.',
+    );
+    await user.click(move);
+    expect(api.moveUser).toHaveBeenCalledWith(2, 2);
+    expect(await within(row).findByText('Foyer : Dupont')).toBeInTheDocument();
+  });
+
+  it('never offers to move oneself', async () => {
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={makeApi()} />);
+    const self = await screen.findByRole('listitem', { name: 'root' });
+    expect(within(self).queryByRole('button', { name: 'Changer de foyer' })).toBeNull();
+  });
+
+  it('moves the focus into the panel it opens, and back to the actions when it closes', async () => {
+    render(<MembersAdmin currentUserId={1} loadHouseholds={loadHouseholds} api={makeApi()} />);
+    const row = await screen.findByRole('listitem', { name: 'marie' });
+    const user = userEvent.setup();
+    await user.click(within(row).getByRole('button', { name: 'Changer de foyer' }));
+    expect(within(row).getByLabelText('Nouveau foyer de marie')).toHaveFocus();
+    await user.click(within(row).getByRole('button', { name: 'Annuler' }));
+    expect(within(row).getByRole('button', { name: 'Changer de foyer' })).toHaveFocus();
+    await user.click(within(row).getByRole('button', { name: 'Désactiver' }));
+    expect(within(row).getByRole('button', { name: 'Annuler' })).toHaveFocus();
   });
 });

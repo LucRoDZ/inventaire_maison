@@ -16,8 +16,9 @@ import {
 } from '@inventaire/shared';
 import { and, asc, desc, eq, or, sql, type SQL } from 'drizzle-orm';
 import { isUniqueViolation } from '../common/pg-errors';
-import { DB, type Database, type Transaction } from '../database/database.module';
+import type { Transaction } from '../database/database.module';
 import { categories, locations, products, shelves, stockItems } from '../database/schema';
+import { TenantDb } from '../database/tenant-db';
 import { buildSearchText, normalizeSearch } from './search-text';
 
 export interface ProductCreateInput {
@@ -64,34 +65,43 @@ export function toProductDto(row: typeof products.$inferSelect): ProductDto {
 
 @Injectable()
 export class ProductsService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(@Inject(TenantDb) private readonly tenant: TenantDb) {}
 
   async search({ q, limit }: ProductSearch): Promise<ProductDto[]> {
-    const term = q ? normalizeSearch(q) : '';
-    const conditions: SQL[] = [];
+    return this.tenant.run(async (tx, householdId) => {
+      const term = q ? normalizeSearch(q) : '';
+      const conditions: SQL[] = [eq(products.householdId, householdId)];
 
-    const query = this.db.select().from(products);
-    if (term === '') {
+      const query = tx.select().from(products);
+      if (term === '') {
+        const rows = await query
+          .where(and(...conditions))
+          .orderBy(asc(products.name), asc(products.id))
+          .limit(limit);
+        return rows.map(toProductDto);
+      }
+
+      const contains = sql`position(${term} in ${products.searchText}) > 0`;
+      const similarity = sql`word_similarity(${term}, ${products.searchText})`;
       const rows = await query
-        .where(and(...conditions))
-        .orderBy(asc(products.name), asc(products.id))
+        .where(and(...conditions, or(contains, sql`${similarity} >= ${SIMILARITY_THRESHOLD}`)))
+        .orderBy(desc(contains), desc(similarity), asc(products.name), asc(products.id))
         .limit(limit);
       return rows.map(toProductDto);
-    }
-
-    const contains = sql`position(${term} in ${products.searchText}) > 0`;
-    const similarity = sql`word_similarity(${term}, ${products.searchText})`;
-    const rows = await query
-      .where(and(...conditions, or(contains, sql`${similarity} >= ${SIMILARITY_THRESHOLD}`)))
-      .orderBy(desc(contains), desc(similarity), asc(products.name), asc(products.id))
-      .limit(limit);
-    return rows.map(toProductDto);
+    });
   }
 
   async get(id: number): Promise<ProductDetailDto> {
-    const [row] = await this.db.select().from(products).where(eq(products.id, id));
+    return this.tenant.run((tx, householdId) => this.getIn(tx, householdId, id));
+  }
+
+  private async getIn(tx: Transaction, householdId: number, id: number): Promise<ProductDetailDto> {
+    const [row] = await tx
+      .select()
+      .from(products)
+      .where(and(eq(products.id, id), eq(products.householdId, householdId)));
     if (!row) throw new NotFoundException('Produit introuvable');
-    const lines = await this.db
+    const lines = await tx
       .select({
         id: stockItems.id,
         locationId: stockItems.locationId,
@@ -102,9 +112,15 @@ export class ProductsService {
         expiryDate: stockItems.expiryDate,
       })
       .from(stockItems)
-      .innerJoin(locations, eq(locations.id, stockItems.locationId))
-      .leftJoin(shelves, eq(shelves.id, stockItems.shelfId))
-      .where(eq(stockItems.productId, id))
+      .innerJoin(
+        locations,
+        and(eq(locations.id, stockItems.locationId), eq(locations.householdId, householdId)),
+      )
+      .leftJoin(
+        shelves,
+        and(eq(shelves.id, stockItems.shelfId), eq(shelves.householdId, householdId)),
+      )
+      .where(and(eq(stockItems.productId, id), eq(stockItems.householdId, householdId)))
       .orderBy(
         asc(locations.sortOrder),
         asc(locations.id),
@@ -150,19 +166,19 @@ export class ProductsService {
       }
     }
     try {
-      return await this.db.transaction(async (tx) => {
-        await this.requireCategory(tx, input.categoryId);
-        if (input.defaultLocationId) await this.requireLocation(tx, input.defaultLocationId);
+      return await this.tenant.run(async (tx, householdId) => {
+        await this.requireCategory(tx, householdId, input.categoryId);
+        if (input.defaultLocationId) {
+          await this.requireLocation(tx, householdId, input.defaultLocationId);
+        }
         if (barcode) {
-          const [existing] = await tx
-            .select({ id: products.id })
-            .from(products)
-            .where(eq(products.barcode, barcode));
-          if (existing) throw this.barcodeTaken(existing.id);
+          const existing = await this.findByBarcode(tx, householdId, barcode);
+          if (existing) throw this.barcodeTaken(existing);
         }
         const [row] = await tx
           .insert(products)
           .values({
+            householdId,
             barcode,
             name: input.name,
             brand: input.brand ?? null,
@@ -179,23 +195,43 @@ export class ProductsService {
       });
     } catch (error) {
       if (isUniqueViolation(error) && barcode) {
-        // Lost a race with a concurrent creation of the same code.
-        const [existing] = await this.db
-          .select({ id: products.id })
-          .from(products)
-          .where(eq(products.barcode, barcode));
-        throw this.barcodeTaken(existing?.id);
+        // Lost a race with a concurrent creation of the same code in the household.
+        const existing = await this.tenant.run((tx, householdId) =>
+          this.findByBarcode(tx, householdId, barcode),
+        );
+        throw this.barcodeTaken(existing ?? undefined);
       }
       throw error;
     }
   }
 
+  /** Id of the product of the household that carries this canonical barcode, or null. */
+  async findByBarcode(
+    tx: Transaction,
+    householdId: number,
+    barcode: string,
+  ): Promise<number | null> {
+    const [row] = await tx
+      .select({ id: products.id })
+      .from(products)
+      .where(and(eq(products.householdId, householdId), eq(products.barcode, barcode)));
+    return row?.id ?? null;
+  }
+
   async update(id: number, patch: ProductPatchInput): Promise<ProductDto> {
-    return this.db.transaction(async (tx) => {
-      const [current] = await tx.select().from(products).where(eq(products.id, id)).for('update');
+    return this.tenant.run(async (tx, householdId) => {
+      const [current] = await tx
+        .select()
+        .from(products)
+        .where(and(eq(products.id, id), eq(products.householdId, householdId)))
+        .for('update');
       if (!current) throw new NotFoundException('Produit introuvable');
-      if (patch.categoryId !== undefined) await this.requireCategory(tx, patch.categoryId);
-      if (patch.defaultLocationId) await this.requireLocation(tx, patch.defaultLocationId);
+      if (patch.categoryId !== undefined) {
+        await this.requireCategory(tx, householdId, patch.categoryId);
+      }
+      if (patch.defaultLocationId) {
+        await this.requireLocation(tx, householdId, patch.defaultLocationId);
+      }
 
       const name = patch.name ?? current.name;
       const brand = patch.brand === undefined ? current.brand : patch.brand;
@@ -215,7 +251,7 @@ export class ProductsService {
           searchText: buildSearchText(name, brand),
           updatedAt: sql`now()`,
         })
-        .where(eq(products.id, id))
+        .where(and(eq(products.id, id), eq(products.householdId, householdId)))
         .returning();
       return toProductDto(row!);
     });
@@ -230,16 +266,19 @@ export class ProductsService {
     });
   }
 
-  private async requireCategory(tx: Transaction, id: number): Promise<void> {
+  private async requireCategory(tx: Transaction, householdId: number, id: number): Promise<void> {
     const [row] = await tx
       .select({ id: categories.id })
       .from(categories)
-      .where(eq(categories.id, id));
+      .where(and(eq(categories.id, id), eq(categories.householdId, householdId)));
     if (!row) throw new NotFoundException('Catégorie introuvable');
   }
 
-  private async requireLocation(tx: Transaction, id: number): Promise<void> {
-    const [row] = await tx.select({ id: locations.id }).from(locations).where(eq(locations.id, id));
+  private async requireLocation(tx: Transaction, householdId: number, id: number): Promise<void> {
+    const [row] = await tx
+      .select({ id: locations.id })
+      .from(locations)
+      .where(and(eq(locations.id, id), eq(locations.householdId, householdId)));
     if (!row) throw new NotFoundException('Lieu introuvable');
   }
 }

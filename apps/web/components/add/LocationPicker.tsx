@@ -1,5 +1,6 @@
 import type { LocationDto } from '@inventaire/shared';
 import type { Place } from '../../lib/add-place';
+import { LocationOptions } from '../ui/LocationOptions';
 
 interface LocationPickerProps {
   locations: LocationDto[];
@@ -22,11 +23,7 @@ export function LocationPicker({ locations, value, onChange }: LocationPickerPro
           // Changing the location empties the shelf: it belonged to the previous one.
           onChange={(event) => onChange({ locationId: Number(event.target.value), shelfId: null })}
         >
-          {locations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
+          <LocationOptions locations={locations} />
         </select>
       </label>
       <label className="text-label flex flex-col gap-1">

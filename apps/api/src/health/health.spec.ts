@@ -1,9 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
-import type { Pool } from 'pg';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { PG_POOL } from '../database/database.module';
+import type { Pool } from 'pg';
 import { createTestApp } from '../../test/create-test-app';
+import { PG_POOL } from '../database/database.module';
 
 describe('GET /api/health', () => {
   let app: INestApplication;
@@ -34,6 +34,9 @@ describe('GET /api/health', () => {
     const unauthenticated = await request(app.getHttpServer()).get('/api/auth/me');
     expect(unauthenticated.status).toBe(401);
     expect(unauthenticated.headers['x-content-type-options']).toBe('nosniff');
+    // Nothing of the API is kept by a browser or a proxy.
+    expect(res.headers['cache-control']).toBe('private, no-store');
+    expect(unauthenticated.headers['cache-control']).toBe('private, no-store');
     expect(unauthenticated.headers['x-powered-by']).toBeUndefined();
   });
 

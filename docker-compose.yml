@@ -64,7 +64,11 @@ services:
     restart: unless-stopped
     environment:
       PORT: '3001'
-      DATABASE_URL: postgres://inventaire:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}@inventaire-db:5432/inventaire
+      # Two roles: the application runs as inventaire_app (row-level security applies, no
+      # superuser), migrations run as the owner. The API creates inventaire_app and sets its
+      # password from this URL at start, on a new volume as on an existing one.
+      DATABASE_URL: postgres://inventaire_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD manquant dans .env (./deploy.sh le génère)}@inventaire-db:5432/inventaire
+      DATABASE_MIGRATION_URL: postgres://inventaire:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}@inventaire-db:5432/inventaire
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET manquant dans .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:?ADMIN_USERNAME manquant dans .env}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD manquant dans .env}
