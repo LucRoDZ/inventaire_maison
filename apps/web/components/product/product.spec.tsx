@@ -18,7 +18,7 @@ const categories: CategoryDto[] = [
   { id: 2, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true },
 ];
 const locations: LocationDto[] = [
-  { id: 5, name: 'Frigo', kind: 'fridge', icon: 'x', sortOrder: 1, shelves: [] },
+  { id: 5, name: 'Frigo', kind: 'fridge', icon: 'x', productCount: 0, sortOrder: 1, shelves: [] },
 ];
 const product: ProductDto = {
   id: 7,

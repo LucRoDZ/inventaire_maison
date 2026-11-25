@@ -228,6 +228,38 @@ const checks: Record<string, Check> = {
     assertNothingOfB(res.body, `${who} locations`);
     assertNoHousehold(res.body, `${who} locations`);
   },
+  'POST /api/locations': async (client, who) => {
+    // Created in the household of the request, whatever a body might say.
+    expect(
+      (await client.post('/api/locations').send({ name: 'Intrus', kind: 'other', householdId: B }))
+        .status,
+    ).toBe(400);
+    const res = await client.post('/api/locations').send({ name: `Remise ${who}`, kind: 'other' });
+    expect(res.status).toBe(201);
+    assertNoHousehold(res.body, 'create location');
+    const [row] = await q<{ household_id: number }>(
+      'SELECT household_id FROM locations WHERE id = $1',
+      [res.body.id],
+    );
+    expect(row!.household_id).toBe(A);
+    // The same name as a piece of furniture of B is free in A.
+    const same = await client
+      .post('/api/locations')
+      .send({ name: `Frigo ${MARK_B}`, kind: 'fridge' });
+    expect(same.status).toBe(201);
+    for (const id of [res.body.id, same.body.id]) {
+      expect((await client.delete(`/api/locations/${id}`)).status).toBe(204);
+    }
+  },
+  'DELETE /api/locations/:id': async (client) => {
+    expect((await client.delete(`/api/locations/${b.location}`)).status).toBe(404);
+    // The stock of A can never be poured into a piece of furniture of B.
+    expect(
+      (await client.delete(`/api/locations/${a.location}?moveStockTo=${b.location}`)).status,
+    ).toBe(404);
+    const [line] = await q('SELECT 1 FROM stock_items WHERE id = $1', [a.stockItem]);
+    expect(line).toBeDefined();
+  },
   'PATCH /api/locations/:id': async (client) => {
     expect((await client.patch(`/api/locations/${b.location}`).send({ name: 'Volé' })).status).toBe(
       404,

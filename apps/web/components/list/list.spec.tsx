@@ -18,8 +18,24 @@ const categories: CategoryDto[] = [
   { id: 3, name: 'Autre', icon: 'package', sortOrder: 3, isFallback: true },
 ];
 const locations: LocationDto[] = [
-  { id: 10, name: 'Frigo', kind: 'fridge', icon: 'refrigerator', sortOrder: 1, shelves: [] },
-  { id: 11, name: 'Cave', kind: 'cellar', icon: 'wine', sortOrder: 2, shelves: [] },
+  {
+    id: 10,
+    name: 'Frigo',
+    kind: 'fridge',
+    icon: 'refrigerator',
+    productCount: 0,
+    sortOrder: 1,
+    shelves: [],
+  },
+  {
+    id: 11,
+    name: 'Cave',
+    kind: 'cellar',
+    icon: 'wine',
+    productCount: 0,
+    sortOrder: 2,
+    shelves: [],
+  },
 ];
 
 const line = (

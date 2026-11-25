@@ -12,13 +12,22 @@ const locations: LocationDto[] = [
     name: 'Garde-manger',
     kind: 'pantry',
     icon: 'archive',
+    productCount: 0,
     sortOrder: 0,
     shelves: [
       { id: 10, locationId: 1, name: 'Haut', kind: 'plain', sortOrder: 0 },
       { id: 11, locationId: 1, name: 'Bas', kind: 'rack', sortOrder: 1 },
     ],
   },
-  { id: 2, name: 'Frigo', kind: 'fridge', icon: 'snowflake', sortOrder: 1, shelves: [] },
+  {
+    id: 2,
+    name: 'Frigo',
+    kind: 'fridge',
+    icon: 'snowflake',
+    productCount: 0,
+    sortOrder: 1,
+    shelves: [],
+  },
 ];
 
 function makeApi(over: Partial<typeof PlacesApi> = {}): typeof PlacesApi {

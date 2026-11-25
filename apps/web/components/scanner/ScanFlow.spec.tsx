@@ -27,6 +27,7 @@ const locations: LocationDto[] = [
     name: 'Frigo',
     kind: 'fridge',
     icon: 'refrigerator',
+    productCount: 0,
     sortOrder: 1,
     shelves: [{ id: 21, locationId: 2, name: 'Étagère 2', kind: 'plain', sortOrder: 1 }],
   },
