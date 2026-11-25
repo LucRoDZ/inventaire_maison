@@ -16,7 +16,6 @@ import { ClockModule } from '../common/clock';
 import { ConfigModule } from '../config/config.module';
 import { loadLocalEnv } from '../config/load-env';
 import { DatabaseModule } from '../database/database.module';
-import { users } from '../database/schema';
 import { HouseholdsModule } from './households.module';
 import { HouseholdsService } from './households.service';
 
@@ -83,11 +82,7 @@ async function run(): Promise<void> {
   });
   try {
     const passwordHash = await app.get(PasswordService).hash(password);
-    const created = await app
-      .get(HouseholdsService)
-      .create(name, (tx, householdId) =>
-        tx.insert(users).values({ username, passwordHash, role: 'admin', householdId }).returning(),
-      );
+    const created = await app.get(HouseholdsService).createWithAdmin(name, username, passwordHash);
     console.log(`Foyer « ${created.name} » créé avec le compte administrateur « ${username} ».`);
     if (generated) {
       // Shown once, never stored in clear nor written to a log.

@@ -94,6 +94,21 @@ export class HouseholdsService {
     }
   }
 
+  /**
+   * `npm run household:create`: a household and its first admin account, in one transaction
+   * (amorce d'une instance vide, decision D3). `passwordHash` is already an argon2id hash.
+   */
+  async createWithAdmin(
+    name: string,
+    username: string,
+    passwordHash: string,
+  ): Promise<{ id: number; name: string }> {
+    const created = await this.create(name, (tx, householdId) =>
+      tx.insert(users).values({ username, passwordHash, role: 'admin', householdId }).returning(),
+    );
+    return { id: created.id, name: created.name };
+  }
+
   async rename(id: number, name: string): Promise<{ id: number; name: string }> {
     try {
       const [row] = await this.db
