@@ -7,6 +7,8 @@ Auto-hébergée sur un VPS OVH, en conteneurs Docker, à `https://inventaire.luc
 ## Documentation
 
 - Cahier des charges : [`docs/cahier-des-charges.md`](docs/cahier-des-charges.md)
+- Foyers isolés et meubles modulables (conception, rôles, migration, retour arrière) : [`docs/foyers-et-meubles.md`](docs/foyers-et-meubles.md)
+- Audit de finition de l'interface : [`docs/audit-finition.md`](docs/audit-finition.md)
 - Consignes pour Claude Code : [`CLAUDE.md`](CLAUDE.md)
 - Suivi d'avancement : [`TASKS.md`](TASKS.md)
 
@@ -35,7 +37,7 @@ npm run db:migrate          # facultatif : l'API applique aussi les migrations a
 npm run dev                 # web sur :3000, api sur :3001
 ```
 
-En local, l'API, `db:migrate` et `db:seed` lisent le `.env` de la racine ; une variable déjà définie dans le shell est prioritaire. En production (Docker) et dans les tests, ce fichier n'est jamais lu.
+En local, l'API, `db:migrate` et `household:create` lisent le `.env` de la racine ; une variable déjà définie dans le shell est prioritaire. En production (Docker) et dans les tests, ce fichier n'est jamais lu. Au premier démarrage sur une base vide, l'API crée le foyer « Famille » (meubles et catégories du modèle) et son administrateur (`ADMIN_USERNAME`, `ADMIN_PASSWORD`).
 
 Toute la pile en conteneurs, avec Caddy embarqué :
 
@@ -46,15 +48,17 @@ curl -sk https://localhost/api/health      # {"status":"ok"}
 
 ## Variables d'environnement
 
-Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`. En production (`NODE_ENV=production`, donc dans Docker), l'API refuse de démarrer si `SESSION_SECRET`, `ADMIN_PASSWORD`, `PROXY_SECRET` ou le mot de passe de la base contiennent encore `change-me`. `POSTGRES_PASSWORD` entre tel quel dans l'URL de connexion : utilise des caractères hexadécimaux (`openssl rand -hex 24`), pas de `@`, `/`, `:` ni `#`.
+Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`. En production (`NODE_ENV=production`, donc dans Docker), l'API refuse de démarrer si `SESSION_SECRET`, `ADMIN_PASSWORD`, `PROXY_SECRET` ou un mot de passe de la base contiennent encore `change-me`. `POSTGRES_PASSWORD` et `APP_DB_PASSWORD` entrent tels quels dans les URL de connexion : utilise des caractères hexadécimaux (`openssl rand -hex 24`), pas de `@`, `/`, `:` ni `#`.
 
 | Variable | Rôle |
 | --- | --- |
 | `APP_DOMAIN` | Domaine public (`localhost` en local) ; l'origine autorisée de l'API en est dérivée |
-| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
-| `DATABASE_URL` | Connexion PostgreSQL pour `npm run dev` (Compose construit la sienne) |
+| `POSTGRES_PASSWORD` | Mot de passe du propriétaire de la base (`inventaire`, superutilisateur de l'image Postgres) : migrations seulement |
+| `APP_DB_PASSWORD` | Mot de passe du rôle d'exécution `inventaire_app` (sans superutilisateur ni `BYPASSRLS`, soumis à la sécurité par ligne). L'API crée ce rôle et lui pose ce mot de passe à chaque démarrage. `./deploy.sh` l'ajoute à `.env` s'il manque |
+| `DATABASE_URL` | Connexion d'exécution (`inventaire_app`) pour `npm run dev` ; Compose construit la sienne |
+| `DATABASE_MIGRATION_URL` | Connexion du propriétaire (migrations, création du rôle d'exécution) pour `npm run dev` ; Compose construit la sienne |
 | `SESSION_SECRET` | Clé HMAC des sessions (32 caractères au moins) : la base ne stocke que `HMAC-SHA256(SESSION_SECRET, jeton)`. Changer ce secret déconnecte tout le monde (révocation d'urgence) |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Premier compte administrateur, créé quand la table `users` est vide. Pseudo : 3 à 30 caractères parmi `a-z`, `0-9`, `_`, `.`, `-` (mis en minuscules) ; mot de passe : 8 à 128 caractères |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Premier compte administrateur, créé quand la table `users` est vide, dans le foyer « Famille ». Pseudo : 3 à 30 caractères parmi `a-z`, `0-9`, `_`, `.`, `-` (mis en minuscules) ; mot de passe : 8 à 128 caractères |
 | `PROXY_SECRET` | Secret partagé avec le reverse proxy (16 caractères au moins, `openssl rand -hex 32`). Le proxy l'envoie dans `X-Proxy-Secret` ; sans lui, l'API ignore `X-Forwarded-For` et ne retient que l'adresse du pair direct. Empêche un autre conteneur du réseau partagé de falsifier son adresse pour contourner les limites de débit. Obligatoire dans Compose |
 | `OFF_USER_AGENT` | User-Agent envoyé à Open Food Facts |
 | `COMPOSE_FILE` | Fichiers Compose utilisés (voir les deux modes de proxy) |
@@ -62,14 +66,35 @@ Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`. En produc
 | `SHARED_PROXY_NETWORK` | Réseau Docker externe du nginx partagé (mode production uniquement) |
 | `RATE_LIMIT_PER_MINUTE` | Facultative : limite globale de requêtes par minute et par IP (300 par défaut ; `/api/health` n'est jamais limité) |
 
+## Foyers, comptes et rôles
+
+Chaque compte appartient à un **foyer** (une famille) ; les comptes d'un même foyer partagent tout l'inventaire, deux foyers ne voient jamais rien l'un de l'autre. Le foyer n'apparaît jamais aux membres : seul l'administrateur le voit, dans **Plus > Administration** (écrans Foyers, Comptes, Catégories et Correspondances). L'administrateur gère foyers et comptes mais ne lit jamais l'inventaire d'un autre foyer que le sien.
+
+- **Créer un foyer** : Administration > Foyers, ou en créant un compte avec « Nouveau foyer ». Le foyer reçoit une copie du modèle : quatre meubles (Garde-manger, Frigo, Congélateur, Cave), les catégories et les correspondances Open Food Facts.
+- **Supprimer un foyer** : seulement s'il n'a plus de compte (déplacez-les d'abord) ; il faut retaper son nom. Ses meubles, produits, stock, catégories, historique et photos sont effacés : seule une sauvegarde permet de revenir en arrière.
+- **Changer un compte de foyer** : Administration > Comptes > « Changer de foyer ». Le compte voit alors l'autre inventaire, ses sessions sont coupées ; l'historique garde son pseudo.
+- **Meubles** : chaque compte ajoute, renomme, réordonne et supprime les meubles de son foyer (12 au plus, 8 étagères ou tiroirs par meuble), depuis l'accueil (tuile « Ajouter un meuble ») ou Plus > Meubles et étagères.
+- **Amorcer une instance vide** sans passer par le premier admin du `.env` :
+
+  ```bash
+  npm run household:create -- --name "Famille Martin" --admin "martin"          # en local
+  docker compose exec api node dist/households/cli.js --name "Famille Martin" --admin "martin"   # sur le VPS
+  ```
+
+  Le mot de passe est demandé sans écho ; laissé vide (ou sans terminal), il est généré et affiché une seule fois.
+
+**Défense en profondeur.** Chaque requête est liée au foyer du compte (contexte posé par la garde de session) ; tous les accès aux données passent par `TenantDb`, qui ouvre une transaction avec `set_config('app.household_id', …, true)` et filtre explicitement par foyer. Sous ce filtre, la sécurité par ligne de PostgreSQL (`ENABLE` et `FORCE ROW LEVEL SECURITY`) refuse toute ligne d'un autre foyer, et toute ligne quand aucun foyer n'est posé. L'application tourne sous le rôle `inventaire_app` (`DATABASE_URL`), sans superutilisateur ni `BYPASSRLS`, avec des droits minimum par table (le journal en lecture et insertion seulement) ; les migrations tournent sous le propriétaire (`DATABASE_MIGRATION_URL`). L'API refuse de démarrer si le rôle d'exécution peut contourner la sécurité par ligne. Les photos sont rangées par foyer et servies après vérification ; le service worker ne met aucune réponse de l'API en cache. Détails : [`docs/foyers-et-meubles.md`](docs/foyers-et-meubles.md).
+
 ## Tests et qualité
 
 ```bash
 npm run lint
 npm run format:check
 npm run typecheck
-npm test            # API puis web ; l'API exige un PostgreSQL joignable par DATABASE_URL
-                    # (défaut : postgres://test:test@localhost:5432/inventaire_test, comme en CI)
+npm test            # API puis web ; l'API exige un PostgreSQL joignable par
+                    # DATABASE_MIGRATION_URL, un superutilisateur (défaut :
+                    # postgres://test:test@localhost:5432/inventaire_test, comme en CI) ; les tests
+                    # tournent sous le rôle d'exécution de DATABASE_URL, créé au démarrage
 npm run test:e2e    # Playwright : Chromium (Pixel 7) et WebKit (iPhone 14)
 shellcheck deploy.sh scripts/*.sh
 scripts/test-backup-db.sh        # pile Compose démarrée (`docker compose up -d --wait`)
@@ -195,6 +220,32 @@ Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
 Après un déploiement, les téléphones passent à la nouvelle version **sans rien demander** : le service worker prend la main tout seul, et une page déjà ouverte change de version à la navigation suivante (jamais pendant un scan, une saisie, un glisser-déposer ou avec un panneau ouvert), ou au prochain lancement. Aucun message « Nouvelle version disponible ».
 
+### Mise à jour vers les foyers (une seule fois)
+
+Cette version ajoute la migration `0003` (foyers, sécurité par ligne) et le rôle `inventaire_app`. Elle s'applique d'elle-même au démarrage de l'API, mais **une sauvegarde est obligatoire avant** : il n'existe pas de migration descendante.
+
+```bash
+/opt/scripts/backup-inventaire.sh          # sauvegarde obligatoire (base et images)
+cd /opt/inventaire && git pull --ff-only   # récupère le nouveau deploy.sh
+./deploy.sh                                # génère APP_DB_PASSWORD dans .env s'il manque, puis déploie
+```
+
+Au démarrage, l'API rattache tout l'existant au foyer « Famille » (comptes, meubles, produits, stock, historique), crée le rôle `inventaire_app`, déplace les photos dans `h<foyer>/` et vérifie que le rôle d'exécution ne contourne pas la sécurité par ligne. Vérifier ensuite `curl -s https://inventaire.lucaszivan.app/api/health`, puis se connecter : l'inventaire est inchangé.
+
+**Retour arrière** (seulement en cas de problème) : l'ancien code ne fonctionne pas sur le nouveau schéma, il faut restaurer la sauvegarde prise juste avant.
+
+```bash
+cd /opt/inventaire
+git checkout <commit précédent>            # le dernier commit avant la fusion de la PR
+./deploy.sh --no-backup                    # reconstruit l'ancienne version
+docker compose stop api
+scripts/restore-db.sh --force backups/inventaire-<date d'avant>.sql.gz
+docker compose start api
+docker compose exec -T api tar -xzf - -C /data/images < backups/images-<date d'avant>.tar.gz   # si les photos ont bougé
+```
+
+Le rôle `inventaire_app` laissé par la nouvelle version n'a aucun droit sur l'ancien schéma restauré ; on peut le supprimer (`docker compose exec db psql -U inventaire -c 'DROP ROLE inventaire_app'`).
+
 ### Renouvellement du certificat
 
 Les certificats vivent dans le volume `easyq_certbot_certs`, comme ceux d'easyq. Si le VPS renouvelle déjà ce volume (cron ou minuteur d'easyq), il suffit que nginx relise les certificats après chaque renouvellement. Sinon, renouveler à la main ou par cron :
@@ -229,7 +280,7 @@ Sans nginx partagé, Caddy obtient lui-même les certificats. Dans `.env` : `COM
 
 ## Sauvegardes
 
-- Base : `scripts/backup-db.sh` (appelé par `deploy.sh`) écrit un `pg_dump` compressé `inventaire-<date>.sql.gz` dans `backups/` et garde les 14 derniers.
+- Base : `scripts/backup-db.sh` (appelé par `deploy.sh`) écrit un `pg_dump` compressé `inventaire-<date>.sql.gz` dans `backups/` et garde les 14 derniers. Le dump ne contient pas les droits (`--no-privileges`) : l'API réaccorde ceux du rôle `inventaire_app` à chaque démarrage.
 - Images produits : `scripts/backup-images.sh` archive le volume `images` en `images-<date>.tar.gz` dans `backups/` (14 conservées), en lisant le volume par le conteneur `api`.
 - Les archives sont créées en `600` (dossier en `700`) : elles contiennent les hachages des mots de passe. `BACKUP_DIR` et `BACKUP_KEEP` changent le dossier et le nombre conservé.
 
@@ -339,3 +390,7 @@ Le script relance Claude Code jusqu'à `ALL DONE` ou `STOP: validation requise` 
 ## Licence
 
 Usage privé familial.
+
+## Crédits
+
+La passe de finition de l'interface (`docs/audit-finition.md`) s'appuie sur le skill [`unslop`](https://github.com/heydamir/unslop) de Damir Sokolovsky, sous licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
