@@ -219,20 +219,21 @@ test.describe('meuble ouvert sans défilement vertical', () => {
 
     const button = page.getByRole('button', { name: 'Filtres', exact: true });
     await expect(button).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.getByText(/^Filtré :/)).toHaveCount(0);
+    await expect(page.getByTestId('filter-reminder')).toHaveCount(0);
     await button.click();
     const sheet = page.getByRole('dialog', { name: 'Filtres' });
     await expect(sheet).toBeVisible();
     await expect(button).toHaveAttribute('aria-expanded', 'true');
-    await sheet.getByRole('searchbox', { name: 'Rechercher dans la maison' }).fill('topinambour');
+    await sheet.getByRole('searchbox', { name: 'Nom ou marque' }).fill('topinambour');
+    await sheet.getByRole('button', { name: 'Appliquer' }).click();
     await expect(page).toHaveURL(/\?q=topinambour$/);
 
-    // Échap closes the sheet and gives the focus back to the button, now « actifs ».
-    await page.keyboard.press('Escape');
+    // Applied: the sheet closes and gives the focus back to the button, now with its badge.
     await expect(sheet).toHaveCount(0);
-    const active = page.getByRole('button', { name: 'Filtres, actifs' });
+    const active = page.getByRole('button', { name: 'Filtres', exact: true });
     await expect(active).toBeFocused();
     await expect(active).toHaveAttribute('aria-expanded', 'false');
+    await expect(active.getByTestId('filters-badge')).toHaveText('1');
 
     // What does not match fades; what matches stays.
     const quenelle = page.getByRole('button', {
@@ -245,9 +246,9 @@ test.describe('meuble ouvert sans défilement vertical', () => {
     await expect(topinambour.first()).not.toHaveClass(/opacity-30/);
 
     // The reminder takes its 32 px from the shelves: still no vertical scroll.
-    const reminder = page.getByText(/^Filtré :/);
-    await expect(reminder).toHaveText('Filtré : topinambour');
-    expect(Math.round((await reminder.locator('..').boundingBox())!.height)).toBe(32);
+    const reminder = page.getByTestId('filter-reminder');
+    await expect(reminder).toContainText('topinambour');
+    expect(Math.round((await reminder.boundingBox())!.height)).toBe(32);
     await expect.poll(async () => (await layout(page)).overlaps).toEqual([]);
     expectFits(await layout(page), 'filtre actif');
 
@@ -277,7 +278,7 @@ test.describe('meuble ouvert sans défilement vertical', () => {
     await expect(page).toHaveURL(/\/inventaire\?q=beurre$/);
   });
 
-  test('paysage : le défilement vertical redevient permis, rien n’est rogné', async ({
+  test('paysage : le meuble défile dans sa zone (jamais la page), rien n’est rogné', async ({
     page,
   }, testInfo) => {
     const tag = TAG[testInfo.project.name as keyof typeof TAG];
@@ -287,6 +288,16 @@ test.describe('meuble ouvert sans défilement vertical', () => {
     expect(state.overlaps).toEqual([]);
     expect(state.outside).toEqual([]);
     for (const tile of state.tiles) expect(tile.clipped).toBe(false);
-    expect(state.scrollHeight).toBeGreaterThan(state.innerHeight);
+    // The page never scrolls; the furniture scrolls inside the screen, under its top bar.
+    expect(state.scrollHeight).toBeLessThanOrEqual(state.innerHeight);
+    const inner = await page
+      .locator('main')
+      .evaluate((main) =>
+        [...main.querySelectorAll<HTMLElement>('div')].some(
+          (el) =>
+            getComputedStyle(el).overflowY === 'auto' && el.scrollHeight > el.clientHeight + 1,
+        ),
+      );
+    expect(inner).toBe(true);
   });
 });

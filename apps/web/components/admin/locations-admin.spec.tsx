@@ -56,84 +56,163 @@ function makeApi(over: Partial<typeof PlacesApi> = {}): typeof PlacesApi {
 
 async function setup(api = makeApi()) {
   render(<LocationsAdmin api={api} />);
-  const pantry = await screen.findByRole('region', { name: 'Meuble Garde-manger' });
-  return { api, pantry, user: userEvent.setup() };
+  await screen.findByRole('listitem', { name: 'Meuble Garde-manger' });
+  return { api, user: userEvent.setup() };
+}
+
+const row = (name: string) => screen.getByRole('listitem', { name: `Meuble ${name}` });
+
+/** Opens the line of a piece of furniture and returns it. */
+async function open(user: ReturnType<typeof userEvent.setup>, name: string) {
+  const line = row(name);
+  const button = within(line)
+    .getAllByRole('button')
+    .find((b) => b.hasAttribute('aria-expanded'))!;
+  if (button.getAttribute('aria-expanded') !== 'true') await user.click(button);
+  return line;
 }
 
 describe('LocationsAdmin', () => {
-  it('renames a location and changes its icon', async () => {
-    const { api, pantry, user } = await setup();
-    const save = within(pantry).getByRole('button', { name: 'Enregistrer le meuble' });
-    expect(save).toBeDisabled();
+  it('shows one closed line per piece of furniture: icon, name, number of products', async () => {
+    await setup();
+    const line = row('Garde-manger');
+    const button = within(line).getAllByRole('button')[0]!;
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveTextContent('Garde-manger');
+    expect(button).toHaveTextContent('Vide');
+    expect(within(line).getByLabelText('Nom du meuble')).not.toBeVisible();
+    expect(screen.queryByRole('combobox', { name: /Icône/ })).toBeNull();
+  });
+
+  it('opens one line at a time', async () => {
+    const { user } = await setup();
+    await open(user, 'Garde-manger');
+    expect(within(row('Garde-manger')).getByLabelText('Nom du meuble')).toBeVisible();
+    await open(user, 'Frigo');
+    expect(within(row('Frigo')).getByLabelText('Nom du meuble')).toBeVisible();
+    expect(within(row('Garde-manger')).getByLabelText('Nom du meuble')).not.toBeVisible();
+    expect(
+      screen.getAllByRole('button').filter((b) => b.getAttribute('aria-expanded') === 'true'),
+    ).toHaveLength(1);
+  });
+
+  it('keeps what was typed when the line is folded and opened again', async () => {
+    const { user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    await user.type(within(pantry).getByLabelText('Nom de Haut'), ' gauche');
+    await open(user, 'Frigo');
+    await open(user, 'Garde-manger');
+    expect(within(row('Garde-manger')).getByLabelText('Nom de Haut')).toHaveValue('Haut gauche');
+  });
+
+  it('renames, changes the icon in a grid and saves both with one « Enregistrer »', async () => {
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    const save = within(pantry).getByRole('button', { name: 'Enregistrer' });
+    expect(save).toHaveAttribute('aria-disabled', 'true');
     const name = within(pantry).getByLabelText('Nom du meuble');
     await user.clear(name);
-    await user.type(name, 'Cellier');
-    await user.selectOptions(within(pantry).getByLabelText('Icône du meuble'), 'wine');
+    await user.type(name, 'Placard');
+    await user.click(within(pantry).getByRole('button', { name: /Changer l’icône/ }));
+    const sheet = screen.getByRole('dialog', { name: 'Icône de Garde-manger' });
+    await user.click(within(sheet).getByRole('radio', { name: 'Verre de vin' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Choisir cette icône' }));
+    expect(api.updateLocation).not.toHaveBeenCalled();
     await user.click(save);
-    expect(api.updateLocation).toHaveBeenCalledWith(1, { name: 'Cellier', icon: 'wine' });
-    expect(await screen.findByRole('status')).toHaveTextContent('Meuble enregistré.');
+    expect(api.updateLocation).toHaveBeenCalledWith(1, { name: 'Placard', icon: 'wine' });
+    expect(await screen.findByRole('status')).toHaveTextContent('Placard enregistré.');
+  });
+
+  it('refuses an empty name or one already taken, under the field', async () => {
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    const name = within(pantry).getByLabelText('Nom du meuble');
+    await user.clear(name);
+    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer' }));
+    expect(within(pantry).getByRole('alert')).toHaveTextContent('Donnez un nom au meuble.');
+    await user.type(name, 'frigo');
+    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer' }));
+    expect(within(pantry).getByRole('alert')).toHaveTextContent('déjà ce nom');
+    expect(api.updateLocation).not.toHaveBeenCalled();
   });
 
   it('moves a location down by renumbering only what changed', async () => {
-    const { api, pantry, user } = await setup();
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
     await user.click(within(pantry).getByRole('button', { name: 'Descendre Garde-manger' }));
-    await waitFor(() => expect(api.updateLocation).toHaveBeenCalledTimes(2));
-    expect(api.updateLocation).toHaveBeenCalledWith(2, { sortOrder: 0 });
     expect(api.updateLocation).toHaveBeenCalledWith(1, { sortOrder: 1 });
-    expect(within(pantry).getByRole('button', { name: 'Monter Garde-manger' })).toBeDisabled();
+    expect(api.updateLocation).toHaveBeenCalledWith(2, { sortOrder: 0 });
   });
 
-  it('adds a shelf, refusing an empty name', async () => {
-    const { api, pantry, user } = await setup();
-    const form = within(pantry).getByRole('form', { name: 'Ajouter une étagère à Garde-manger' });
-    await user.click(within(form).getByRole('button', { name: 'Ajouter l’étagère' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('obligatoire');
-    expect(api.createShelf).not.toHaveBeenCalled();
-    await user.type(within(form).getByLabelText('Nom de la nouvelle étagère'), 'Milieu');
-    await user.selectOptions(within(form).getByLabelText('Type de la nouvelle étagère'), 'rack');
-    await user.click(within(form).getByRole('button', { name: 'Ajouter l’étagère' }));
-    expect(api.createShelf).toHaveBeenCalledWith({ locationId: 1, name: 'Milieu', kind: 'rack' });
-  });
-
-  it('renames a shelf and changes its type', async () => {
-    const { api, pantry, user } = await setup();
-    const row = within(pantry).getByRole('listitem', { name: 'Haut' });
-    const name = within(row).getByLabelText('Nom de l’étagère');
+  it('shows the shelves as compact lines and saves their name and type with the form', async () => {
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    const line = within(pantry).getByRole('listitem', { name: 'Haut' });
+    const name = within(line).getByLabelText('Nom de Haut');
     await user.clear(name);
-    await user.type(name, 'Très haut');
-    await user.selectOptions(within(row).getByLabelText('Type de l’étagère'), 'rack');
-    await user.click(within(row).getByRole('button', { name: 'Enregistrer l’étagère' }));
-    expect(api.updateShelf).toHaveBeenCalledWith(10, { name: 'Très haut', kind: 'rack' });
+    await user.type(name, 'Tout en haut');
+    await user.selectOptions(within(line).getByLabelText('Type de Haut'), 'rack');
+    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer' }));
+    expect(api.updateShelf).toHaveBeenCalledWith(10, { name: 'Tout en haut', kind: 'rack' });
+    expect(api.updateLocation).not.toHaveBeenCalled();
+  });
+
+  it('refuses a shelf without a name', async () => {
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    await user.clear(within(pantry).getByLabelText('Nom de Haut'));
+    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('obligatoire');
+    expect(api.updateShelf).not.toHaveBeenCalled();
+  });
+
+  it('adds a shelf named after the next number', async () => {
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    await user.click(within(pantry).getByRole('button', { name: 'Ajouter une étagère' }));
+    expect(api.createShelf).toHaveBeenCalledWith({
+      locationId: 1,
+      name: 'Étagère 3',
+      kind: 'plain',
+    });
   });
 
   it('moves a shelf up', async () => {
-    const { api, pantry, user } = await setup();
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
     await user.click(within(pantry).getByRole('button', { name: 'Monter Bas' }));
-    await waitFor(() => expect(api.updateShelf).toHaveBeenCalledTimes(2));
-    expect(api.updateShelf).toHaveBeenCalledWith(11, { sortOrder: 0 });
+    await waitFor(() => expect(api.updateShelf).toHaveBeenCalledWith(11, { sortOrder: 0 }));
     expect(api.updateShelf).toHaveBeenCalledWith(10, { sortOrder: 1 });
   });
 
   it('asks for a confirmation that names Non rangé before deleting a shelf', async () => {
-    const { api, pantry, user } = await setup();
-    const row = within(pantry).getByRole('listitem', { name: 'Haut' });
-    await user.click(within(row).getByRole('button', { name: 'Supprimer' }));
-    expect(row).toHaveTextContent('Les produits iront dans Non rangé.');
+    const { api, user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    await user.click(within(pantry).getByRole('button', { name: 'Supprimer Haut' }));
+    let dialog = screen.getByRole('alertdialog', { name: 'Supprimer Haut ?' });
+    expect(dialog).toHaveAccessibleDescription(
+      'Ses produits restent dans Garde-manger, sur le plateau « Non rangé ».',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+    await user.keyboard('{Escape}');
     expect(api.deleteShelf).not.toHaveBeenCalled();
-    await user.click(within(row).getByRole('button', { name: 'Annuler' }));
-    expect(within(row).queryByText(/iront dans Non rangé/)).not.toBeInTheDocument();
-    await user.click(within(row).getByRole('button', { name: 'Supprimer' }));
-    await user.click(within(row).getByRole('button', { name: 'Confirmer la suppression' }));
+    await user.click(within(pantry).getByRole('button', { name: 'Supprimer Haut' }));
+    dialog = screen.getByRole('alertdialog', { name: 'Supprimer Haut ?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer Haut' }));
     expect(api.deleteShelf).toHaveBeenCalledWith(10);
+    expect(await screen.findByRole('status')).toHaveTextContent('plateau « Non rangé »');
   });
 
   it('shows the API message when an action fails', async () => {
     const api = makeApi({
-      updateLocation: vi.fn().mockRejectedValue(new ApiError(400, 'Meuble invalide')),
+      updateLocation: vi.fn(async () => {
+        throw new ApiError(400, 'Meuble invalide');
+      }),
     });
-    const { pantry, user } = await setup(api);
+    const { user } = await setup(api);
+    const pantry = await open(user, 'Garde-manger');
     await user.type(within(pantry).getByLabelText('Nom du meuble'), 'x');
-    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer le meuble' }));
+    await user.click(within(pantry).getByRole('button', { name: 'Enregistrer' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Meuble invalide');
   });
 
@@ -144,9 +223,14 @@ describe('LocationsAdmin', () => {
       }),
     });
     const { user } = await setup(api);
-    const names = () => screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    const names = () =>
+      screen
+        .getAllByRole('listitem')
+        .filter((l) => l.getAttribute('aria-label')?.startsWith('Meuble '))
+        .map((r) => r.getAttribute('aria-label'));
     expect(names()).toEqual(['Meuble Garde-manger', 'Meuble Frigo']);
-    await user.click(screen.getByRole('button', { name: 'Descendre Garde-manger' }));
+    const pantry = await open(user, 'Garde-manger');
+    await user.click(within(pantry).getByRole('button', { name: 'Descendre Garde-manger' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Erreur du serveur');
     expect(names()).toEqual(['Meuble Garde-manger', 'Meuble Frigo']);
   });
@@ -167,7 +251,7 @@ describe('LocationsAdmin', () => {
 
   it('deletes an empty piece of furniture after a confirmation that names it', async () => {
     const { api, user } = await setup();
-    const frigo = screen.getByRole('region', { name: 'Meuble Frigo' });
+    const frigo = await open(user, 'Frigo');
     await user.click(within(frigo).getByRole('button', { name: 'Supprimer ce meuble' }));
     const dialog = screen.getByRole('alertdialog', { name: 'Supprimer Frigo ?' });
     expect(dialog).toHaveAccessibleDescription('Il est vide : il disparaît avec ses étagères.');
@@ -181,7 +265,7 @@ describe('LocationsAdmin', () => {
     const full = locations.map((l) => (l.id === 2 ? { ...l, productCount: 12 } : l));
     const api = makeApi({ fetchLocations: vi.fn(async () => full) });
     const { user } = await setup(api);
-    const frigo = screen.getByRole('region', { name: 'Meuble Frigo' });
+    const frigo = await open(user, 'Frigo');
     await user.click(within(frigo).getByRole('button', { name: 'Supprimer ce meuble' }));
     const dialog = screen.getByRole('alertdialog', { name: 'Supprimer Frigo ?' });
     expect(dialog).toHaveAccessibleDescription(
@@ -202,7 +286,7 @@ describe('LocationsAdmin', () => {
 
   it('cancels with Échap and gives the focus back to the button', async () => {
     const { api, user } = await setup();
-    const frigo = screen.getByRole('region', { name: 'Meuble Frigo' });
+    const frigo = await open(user, 'Frigo');
     const button = within(frigo).getByRole('button', { name: 'Supprimer ce meuble' });
     await user.click(button);
     await user.keyboard('{Escape}');

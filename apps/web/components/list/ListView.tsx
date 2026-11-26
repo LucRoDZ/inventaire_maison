@@ -2,17 +2,16 @@
 
 import type {
   CategoryDto,
-  LocationCountDto,
   LocationDto,
   StockAdjustInput,
   StockAdjustResponse,
   StockListItemDto,
   StockListResponse,
-  StockSort,
 } from '@inventaire/shared';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError } from '../../lib/api';
+import { NO_FILTER, type HomeFilters } from '../../lib/home-filters';
 import {
   adjustStock,
   fetchCategories,
@@ -20,14 +19,23 @@ import {
   fetchStock,
   type StockFilters,
 } from '../../lib/stock-api';
+import type { LocationChoice } from '../home/FiltersControl';
 import { Callout } from '../ui/Callout';
 import { CategorySection } from './CategorySection';
-import { ListToolbar } from './ListToolbar';
-import { LocationTabs } from './LocationTabs';
 
 const SEARCH_DELAY_MS = 300;
 
+/** What the filter panel of the list offers: each piece of furniture and its number of products. */
+export interface ListSummary {
+  locations: LocationChoice[];
+  total: number;
+}
+
 interface ListViewProps {
+  /** The search and the filters of the URL (search, furniture, categories, order). */
+  filters?: HomeFilters;
+  /** Called when the furniture or their counts change, for the filter panel. */
+  onSummary?: (summary: ListSummary) => void;
   /** Test seams. */
   api?: {
     fetchStock?: (filters: StockFilters) => Promise<StockListResponse>;
@@ -37,27 +45,34 @@ interface ListViewProps {
   };
 }
 
-export function ListView({ api = {} }: ListViewProps) {
+const distinctProducts = (items: StockListItemDto[]) =>
+  new Set(items.map((item) => item.product.id)).size;
+
+/**
+ * The inventory as a list, grouped by category. The search and the order go to the server; the
+ * furniture and the categories are filtered here, so that the count of each piece of furniture in
+ * the panel follows the chosen categories.
+ */
+export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewProps) {
   const apiRef = useRef(api);
+  const summaryRef = useRef(onSummary);
   useEffect(() => {
     apiRef.current = api;
+    summaryRef.current = onSummary;
   });
 
-  const [locations, setLocations] = useState<LocationDto[]>([]);
+  /** Null until loaded: no summary is given before, so no filter is taken for a stale one. */
+  const [locations, setLocations] = useState<LocationDto[] | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [items, setItems] = useState<StockListItemDto[] | null>(null);
-  const [counts, setCounts] = useState<LocationCountDto[]>([]);
-  const [location, setLocation] = useState<number | null>(null);
-  const [category, setCategory] = useState<number | null>(null);
-  const [sort, setSort] = useState<StockSort>('name');
-  const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const [debounced, setDebounced] = useState(filters.q.trim());
   const [error, setError] = useState<string | null>(null);
+  const { sort, locationId, categoryIds } = filters;
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), SEARCH_DELAY_MS);
+    const timer = setTimeout(() => setDebounced(filters.q.trim()), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [filters.q]);
 
   useEffect(() => {
     void Promise.all([
@@ -68,19 +83,16 @@ export function ListView({ api = {} }: ListViewProps) {
         setLocations(loadedLocations);
         setCategories(loadedCategories);
       })
-      .catch(() => setError('Impossible de charger les lieux et les catégories.'));
+      .catch(() => setError('Impossible de charger les meubles et les catégories.'));
   }, []);
 
   const load = useCallback(async () => {
     try {
       const response = await (apiRef.current.fetchStock ?? fetchStock)({
-        location: location ?? undefined,
-        category: category ?? undefined,
         q: debounced || undefined,
         sort,
       });
       setItems(response.items);
-      setCounts(response.counts);
       setError(null);
     } catch (caught) {
       setError(
@@ -89,11 +101,39 @@ export function ListView({ api = {} }: ListViewProps) {
           : 'Impossible de charger l’inventaire : vérifiez la connexion.',
       );
     }
-  }, [location, category, debounced, sort]);
+  }, [debounced, sort]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** Lines of the chosen categories, every piece of furniture: the counts of the panel. */
+  const inCategories = useMemo(
+    () =>
+      (items ?? []).filter(
+        (item) => categoryIds.length === 0 || categoryIds.includes(item.category.id),
+      ),
+    [items, categoryIds],
+  );
+  const shown = useMemo(
+    () =>
+      locationId === null
+        ? inCategories
+        : inCategories.filter((item) => item.location.id === locationId),
+    [inCategories, locationId],
+  );
+
+  useEffect(() => {
+    if (locations === null) return;
+    summaryRef.current?.({
+      total: distinctProducts(inCategories),
+      locations: locations.map((location) => ({
+        id: location.id,
+        name: location.name,
+        count: distinctProducts(inCategories.filter((item) => item.location.id === location.id)),
+      })),
+    });
+  }, [inCategories, locations]);
 
   /** Optimistic: the card changes at once and goes back to its old value if the server refuses. */
   const change = async (item: StockListItemDto, delta: 1 | -1) => {
@@ -131,31 +171,20 @@ export function ListView({ api = {} }: ListViewProps) {
 
   const sections = useMemo(() => {
     const byCategory = new Map<number, StockListItemDto[]>();
-    for (const item of items ?? []) {
+    for (const item of shown) {
       byCategory.set(item.category.id, [...(byCategory.get(item.category.id) ?? []), item]);
     }
     return categories
       .filter((c) => byCategory.has(c.id))
       .map((c) => ({ category: c, items: byCategory.get(c.id) ?? [] }));
-  }, [items, categories]);
+  }, [shown, categories]);
 
-  const products = new Set((items ?? []).map((item) => item.product.id)).size;
-  const units = (items ?? []).reduce((sum, item) => sum + item.quantity, 0);
-  const filtering = debounced !== '' || category !== null;
+  const products = distinctProducts(shown);
+  const units = shown.reduce((sum, item) => sum + item.quantity, 0);
+  const filtering = debounced !== '' || categoryIds.length > 0 || locationId !== null;
 
   return (
     <div className="flex flex-col gap-4">
-      <LocationTabs locations={locations} counts={counts} value={location} onChange={setLocation} />
-      <ListToolbar
-        query={query}
-        onQuery={setQuery}
-        categories={categories}
-        category={category}
-        onCategory={setCategory}
-        sort={sort}
-        onSort={setSort}
-      />
-
       {error ? (
         <Callout role="alert" title="Un instant">
           {error}
@@ -163,20 +192,22 @@ export function ListView({ api = {} }: ListViewProps) {
       ) : null}
 
       {items === null ? (
-        <p role="status" className="text-small">
-          Chargement…
-        </p>
+        error ? null : (
+          <p role="status" className="text-small">
+            Chargement…
+          </p>
+        )
       ) : (
         <>
-          <p role="status" className="text-small">
+          <p role="status" className="text-help">
             {products} {products > 1 ? 'articles' : 'article'} · {units}{' '}
             {units > 1 ? 'unités' : 'unité'}
           </p>
-          {items.length === 0 ? (
+          {shown.length === 0 ? (
             <div className="flex flex-col items-start gap-3">
               <Callout role="note" title={filtering ? 'Aucun résultat' : 'Rien ici pour l’instant'}>
                 {filtering
-                  ? 'Aucun produit ne correspond à ces filtres.'
+                  ? 'Aucun produit ne correspond à cette recherche et à ces filtres.'
                   : 'Scannez un premier produit pour remplir l’inventaire.'}
               </Callout>
               {!filtering ? (

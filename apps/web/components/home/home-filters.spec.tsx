@@ -2,7 +2,7 @@ import type { CategoryDto, HomeLocationDto, HomeResponse } from '@inventaire/sha
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HomeFilters } from './HomeFilters';
+import { SearchField } from './SearchField';
 import { HomeView } from './HomeView';
 
 let search = '';
@@ -57,37 +57,36 @@ const house: HomeResponse = {
   ],
 };
 
-describe('HomeFilters', () => {
-  it('writes the typed text and the chosen category to the URL', async () => {
+describe('SearchField', () => {
+  it('keeps the spaces being typed and writes the search after a pause', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     const onChange = vi.fn();
-    render(
-      <HomeFilters
-        filters={{ q: '', categoryId: null }}
-        onChange={onChange}
-        categories={categories}
-      />,
-    );
-    await userEvent.type(screen.getByRole('searchbox'), 'l');
-    expect(onChange).toHaveBeenLastCalledWith({ q: 'l', categoryId: null });
-    await userEvent.click(screen.getByRole('button', { name: 'Boissons' }));
-    expect(onChange).toHaveBeenLastCalledWith({ q: '', categoryId: 2 });
+    const { rerender } = render(<SearchField value="" onChange={onChange} delay={200} />);
+    const field = screen.getByRole('searchbox', { name: 'Nom ou marque' });
+    await userEvent.type(field, 'pâte ');
+    await vi.advanceTimersByTimeAsync(250);
+    expect(onChange).toHaveBeenLastCalledWith('pâte ');
+    await userEvent.type(field, 'à');
+    // The URL gives « pâte » back, trimmed and late: the field keeps its space and its letter.
+    rerender(<SearchField value="pâte" onChange={onChange} delay={200} />);
+    expect(field).toHaveValue('pâte à');
+    await vi.advanceTimersByTimeAsync(250);
+    expect(onChange).toHaveBeenLastCalledWith('pâte à');
+    // Leaving the field writes what was typed at once.
+    await userEvent.type(field, 'x');
+    field.blur();
+    expect(onChange).toHaveBeenLastCalledWith('pâte àx');
+    // Cleared from elsewhere: the field follows.
+    rerender(<SearchField value="" onChange={onChange} delay={200} />);
+    expect(field).toHaveValue('');
+    vi.useRealTimers();
   });
 
-  it('toggles a chip off when it is tapped again', async () => {
+  it('is named « Nom ou marque » and gives each typed text', async () => {
     const onChange = vi.fn();
-    render(
-      <HomeFilters
-        filters={{ q: '', categoryId: 2 }}
-        onChange={onChange}
-        categories={categories}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Boissons' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'Boissons' }));
-    expect(onChange).toHaveBeenLastCalledWith({ q: '', categoryId: null });
+    render(<SearchField value="" onChange={onChange} />);
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Nom ou marque' }), 'l');
+    expect(onChange).toHaveBeenLastCalledWith('l');
   });
 });
 
@@ -104,6 +103,13 @@ describe('HomeView with a filter', () => {
     render(<HomeView load={async () => house} />);
     expect(await screen.findByRole('link', { name: /^Cave/ })).toHaveClass('ring-amber');
     expect(screen.getByRole('link', { name: /^Frigo/ })).not.toHaveClass('ring-amber');
+  });
+
+  it('rings the furniture of any of the chosen categories', async () => {
+    search = 'cat=1,2';
+    render(<HomeView load={async () => house} />);
+    expect(await screen.findByRole('link', { name: /^Cave/ })).toHaveClass('ring-amber');
+    expect(screen.getByRole('link', { name: /^Frigo/ })).toHaveClass('ring-amber');
   });
 
   it('rings nothing without a filter', async () => {

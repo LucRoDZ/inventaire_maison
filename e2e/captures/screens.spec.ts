@@ -37,7 +37,7 @@ for (const size of SIZES) {
     await page.getByRole('button', { name: 'Liste', exact: true }).click();
     await shot(page, '06-accueil-liste', size.width);
     await page.goto('/inventaire');
-    await page.getByRole('link', { name: /^Frigo\s*\d+ articles?/ }).click();
+    await page.getByRole('link', { name: /^Frigo\s*(\d+ articles?|Vide)/ }).click();
     await shot(page, '07-meuble-ouvert', size.width);
     const products = (await (await page.request.get('/api/products?q=yaourt')).json()) as {
       id: number;
@@ -60,10 +60,9 @@ for (const size of SIZES) {
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
       await shot(page, name, size.width);
       if (name === '11-meubles') {
-        await page
-          .getByRole('region', { name: /^Meuble Cave/ })
-          .getByRole('button', { name: 'Supprimer ce meuble' })
-          .click();
+        const cave = page.getByRole('listitem', { name: /^Meuble Cave/ });
+        await cave.getByRole('button', { name: /^Cave/ }).click();
+        await cave.getByRole('button', { name: 'Supprimer ce meuble' }).click();
         await shot(page, '12-boite-suppression', size.width);
         await page.keyboard.press('Escape');
       }

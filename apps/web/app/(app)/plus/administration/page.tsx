@@ -1,16 +1,9 @@
 'use client';
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  House,
-  Refrigerator,
-  Tag,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronRight, House, Tag, Users, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AdminGate } from '../../../../components/admin/AdminGate';
+import { Screen } from '../../../../components/ui/Screen';
 
 function Entry({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
   return (
@@ -29,20 +22,11 @@ function Entry({ href, label, icon: Icon }: { href: string; label: string; icon:
 
 export default function AdministrationPage() {
   return (
-    <main className="flex flex-col gap-4">
-      <Link
-        href="/plus"
-        className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        Plus
-      </Link>
-      <h1 className="text-title">Administration</h1>
+    <Screen title="Administration" back={{ href: '/plus', label: 'Plus' }}>
       <AdminGate>
         <ul className="flex flex-col gap-2">
           <Entry href="/plus/administration/foyers" label="Foyers" icon={House} />
           <Entry href="/plus/administration/membres" label="Comptes" icon={Users} />
-          <Entry href="/plus/meubles" label="Meubles et étagères" icon={Refrigerator} />
           <Entry href="/plus/administration/categories" label="Catégories" icon={Tag} />
           <Entry
             href="/plus/administration/correspondances"
@@ -50,7 +34,20 @@ export default function AdministrationPage() {
             icon={Tag}
           />
         </ul>
+        {/* One way in, under Plus: this screen points to it instead of repeating it. */}
+        <div className="flex flex-col items-start gap-1">
+          <p className="text-help">
+            Les meubles et leurs étagères se règlent sous Plus, pour tous les comptes de la maison.
+          </p>
+          <Link
+            href="/plus/meubles"
+            className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
+          >
+            Aller à Meubles et étagères
+            <ChevronRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
       </AdminGate>
-    </main>
+    </Screen>
   );
 }

@@ -27,7 +27,7 @@ export function BottomNav() {
       aria-label="Navigation principale"
       className="border-line fixed inset-x-0 bottom-0 border-t bg-white pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="mx-auto flex max-w-xl">
+      <ul className="mx-auto flex max-w-xl lg:max-w-3xl">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (

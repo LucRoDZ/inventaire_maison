@@ -210,7 +210,9 @@ describe('HomeView and the furniture', () => {
     const items = screen.getAllByRole('listitem');
     expect(items.at(-1)).toContainElement(add);
     for (const name of ['Frigo', 'Frigo garage', 'Frigo cave']) {
-      expect(screen.getByRole('link', { name: new RegExp(`^${name}\\s*\\d`) })).toBeVisible();
+      expect(
+        screen.getByRole('link', { name: new RegExp(`^${name}\\s*(\\d|Vide)`) }),
+      ).toBeVisible();
     }
   });
 

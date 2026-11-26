@@ -78,7 +78,7 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
       onPointerUp={release}
       onPointerCancel={release}
       onPointerLeave={release}
-      className={`fx-card border-line rounded-card shadow-card relative flex flex-col items-center gap-2 border bg-white p-3 ${
+      className={`fx-card border-line rounded-card shadow-card relative flex min-h-52 w-full flex-col items-center gap-2 border bg-white p-3 ${
         highlighted ? 'ring-amber ring-4' : ''
       }`}
     >
@@ -100,13 +100,17 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
           </span>
         ))}
       </div>
-      <span className="text-card-title">{location.name}</span>
-      <span className="text-small">
-        {products} {products > 1 ? 'articles' : 'article'}
+      {/* Two lines at most, then cut: every card of a row keeps the same height. */}
+      <span className="text-card-title line-clamp-2 w-full break-words">{location.name}</span>
+      {/* At the bottom of the card, whatever the length of the name; « Vide » as on the shelves. */}
+      {/* Room on its right for the « ⋯ » button, laid over the corner of the card. */}
+      <span className="text-small mt-auto self-start pr-10">
+        {products === 0 ? 'Vide' : `${products} ${products > 1 ? 'articles' : 'article'}`}
       </span>
-      {/* After the name in the document, so that the link is always read « Frigo… » first. */}
+      {/* After the name in the document, so that the link is always read « Frigo… » first. On
+          screen, the same place on every card: across the foot of the drawing, out of the flow. */}
       {expiringSoon > 0 ? (
-        <span className="text-help bg-amber text-indigo absolute top-2 right-2 rounded-full px-2 py-0.5 font-bold">
+        <span className="text-help bg-amber text-indigo absolute top-[6.25rem] left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 font-bold whitespace-nowrap">
           {expiringSoon} {expiringSoon > 1 ? 'bientôt périmés' : 'bientôt périmé'}
         </span>
       ) : null}

@@ -28,7 +28,7 @@ export function CategorySection({ name, items, onChange }: CategorySectionProps)
         <ChevronDown
           size={18}
           aria-hidden="true"
-          className={open ? 'rotate-180 transition-transform' : 'transition-transform'}
+          className={`transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {open ? (

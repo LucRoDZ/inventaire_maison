@@ -1,10 +1,10 @@
 import { PlusMenu } from '../../../components/plus/PlusMenu';
+import { Screen } from '../../../components/ui/Screen';
 
 export default function PlusPage() {
   return (
-    <main className="flex flex-col gap-4">
-      <h1 className="text-title">Plus</h1>
+    <Screen title="Plus">
       <PlusMenu />
-    </main>
+    </Screen>
   );
 }

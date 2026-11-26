@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createMember, pushCode, signIn, startScanner, waitForHydration } from './helpers';
+import {
+  createMember,
+  pushCode,
+  signIn,
+  startScanner,
+  waitForHydration,
+  filterListByFurniture,
+} from './helpers';
 
 // Both browser projects share one database: each one scans its own product.
 const FIXTURES = {
@@ -256,7 +263,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
     .getByRole('link', { name: 'Inventaire' })
     .click();
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
-  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  await filterListByFurniture(page, /^Frigo/);
   const section = page.getByRole('button', { name: /^Produits laitiers et œufs/ });
   await expect(section).toBeVisible();
   const card = page.locator('article').filter({ hasText: name });
@@ -273,7 +280,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
 
   await page.reload();
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
-  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  await filterListByFurniture(page, /^Frigo/);
   await expect(
     page.locator('article').filter({ hasText: name }).getByLabel('Quantité', { exact: true }),
   ).toHaveText('2');
@@ -778,13 +785,21 @@ test('administration : une étagère ajoutée apparaît dans la vue Maison ; sup
   const { shelf, product } = SHELF_ADMIN[testInfo.project.name as keyof typeof SHELF_ADMIN];
   const origin = { Origin: testInfo.project.use.baseURL! };
   await signIn(page);
+  // The former address leads to the furniture screen; one line per piece of furniture.
   await page.goto('/plus/administration/lieux');
-  const cellar = page.getByRole('region', { name: 'Meuble Cave' });
+  const cellar = page.getByRole('listitem', { name: 'Meuble Cave' });
   await expect(cellar).toBeVisible();
+  await cellar.getByRole('button', { name: /^Cave/ }).click();
 
-  await cellar.getByLabel('Nom de la nouvelle étagère').fill(shelf);
-  await cellar.getByRole('button', { name: 'Ajouter l’étagère' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Étagère ajoutée.' })).toBeVisible();
+  // « Ajouter une étagère » adds « Étagère n » and puts the focus on its name; one save.
+  await cellar.getByRole('button', { name: 'Ajouter une étagère' }).click();
+  const added = cellar.getByRole('textbox', { name: /^Nom de Étagère \d+$/ }).last();
+  // Safari (and the WebKit of the tests) never focuses a field outside a gesture of the person,
+  // here after the answer of the server: the focus is checked on Chromium only.
+  if (testInfo.project.name === 'chromium-mobile') await expect(added).toBeFocused();
+  await added.fill(shelf);
+  await cellar.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'enregistré' })).toBeVisible();
   await expect(cellar.getByRole('listitem', { name: shelf })).toBeVisible();
 
   // The shelf shows in the open furniture.
@@ -818,14 +833,15 @@ test('administration : une étagère ajoutée apparaît dans la vue Maison ; sup
   });
   expect(adjust.ok()).toBe(true);
 
-  await page.goto('/plus/administration/lieux');
-  const row = page
-    .getByRole('region', { name: 'Meuble Cave' })
-    .getByRole('listitem', { name: shelf });
-  await row.getByRole('button', { name: 'Supprimer' }).click();
-  await expect(row).toContainText('Les produits iront dans Non rangé.');
-  await row.getByRole('button', { name: 'Confirmer la suppression' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Étagère supprimée.' })).toBeVisible();
+  await page.goto('/plus/meubles');
+  const line = page.getByRole('listitem', { name: 'Meuble Cave' });
+  await line.getByRole('button', { name: /^Cave/ }).click();
+  await line.getByRole('button', { name: `Supprimer ${shelf}` }).click();
+  const confirm = page.getByRole('alertdialog', { name: `Supprimer ${shelf} ?` });
+  await expect(confirm).toContainText('plateau « Non rangé »');
+  await expect(confirm.getByRole('button', { name: 'Annuler' })).toBeFocused();
+  await confirm.getByRole('button', { name: `Supprimer ${shelf}` }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'supprimée' })).toBeVisible();
 
   await page.goto('/inventaire');
   await page.getByRole('link', { name: /^Cave/ }).click();

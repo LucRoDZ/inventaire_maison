@@ -2,45 +2,81 @@
 
 import type { CategoryDto } from '@inventaire/shared';
 import { Suspense, useEffect, useState } from 'react';
-import { FiltersControl } from '../../../components/home/FiltersControl';
+import { FilterReminder, FiltersControl } from '../../../components/home/FiltersControl';
 import { HomeView } from '../../../components/home/HomeView';
-import { ListView } from '../../../components/list/ListView';
-import { ViewToggle, type InventoryView } from '../../../components/list/ViewToggle';
-import { useHomeFilters } from '../../../lib/home-filters';
+import { SearchField } from '../../../components/home/SearchField';
+import { ListView, type ListSummary } from '../../../components/list/ListView';
+import { ViewToggle } from '../../../components/list/ViewToggle';
+import { Screen } from '../../../components/ui/Screen';
+import {
+  clearPanelFilters,
+  filterSummary,
+  useHomeFilters,
+  useInventoryView,
+  withKnownFilters,
+} from '../../../lib/home-filters';
 import { fetchCategories } from '../../../lib/stock-api';
 
-/** The same « Filtres » button as in an open furniture, on the filters of the URL. */
-function HomeFiltersButton() {
-  const [filters, setFilters] = useHomeFilters();
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
+/**
+ * The inventory. A fixed header, the same in both views: the title and the « Filtres » button, the
+ * Maison / Liste switch, the search. Every filter is in the panel of the button; a reminder line
+ * says which ones are on. The search and the filters live in the URL.
+ */
+function Inventaire() {
+  const [view, setView] = useInventoryView();
+  const [urlFilters, setFilters] = useHomeFilters();
+  const [categories, setCategories] = useState<CategoryDto[] | null>(null);
+  const [summary, setSummary] = useState<ListSummary | null>(null);
+  // Ids that no longer exist are ignored, so the badge and the reminder always agree.
+  const filters = withKnownFilters(urlFilters, categories, summary?.locations ?? null);
+
   useEffect(() => {
     fetchCategories()
       .then(setCategories)
       .catch(() => undefined);
   }, []);
-  return <FiltersControl filters={filters} onChange={setFilters} categories={categories} />;
+
+  const reminder = filterSummary(filters, view, categories ?? [], summary?.locations ?? []);
+
+  return (
+    <Screen
+      title="Inventaire"
+      actions={
+        <FiltersControl
+          mode={view}
+          filters={filters}
+          onChange={setFilters}
+          categories={categories ?? []}
+          locations={summary?.locations ?? []}
+          total={summary?.total ?? 0}
+        />
+      }
+      header={
+        <>
+          <ViewToggle value={view} onChange={setView} />
+          <SearchField
+            value={filters.q} // From the URL itself: typing never erases a filter only hidden for now.
+            onChange={(q) => setFilters({ ...urlFilters, q })}
+          />
+        </>
+      }
+      zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}
+      memoryKey={`inventaire-${view}`}
+    >
+      {/* In the zone that scrolls: its coming and going never moves the zone itself. */}
+      <FilterReminder
+        summary={reminder}
+        onClear={() => setFilters(clearPanelFilters(filters, view))}
+      />
+      {view === 'list' ? <ListView filters={filters} onSummary={setSummary} /> : <HomeView />}
+    </Screen>
+  );
 }
 
 export default function InventairePage() {
-  const [view, setView] = useState<InventoryView>('home');
   return (
-    <main className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-title">Inventaire</h1>
-        {view === 'home' ? (
-          <Suspense>
-            <HomeFiltersButton />
-          </Suspense>
-        ) : null}
-      </div>
-      <ViewToggle value={view} onChange={setView} />
-      {view === 'list' ? (
-        <ListView />
-      ) : (
-        <Suspense>
-          <HomeView />
-        </Suspense>
-      )}
-    </main>
+    <Suspense>
+      <Inventaire />
+    </Suspense>
   );
 }

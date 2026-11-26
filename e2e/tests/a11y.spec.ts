@@ -159,14 +159,13 @@ test.describe('audit à 360 px', () => {
     });
   }
 
-  for (const screen of [SCREENS[4]!, SCREENS[1]!]) {
+  for (const screen of [SCREENS[4]!, SCREENS[1]!, SCREENS[2]!]) {
     test(`${screen.name} : panneau Filtres ouvert, axe et zones tactiles`, async ({ page }) => {
       await open(page, screen);
       await page.getByRole('button', { name: 'Filtres', exact: true }).click();
       const sheet = page.getByRole('dialog', { name: 'Filtres' });
       await expect(sheet).toBeVisible();
-      await sheet.getByRole('group', { name: 'Catégories' }).getByRole('button').first().click();
-      await expect(page.getByRole('button', { name: 'Filtres, actifs' })).toBeAttached();
+      await sheet.getByRole('group', { name: 'Catégories' }).getByRole('checkbox').first().check();
 
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -178,7 +177,9 @@ test.describe('audit à 360 px', () => {
       ).toEqual([]);
 
       const small = await sheet.evaluate((dialog) =>
+        // A checkbox or a radio button is touched through its whole label.
         [...dialog.querySelectorAll<HTMLElement>('button, input')]
+          .map((el) => el.closest('label') ?? el)
           .filter((el) => {
             const box = el.getBoundingClientRect();
             return box.width > 0 && (box.height < 43.5 || box.width < 43.5);

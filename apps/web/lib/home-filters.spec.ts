@@ -1,7 +1,11 @@
-import type { HomeLocationDto, HomeTileDto } from '@inventaire/shared';
+import type { CategoryDto, HomeLocationDto, HomeTileDto } from '@inventaire/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  activeFilterCount,
+  clearPanelFilters,
+  filterSummary,
   filtersToQuery,
+  withKnownFilters,
   isFiltering,
   locationMatches,
   NO_FILTER,
@@ -45,32 +49,32 @@ describe('tileMatches', () => {
   });
 
   it('filters on the name, without accents or case', () => {
-    expect(tileMatches(tile('Lait demi-écrémé', 1), { q: 'ECREME', categoryId: null })).toBe(true);
-    expect(tileMatches(tile('Beurre', 1), { q: 'lait', categoryId: null })).toBe(false);
+    expect(tileMatches(tile('Lait demi-écrémé', 1), { ...NO_FILTER, q: 'ECREME' })).toBe(true);
+    expect(tileMatches(tile('Beurre', 1), { ...NO_FILTER, q: 'lait' })).toBe(false);
   });
 
   it('also looks at the brand', () => {
-    expect(tileMatches(tile('Pâtes', 1, 'Barilla'), { q: 'barilla', categoryId: null })).toBe(true);
+    expect(tileMatches(tile('Pâtes', 1, 'Barilla'), { ...NO_FILTER, q: 'barilla' })).toBe(true);
   });
 
   it('filters on the category', () => {
-    expect(tileMatches(tile('Lait', 2), { q: '', categoryId: 2 })).toBe(true);
-    expect(tileMatches(tile('Lait', 2), { q: '', categoryId: 3 })).toBe(false);
+    expect(tileMatches(tile('Lait', 2), { ...NO_FILTER, q: '', categoryIds: [2] })).toBe(true);
+    expect(tileMatches(tile('Lait', 2), { ...NO_FILTER, q: '', categoryIds: [3] })).toBe(false);
   });
 
   it('needs both the text and the category', () => {
-    expect(tileMatches(tile('Lait', 2), { q: 'lait', categoryId: 3 })).toBe(false);
-    expect(tileMatches(tile('Lait', 2), { q: 'lait', categoryId: 2 })).toBe(true);
+    expect(tileMatches(tile('Lait', 2), { ...NO_FILTER, q: 'lait', categoryIds: [3] })).toBe(false);
+    expect(tileMatches(tile('Lait', 2), { ...NO_FILTER, q: 'lait', categoryIds: [2] })).toBe(true);
   });
 
   it('treats a text of spaces as no filter', () => {
-    expect(isFiltering({ q: '   ', categoryId: null })).toBe(false);
+    expect(isFiltering({ ...NO_FILTER, q: '   ' })).toBe(false);
   });
 });
 
 describe('locationMatches', () => {
   it('is true when a shelf or the tray holds a match', () => {
-    const filters = { q: 'lait', categoryId: null };
+    const filters = { ...NO_FILTER, q: 'lait' };
     expect(locationMatches(place([tile('Lait', 1)]), filters)).toBe(true);
     expect(locationMatches(place([], [tile('Lait', 1)]), filters)).toBe(true);
     expect(locationMatches(place([tile('Beurre', 1)]), filters)).toBe(false);
@@ -80,14 +84,59 @@ describe('locationMatches', () => {
 
 describe('URL', () => {
   it('writes and reads the filters', () => {
-    expect(filtersToQuery({ q: ' lait ', categoryId: 3 })).toBe('?q=lait&cat=3');
+    const filters = { q: ' lait ', categoryIds: [3, 5], locationId: 7, sort: 'expiry' as const };
+    expect(filtersToQuery(filters)).toBe('?q=lait&cat=3%2C5&meuble=7&tri=expiry');
     expect(filtersToQuery(NO_FILTER)).toBe('');
-    expect(parseFilters(new URLSearchParams('q=lait&cat=3'))).toEqual({ q: 'lait', categoryId: 3 });
+    expect(parseFilters(new URLSearchParams(filtersToQuery(filters)))).toEqual({
+      ...filters,
+      q: 'lait',
+    });
   });
 
-  it('ignores a category that is not an identifier', () => {
-    expect(parseFilters(new URLSearchParams('cat=abc')).categoryId).toBeNull();
-    expect(parseFilters(new URLSearchParams('cat=-2')).categoryId).toBeNull();
+  it('ignores what is not an identifier or a known order', () => {
+    const parsed = parseFilters(new URLSearchParams('cat=abc,-2,4,4&meuble=x&tri=prix'));
+    expect(parsed.categoryIds).toEqual([4]);
+    expect(parsed.locationId).toBeNull();
+    expect(parsed.sort).toBe('name');
     expect(parseFilters(new URLSearchParams('')).q).toBe('');
+  });
+});
+
+describe('panel filters', () => {
+  const filters = { q: 'lait', categoryIds: [1, 2], locationId: 7, sort: 'added' as const };
+
+  it('counts the categories, and the furniture in the list view only', () => {
+    expect(activeFilterCount(filters, 'home')).toBe(2);
+    expect(activeFilterCount(filters, 'list')).toBe(3);
+    expect(activeFilterCount(NO_FILTER, 'list')).toBe(0);
+  });
+
+  it('clears the filters of one view and keeps the search', () => {
+    expect(clearPanelFilters(filters, 'home')).toEqual({ ...filters, categoryIds: [] });
+    expect(clearPanelFilters(filters, 'list')).toEqual({ ...NO_FILTER, q: 'lait' });
+  });
+
+  it('says the furniture then the categories', () => {
+    const categories = [
+      { id: 1, name: 'Boissons', icon: 'package', sortOrder: 1, isFallback: false } as CategoryDto,
+      { id: 2, name: 'Viandes', icon: 'package', sortOrder: 2, isFallback: false } as CategoryDto,
+    ];
+    const places = [{ id: 7, name: 'Frigo' }];
+    expect(filterSummary(filters, 'list', categories, places)).toBe('Frigo · Boissons · Viandes');
+    expect(filterSummary(filters, 'home', categories, places)).toBe('Boissons · Viandes');
+    expect(filterSummary(NO_FILTER, 'list', categories, places)).toBe('');
+  });
+});
+
+describe('withKnownFilters', () => {
+  it('drops the ids that no longer exist, once the lists are loaded', () => {
+    const filters = { ...NO_FILTER, categoryIds: [1, 9], locationId: 7 };
+    expect(withKnownFilters(filters, [{ id: 1 }], [{ id: 3 }])).toEqual({
+      ...NO_FILTER,
+      categoryIds: [1],
+      locationId: null,
+    });
+    expect(withKnownFilters(filters, null, null)).toBe(filters);
+    expect(withKnownFilters(filters, [{ id: 1 }, { id: 9 }], [{ id: 7 }])).toBe(filters);
   });
 });

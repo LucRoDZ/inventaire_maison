@@ -9,6 +9,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
+import { NO_FILTER, type HomeFilters } from '../../lib/home-filters';
 import { ExpiryBadge, expiryLabel } from './ExpiryBadge';
 import { ListView } from './ListView';
 
@@ -80,7 +81,9 @@ const stock = (items: StockListItemDto[]): StockListResponse => ({
 function renderList(
   items: StockListItemDto[],
   extra: Partial<NonNullable<React.ComponentProps<typeof ListView>['api']>> = {},
+  filters: HomeFilters = NO_FILTER,
 ) {
+  const onSummary = vi.fn();
   let current = items;
   const fetchStock = vi.fn(async () => stock(current));
   const adjust = vi.fn(async (input: StockAdjustInput) => {
@@ -93,8 +96,10 @@ function renderList(
     );
     return { item: null, movement: {} } as never;
   });
-  render(
+  const view = render(
     <ListView
+      filters={filters}
+      onSummary={onSummary}
       api={{
         fetchStock,
         adjust,
@@ -104,7 +109,21 @@ function renderList(
       }}
     />,
   );
-  return { fetchStock, adjust };
+  const rerender = (next: HomeFilters) =>
+    view.rerender(
+      <ListView
+        filters={next}
+        onSummary={onSummary}
+        api={{
+          fetchStock,
+          adjust,
+          fetchLocations: async () => locations,
+          fetchCategories: async () => categories,
+          ...extra,
+        }}
+      />,
+    );
+  return { fetchStock, adjust, onSummary, rerender };
 }
 
 describe('ExpiryBadge', () => {
@@ -145,21 +164,51 @@ describe('ListView', () => {
     expect(section).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('shows the counters in articles and units, and the tabs with their counts', async () => {
-    renderList([line(1, 'Lait', 2, 3), line(2, 'Eau', 1, 6)]);
-    expect(await screen.findByText('2 articles · 9 unités')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Tout (2)' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: 'Frigo (2)' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Cave (0)' })).toBeInTheDocument();
+  it('shows the counters as a help line and gives each furniture its count', async () => {
+    const { onSummary } = renderList([line(1, 'Lait', 2, 3), line(2, 'Eau', 1, 6)]);
+    expect(await screen.findByText('2 articles · 9 unités')).toHaveClass('text-help');
+    await waitFor(() =>
+      expect(onSummary).toHaveBeenLastCalledWith({
+        total: 2,
+        locations: [
+          { id: 10, name: 'Frigo', count: 2 },
+          { id: 11, name: 'Cave', count: 0 },
+        ],
+      }),
+    );
   });
 
-  it('filters on the location tab through the API', async () => {
-    const { fetchStock } = renderList([line(1, 'Lait', 2, 3)]);
-    await userEvent.click(await screen.findByRole('tab', { name: /Frigo/ }));
+  it('gives no summary before the furniture is loaded (a filter is never taken for stale)', async () => {
+    const { onSummary } = renderList([line(1, 'Lait', 2, 3)], {
+      fetchLocations: () => new Promise<LocationDto[]>(() => undefined),
+    });
+    expect(await screen.findByText('1 article · 3 unités')).toBeInTheDocument();
+    expect(onSummary).not.toHaveBeenCalled();
+  });
+
+  it('sends the search and the order to the server, filters furniture and categories here', async () => {
+    const items = [
+      line(1, 'Lait', 2, 3),
+      line(2, 'Eau', 1, 6),
+      line(3, 'Vin', 1, 2, { location: { id: 11, name: 'Cave' } }),
+    ];
+    const { fetchStock, onSummary, rerender } = renderList(items);
+    expect(await screen.findByText('3 articles · 11 unités')).toBeInTheDocument();
+    rerender({ q: 'eau', categoryIds: [1], locationId: 10, sort: 'expiry' });
+    await waitFor(() => expect(fetchStock).toHaveBeenLastCalledWith({ q: 'eau', sort: 'expiry' }));
+    // The fake server ignores the search: only the furniture and the category filter here.
+    expect(await screen.findByText('1 article · 6 unités')).toBeInTheDocument();
+    expect(screen.queryByText('Vin')).toBeNull();
+    expect(screen.queryByText('Lait')).toBeNull();
     await waitFor(() =>
-      expect(fetchStock).toHaveBeenLastCalledWith(expect.objectContaining({ location: 10 })),
+      expect(onSummary).toHaveBeenLastCalledWith({
+        total: 2,
+        locations: [
+          { id: 10, name: 'Frigo', count: 1 },
+          { id: 11, name: 'Cave', count: 1 },
+        ],
+      }),
     );
-    expect(screen.getByRole('tab', { name: /Frigo/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('changes the quantity at once, with the manual reason and the line key', async () => {
@@ -223,11 +272,7 @@ describe('ListView', () => {
   });
 
   it('says « Aucun résultat » when a search matches nothing', async () => {
-    renderList([]);
-    await userEvent.type(
-      await screen.findByRole('searchbox', { name: 'Rechercher un produit' }),
-      'zzz',
-    );
+    renderList([], {}, { ...NO_FILTER, q: 'zzz' });
     expect(await screen.findByText('Aucun résultat')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Scanner un produit' })).toBeNull();
   });

@@ -53,15 +53,17 @@ describe('HomeView', () => {
     }
   });
 
-  it('uses 2 columns on a phone and 4 on a computer', async () => {
+  it('uses 2 columns on a phone, 3 on a tablet and 4 on a computer', async () => {
     render(<HomeView load={async () => home} />);
     const grid = (await screen.findAllByRole('list'))[0]!;
-    expect(grid).toHaveClass('grid-cols-2', 'md:grid-cols-4');
+    expect(grid).toHaveClass('grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4');
   });
 
-  it('totals the articles and units in the indigo header', async () => {
+  it('has no « Ma maison » banner and no totals over the furniture', async () => {
     render(<HomeView load={async () => home} />);
-    expect(await screen.findByText('9 articles · 18 unités')).toBeInTheDocument();
+    await screen.findByRole('link', { name: /^Frigo/ });
+    expect(screen.queryByText('Ma maison')).toBeNull();
+    expect(screen.queryByText(/articles · /)).toBeNull();
   });
 
   it('shows an error when the house cannot be loaded', async () => {
@@ -82,6 +84,22 @@ describe('FurnitureCard', () => {
     expect(screen.getByText('1 article')).toBeInTheDocument();
     rerender(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4)} />);
     expect(screen.getByText('4 articles')).toBeInTheDocument();
+  });
+
+  it('says « Vide » when empty, as the shelves of the open furniture do', () => {
+    render(<FurnitureCard location={place(1, 'Frigo', 'fridge', 0)} />);
+    expect(screen.getByRole('link')).toHaveAccessibleName(/^Frigo\s*Vide$/);
+    expect(screen.queryByText('0 article')).toBeNull();
+  });
+
+  it('cuts a long name at two lines and keeps the count at the bottom', () => {
+    render(
+      <FurnitureCard
+        location={place(1, 'Réfrigérateur de la cuisine du rez-de-chaussée', 'fridge', 2)}
+      />,
+    );
+    expect(screen.getByText(/^Réfrigérateur/)).toHaveClass('line-clamp-2');
+    expect(screen.getByText('2 articles')).toHaveClass('mt-auto');
   });
 
   it('shows the amber « bientôt périmés » badge only when there are some', () => {

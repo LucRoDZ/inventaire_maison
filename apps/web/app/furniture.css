@@ -303,7 +303,7 @@
   border: 1px solid var(--lavender-line);
   border-radius: 12px;
   box-shadow: 0 2px 0 var(--fx-shade); /* sans flou : le tiroir bouge à l'arrivée */
-  animation: fx-drawer-in 320ms ease-out both;
+  animation: fx-drawer-in 300ms ease-out both;
   animation-delay: calc(var(--i, 0) * 60ms);
 }
 .fx-drawer::before {
@@ -452,7 +452,7 @@
   position: absolute;
   transform-origin: left center;
   transform: perspective(600px) rotateY(calc(var(--fx-sign) * var(--fx-ajar)));
-  transition: transform 120ms ease-out;
+  transition: transform 150ms ease-out;
   pointer-events: none;
 }
 .fx-card-door[data-hinge='right'] {
@@ -492,7 +492,7 @@
   background: var(--amber);
   filter: blur(14px);
   opacity: 0;
-  transition: opacity 120ms ease-out;
+  transition: opacity 150ms ease-out;
   pointer-events: none;
 }
 .fx-card[data-match='true'] .fx-card-door {

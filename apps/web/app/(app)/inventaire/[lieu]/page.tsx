@@ -9,8 +9,9 @@ import type {
 } from '@inventaire/shared';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { FurnitureOptions } from '../../../../components/furniture/FurnitureOptions';
 import { DndProvider } from '../../../../components/home/dnd/DndProvider';
 import { OpenFurniture } from '../../../../components/home/OpenFurniture';
 import { ProductSheet } from '../../../../components/home/ProductSheet';
@@ -20,11 +21,13 @@ import { ApiError } from '../../../../lib/api';
 import { fetchHome } from '../../../../lib/home-api';
 import { FilterReminder, FiltersControl } from '../../../../components/home/FiltersControl';
 import {
+  clearPanelFilters,
+  filterSummary,
   filtersToQuery,
   isFiltering,
-  NO_FILTER,
   tileMatches,
   useHomeFilters,
+  withKnownFilters,
 } from '../../../../lib/home-filters';
 import { fetchCategories, fetchLocations, moveStock } from '../../../../lib/stock-api';
 
@@ -43,10 +46,17 @@ function placeOf(location: HomeLocationDto, tile: HomeTileDto) {
 
 function Meuble() {
   const { lieu } = useParams<{ lieu: string }>();
+  const router = useRouter();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [filters, setFilters] = useHomeFilters();
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [urlFilters, setFilters] = useHomeFilters();
+  // Categories that no longer exist are ignored: the badge, the reminder and its height agree.
+  const filters = withKnownFilters(urlFilters, categoriesLoaded ? categories : null, null);
+  const reminder = [filters.q.trim(), filterSummary(filters, 'home', categories, [])]
+    .filter(Boolean)
+    .join(' · ');
   const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<HomeTileDto | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -67,7 +77,10 @@ function Meuble() {
       .then(setLocations)
       .catch(() => undefined);
     fetchCategories()
-      .then(setCategories)
+      .then((loaded) => {
+        setCategories(loaded);
+        setCategoriesLoaded(true);
+      })
       .catch(() => undefined);
   }, [load]);
 
@@ -121,9 +134,9 @@ function Meuble() {
 
   return (
     <main
-      className="fx-fit flex flex-col gap-1"
+      className="fx-fit flex min-h-0 flex-1 flex-col gap-1 px-4"
       // The reminder line (32 px and its gap) is taken from the height of the shelves.
-      style={{ '--fx-reminder': isFiltering(filters) ? '36px' : '0px' } as CSSProperties}
+      style={{ '--fx-reminder': reminder ? '36px' : '0px' } as CSSProperties}
     >
       {/* One row of 48 px: back (icon only), the name of the furniture, the filters. */}
       <div className="flex h-12 shrink-0 items-center gap-1">
@@ -140,35 +153,63 @@ function Meuble() {
         ) : (
           <span className="flex-1" />
         )}
-        <FiltersControl filters={filters} onChange={setFilters} categories={categories} />
+        <FiltersControl
+          mode="furniture"
+          filters={filters}
+          onChange={setFilters}
+          categories={categories}
+        />
+        {location ? (
+          <FurnitureOptions
+            locationId={location.id}
+            name={location.name}
+            className="-mr-2"
+            onChanged={(change) => {
+              if (change.kind === 'deleted') {
+                router.replace(`/inventaire${filtersToQuery(filters)}`);
+                return;
+              }
+              setNotice(change.message);
+              load();
+            }}
+          />
+        ) : null}
       </div>
       <FilterReminder
-        filters={filters}
-        categories={categories}
-        onClear={() => setFilters(NO_FILTER)}
+        summary={reminder}
+        onClear={() => setFilters({ ...clearPanelFilters(filters, 'home'), q: '' })}
       />
-      {failed ? (
-        <Callout role="alert" title="Un instant">
-          Impossible de charger le meuble : vérifiez la connexion.
-        </Callout>
-      ) : null}
-      {home && !location ? (
-        <Callout role="alert" title="Meuble introuvable">
-          Ce meuble n’existe pas.
-        </Callout>
-      ) : null}
-      {location && home ? (
-        <DndProvider home={home} onMove={(id, to) => void drop(id, to)}>
-          <OpenFurniture
-            location={location}
-            onSelect={setSelected}
-            isDimmed={isFiltering(filters) ? (tile) => !tileMatches(tile, filters) : undefined}
-          />
-        </DndProvider>
-      ) : null}
+      {/* Portrait phone: the furniture fits, nothing scrolls. Elsewhere (landscape, computer) it
+          scrolls here, never the page. */}
+      <div
+        role="region"
+        aria-label={location ? `Étagères de ${location.name}` : 'Meuble'}
+        tabIndex={0}
+        className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto focus-visible:outline-offset-[-2px]"
+      >
+        {failed ? (
+          <Callout role="alert" title="Un instant">
+            Impossible de charger le meuble : vérifiez la connexion.
+          </Callout>
+        ) : null}
+        {home && !location ? (
+          <Callout role="alert" title="Meuble introuvable">
+            Ce meuble n’existe pas.
+          </Callout>
+        ) : null}
+        {location && home ? (
+          <DndProvider home={home} onMove={(id, to) => void drop(id, to)}>
+            <OpenFurniture
+              location={location}
+              onSelect={setSelected}
+              isDimmed={isFiltering(filters) ? (tile) => !tileMatches(tile, filters) : undefined}
+            />
+          </DndProvider>
+        ) : null}
+      </div>
       {notice || problem ? (
         // Above the bottom bar, over the furniture: a message never takes height from the shelves.
-        <div className="fixed inset-x-0 bottom-[calc(var(--fx-nav-h)+0.5rem+env(safe-area-inset-bottom))] z-20 mx-auto flex max-w-xl flex-col gap-2 px-4">
+        <div className="fixed inset-x-0 bottom-[calc(var(--fx-nav-h)+0.5rem+env(safe-area-inset-bottom))] z-20 mx-auto flex max-w-xl flex-col gap-2 px-4 lg:max-w-3xl">
           {notice ? (
             <Callout role="status" title="C’est fait" className="shadow-card">
               {notice}

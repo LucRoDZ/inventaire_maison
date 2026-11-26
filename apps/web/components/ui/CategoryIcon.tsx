@@ -37,6 +37,8 @@ import {
   Soup,
   Utensils,
   Wheat,
+  Refrigerator,
+  Warehouse,
   Wine,
   type LucideIcon,
 } from 'lucide-react';
@@ -87,4 +89,11 @@ const ICONS: Record<CategoryIconName, LucideIcon> = {
 /** The Lucide component for a category icon name; unknown names fall back to a box. */
 export function categoryIcon(name: string): LucideIcon {
   return (ICONS as Record<string, LucideIcon>)[name] ?? Package;
+}
+
+/** The icon of a piece of furniture: the two of the kinds, else one of the categories. */
+export function placeIcon(name: string): LucideIcon {
+  if (name === 'warehouse') return Warehouse;
+  if (name === 'refrigerator') return Refrigerator;
+  return categoryIcon(name);
 }

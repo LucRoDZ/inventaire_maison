@@ -169,3 +169,12 @@ export async function householdOf(username: string): Promise<number> {
     await client.end();
   }
 }
+
+/** List view: keeps only one piece of furniture, through the filter panel of the header. */
+export async function filterListByFurniture(page: Page, name: RegExp) {
+  await page.getByRole('button', { name: 'Filtres', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: 'Filtres' });
+  await sheet.getByRole('group', { name: 'Meuble' }).getByRole('radio', { name }).check();
+  await sheet.getByRole('button', { name: 'Appliquer' }).click();
+  await expect(sheet).toHaveCount(0);
+}

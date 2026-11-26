@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ScanFlow } from '../../components/scanner/ScanFlow';
+import { Screen } from '../../components/ui/Screen';
 
 const positive = (value: string | null): number | null => {
   const n = Number(value);
@@ -19,11 +20,10 @@ function ScannerWithOrigin() {
 
 export default function ScannerPage() {
   return (
-    <main className="flex flex-col gap-4">
-      <h1 className="text-title">Scanner</h1>
+    <Screen title="Scanner">
       <Suspense>
         <ScannerWithOrigin />
       </Suspense>
-    </main>
+    </Screen>
   );
 }
