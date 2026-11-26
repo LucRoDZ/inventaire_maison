@@ -84,7 +84,8 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Build, two browsers and the Phase 3 specs: about 11 minutes without the browser cache.
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
