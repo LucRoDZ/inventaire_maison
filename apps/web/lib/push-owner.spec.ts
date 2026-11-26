@@ -22,20 +22,20 @@ afterEach(() => {
 
 describe('dropForeignSubscription', () => {
   it('drops a subscription left by another account', async () => {
-    localStorage.setItem('inventaire-push-owner', '1');
-    await dropForeignSubscription(2);
+    localStorage.setItem('inventaire-push-owner', 'scope-1');
+    await dropForeignSubscription('scope-2');
     expect(unsubscribe).toHaveBeenCalledOnce();
     expect(localStorage.getItem('inventaire-push-owner')).toBeNull();
   });
 
   it('drops a subscription whose owner is unknown', async () => {
-    await dropForeignSubscription(2);
+    await dropForeignSubscription('scope-2');
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
   it('keeps the subscription of the same account', async () => {
-    localStorage.setItem('inventaire-push-owner', '2');
-    await dropForeignSubscription(2);
+    localStorage.setItem('inventaire-push-owner', 'scope-2');
+    await dropForeignSubscription('scope-2');
     expect(unsubscribe).not.toHaveBeenCalled();
   });
 });

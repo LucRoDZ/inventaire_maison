@@ -1,6 +1,7 @@
 import type { AuthUser } from '@inventaire/shared';
 import { ApiError, apiFetch } from './api';
 import { clearAppCaches } from './clear-caches';
+import { bindDataScope, purgeOfflineData } from './offline/runtime';
 import { dropForeignSubscription, unsubscribeThisDevice } from './push';
 
 /**
@@ -14,7 +15,9 @@ export async function login(username: string, password: string): Promise<AuthUse
     skipLoginRedirect: true,
   });
   await clearAppCaches().catch(() => undefined);
-  await dropForeignSubscription(user.id).catch(() => undefined);
+  // Another data scope than the last one on this device: its queue and catalogue are deleted.
+  await bindDataScope(user.dataScope).catch(() => undefined);
+  await dropForeignSubscription(user.dataScope).catch(() => undefined);
   return user;
 }
 
@@ -26,6 +29,7 @@ export async function logout(): Promise<void> {
   } finally {
     // Private data must not stay on the device, even when the call fails (offline, expired session).
     await clearAppCaches();
+    await purgeOfflineData().catch(() => undefined);
   }
 }
 

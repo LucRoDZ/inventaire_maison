@@ -14,7 +14,7 @@ describe('PushSetting', () => {
     const subscribe = vi.fn(async () => 'subscribed' as const);
     render(
       <PushSetting
-        userId={1}
+        dataScope="scope-1"
         api={{ support: supported, publicKey: withKey, isSubscribed: async () => false, subscribe }}
       />,
     );
@@ -30,7 +30,7 @@ describe('PushSetting', () => {
     const unsubscribe = vi.fn(async () => undefined);
     render(
       <PushSetting
-        userId={1}
+        dataScope="scope-1"
         api={{
           support: supported,
           publicKey: withKey,
@@ -51,7 +51,7 @@ describe('PushSetting', () => {
   it('explains a refused permission', async () => {
     render(
       <PushSetting
-        userId={1}
+        dataScope="scope-1"
         api={{
           support: supported,
           publicKey: withKey,
@@ -67,7 +67,7 @@ describe('PushSetting', () => {
   it('shows the error of the server', async () => {
     render(
       <PushSetting
-        userId={1}
+        dataScope="scope-1"
         api={{
           support: supported,
           publicKey: withKey,
@@ -85,7 +85,7 @@ describe('PushSetting', () => {
   it('explains how to install the app on iOS, without any button', async () => {
     render(
       <PushSetting
-        userId={1}
+        dataScope="scope-1"
         api={{ support: () => ({ supported: false, reason: 'ios-not-installed' }) }}
       />,
     );
@@ -96,7 +96,7 @@ describe('PushSetting', () => {
   it('hides everything without a server key', async () => {
     const publicKey = vi.fn(async () => ({ publicKey: null }));
     const { container } = render(
-      <PushSetting userId={1} api={{ support: supported, publicKey }} />,
+      <PushSetting dataScope="scope-1" api={{ support: supported, publicKey }} />,
     );
     await waitFor(() => expect(publicKey).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
