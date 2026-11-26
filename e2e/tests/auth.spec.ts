@@ -5,6 +5,10 @@ const USERNAME = 'admin';
 const PASSWORD = 'e2e-admin-password';
 
 async function signIn(page: Page, username = USERNAME, password = PASSWORD) {
+  // The iOS install invitation would cover « Se déconnecter » (tested in its own spec).
+  await page.addInitScript(() => {
+    window.localStorage.setItem('inventaire.install', '{"kind":"never"}');
+  });
   await page.goto('/connexion');
   await waitForHydration(page);
   await page.getByLabel('Pseudo').fill(username);

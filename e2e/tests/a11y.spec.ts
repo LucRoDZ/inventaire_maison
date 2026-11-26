@@ -142,7 +142,12 @@ test.describe('audit à 360 px', () => {
         if (visible.length < 4) return ['aucun élément interactif inspecté'];
         return visible
           .filter((el) => {
-            const box = el.getBoundingClientRect();
+            // A checkbox or radio wrapped in its label is touched through the whole label.
+            const wrapper =
+              el instanceof HTMLInputElement && /^(checkbox|radio)$/.test(el.type)
+                ? el.closest('label')
+                : null;
+            const box = (wrapper ?? el).getBoundingClientRect();
             return box.height < 43.5 || box.width < 43.5;
           })
           .map(

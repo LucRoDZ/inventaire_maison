@@ -52,8 +52,8 @@
 
 ### Clôture
 - [ ] **Z1 Suite complète et e2e** (deux navigateurs, deux tailles). Fin : vert.
-- [ ] **Z2 Revue `reviewer`** (isolation, accessibilité, identité). Fin : corrections faites.
-- [ ] **Z3 Finition unslop** des nouveaux écrans. Fin : audit noté.
+- [x] **Z2 Revue `reviewer`** (isolation, accessibilité, identité). Fin : 9 points corrigés (194a040).
+- [x] **Z3 Finition unslop** des nouveaux écrans. Fin : `docs/audit-finition.md`, section Phase 3.
 - [ ] **Z4 README, PR, CI verte, fusion**. Fin : squash.
 
 ## Décisions prises
@@ -86,6 +86,7 @@
 - P3.7 : une ligne de courses cochée bloque une nouvelle ligne automatique du même produit tant qu'elle n'est pas vidée ou rangée ; la ligne automatique vaut 1.
 - P3.8 : la date d'achat de la fiche sert au calcul de la date suggérée, elle n'est pas enregistrée (pas de colonne au contrat).
 - P3.9 : fiche d'ajout et formulaire produit inconnu gardent leurs deux étapes, avec les mêmes champs (contenance, date suggérée, rescan).
+- P3.10 : un appareil abonné garde l'identifiant du compte abonné (`localStorage`) ; à la connexion d'un autre compte, l'abonnement du navigateur est supprimé (l'ancien foyer ne lui parle plus).
 - U2 : barre du bas dans le flux (dernière ligne de la colonne du `body`), pas `fixed`.
 
 ## Problèmes bloquants

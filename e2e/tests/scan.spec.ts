@@ -204,7 +204,7 @@ test('mode Retirer : stock 2, deux retraits, l’article disparaît du stock', a
   await page.getByRole('button', { name: 'Retirer', exact: true }).click();
   await pushCode(page, code);
   await expect(
-    page.getByRole('status').filter({ hasText: `Retiré : 1 × ${name}, Frigo` }),
+    page.getByRole('status').filter({ hasText: `Consommé : 1 × ${name}, Frigo` }),
   ).toBeVisible();
   await expect.poll(quantity).toBe(1);
 
