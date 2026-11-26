@@ -20,38 +20,38 @@
 - [x] **K.4 Plan** `docs/phase-4.md`. Fin : vagues et tableau.
 
 ### A. Scanner immersif
-- [ ] **A1 Écran `/scanner` plein écran** sans barre du bas, « Fermer le scanner », voile et coins. Fin : e2e.
-- [ ] **A2 Retour à la lecture** : coins verrouillés, coche, `aria-live`, vibration réglable, anti-doublon 1,5 s. Fin : test de composant.
-- [ ] **A3 Fiche en bas** de l'écran (ajout ou formulaire inconnu). Fin : e2e saisie manuelle.
-- [ ] **A4 Compteur de session** et « Annuler le dernier ». Fin : e2e.
-- [ ] **A5 Lampe et zoom** selon `getCapabilities()`, saisie manuelle toujours là. Fin : test de composant.
-- [ ] **A6 Cycle de vie de la caméra** et refus d'accès. Fin : e2e flux simulé.
+- [x] **A1 Écran `/scanner` plein écran** sans barre du bas, « Fermer le scanner », voile et coins. Fin : e2e (23cccd7).
+- [x] **A2 Retour à la lecture** : coins verrouillés, coche, `aria-live`, vibration réglable, anti-doublon 1,5 s. Fin : test de composant (23cccd7).
+- [x] **A3 Fiche en bas** de l'écran (ajout ou formulaire inconnu). Fin : e2e saisie manuelle (23cccd7).
+- [x] **A4 Compteur de session** et « Annuler le dernier ». Fin : e2e (23cccd7).
+- [x] **A5 Lampe et zoom** selon `getCapabilities()`, saisie manuelle toujours là. Fin : test de composant (23cccd7).
+- [x] **A6 Cycle de vie de la caméra** et refus d'accès. Fin : e2e flux simulé (159e6c4).
 
 ### B. Scans hors ligne
-- [ ] **B1 File IndexedDB** avec clés d'idempotence, codes inconnus « à identifier ». Fin : tests unitaires.
-- [ ] **B2 Cache du catalogue** du foyer. Fin : test unitaire.
-- [ ] **B3 `POST /sync`** : une transaction par opération, rejeu sans effet, conflits. Fin : tests d'API.
-- [ ] **B4 Interface** : pastille « À synchroniser (n) », écran dédié. Fin : e2e hors ligne.
-- [ ] **B5 Purge** de la file et du cache à la déconnexion ou au changement de compte. Fin : e2e.
-- [ ] **B6 Mises à jour optimistes** sûres, avec retour arrière. Fin : tests de composant.
+- [x] **B1 File IndexedDB** avec clés d'idempotence, codes inconnus « à identifier ». Fin : tests unitaires (875eb3f).
+- [x] **B2 Cache du catalogue** du foyer. Fin : test unitaire (875eb3f).
+- [x] **B3 `POST /sync`** : une transaction par opération, rejeu sans effet, conflits. Fin : tests d'API (0fd04d2).
+- [x] **B4 Interface** : pastille « À synchroniser (n) », écran dédié. Fin : e2e hors ligne (875eb3f).
+- [x] **B5 Purge** de la file et du cache à la déconnexion ou au changement de compte. Fin : e2e (46c57ea).
+- [x] **B6 Mises à jour optimistes** sûres, avec retour arrière. Fin : tests de composant (77f01af).
 
 ### C. Gestes et saisie
-- [ ] **C1 Glisser une ligne** (Liste, Courses) : Consommé ou Jeté, annulation 5 s. Fin : e2e.
-- [ ] **C2 Dates limites rapides** et affichage relatif. Fin : test de composant.
-- [ ] **C3 Chiffres tabulaires**, titres équilibrés. Fin : revue.
-- [ ] **C4 Partager la liste** (Web Share, repli presse-papiers). Fin : test de composant.
+- [x] **C1 Glisser une ligne** (Liste, Courses) : Consommé ou Jeté, annulation 5 s. Fin : e2e (241816a).
+- [x] **C2 Dates limites rapides** et affichage relatif. Fin : test de composant (0c29381).
+- [x] **C3 Chiffres tabulaires**, titres équilibrés. Fin : revue (0c29381).
+- [x] **C4 Partager la liste** (Web Share, repli presse-papiers). Fin : test de composant (0c29381).
 
 ### D. Fluidité visuelle
-- [ ] **D1 Squelettes** de chargement sans décalage. Fin : test de composant.
-- [ ] **D2 Images** en fondu sur espace réservé. Fin : test de composant.
-- [ ] **D3 View Transitions** carte vers meuble, si disponible. Fin : décision notée.
-- [ ] **D4 États vides illustrés** (SVG aux jetons). Fin : axe.
-- [ ] **D5 Messages d'erreur** humains avec « Réessayer ». Fin : test de composant.
+- [x] **D1 Squelettes** de chargement sans décalage. Fin : test de composant (0c29381).
+- [x] **D2 Images** en fondu sur espace réservé. Fin : test de composant (0c29381).
+- [x] **D3 View Transitions** : abandonnée (P4.8).
+- [x] **D4 États vides illustrés** (SVG aux jetons). Fin : axe (0c29381).
+- [x] **D5 Messages d'erreur** humains avec « Réessayer ». Fin : test de composant (0c29381).
 
 ### E. Application installée
-- [ ] **E1 Pastille d'icône** (Badging). Fin : test avec API simulée.
-- [ ] **E2 Raccourcis** Scanner et Courses. Fin : test du manifeste.
-- [ ] **E3 Écrans de lancement et icônes** (iPhone, adaptable). Fin : script et test.
+- [x] **E1 Pastille d'icône** (Badging). Fin : test avec API simulée (77f01af).
+- [x] **E2 Raccourcis** Scanner et Courses. Fin : test du manifeste (77f01af).
+- [x] **E3 Écrans de lancement et icônes** (iPhone, adaptable). Fin : script et test (77f01af).
 
 ### F. Thème sombre
 - [ ] **F1 Réglage « Apparence »** sans flash. Fin : e2e.
@@ -105,6 +105,12 @@
 - P4.5 : `idempotency_keys` sans clé primaire propre : unicité (foyer, clé) ; droits sans `UPDATE`.
 - P4.6 : `/` redirige vers `/scanner` ; l'onglet « Scanner » ouvre l'écran plein écran.
 - P4.7 : B6 (mises à jour optimistes) confié à l'agent UI, propriétaire des listes et de Courses, pour éviter les conflits.
+- P4.8 : View Transitions abandonnée : le meuble ouvert charge ses données après la navigation, la transition capturerait un écran vide.
+- P4.9 : seules les opérations appliquées sont gardées dans `idempotency_keys` ; un conflit ou un rejet peut être renvoyé après correction avec la même clé.
+- P4.10 : le glissement retire une unité, comme « − » (même chemin au clavier : « − » puis « Jeté »).
+- P4.11 : la fiche rapide du scanner n'a ni date limite ni catégorie ; « Plus d'options » ouvre la fiche complète.
+- P4.12 : puces de date limite dans la fiche d'ajout seulement (aucun autre formulaire n'a de date limite).
+- P4.13 : sans `fake-indexeddb`, les tests de la file utilisent un stockage en mémoire derrière la même interface.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

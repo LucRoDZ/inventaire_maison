@@ -6,10 +6,10 @@
 | --- | --- | --- |
 | Étape 0 | fait | archive Phase 3, section Phase 4, cibles e2e vérifiées |
 | Contrat (K.1 à K.4) | fait | migration 0005, jetons, types, `dataScope`, ce plan |
-| Vague 1 : SCAN (A) | en cours | worktree `worker` |
-| Vague 1 : SYNC (B1 à B5) | en cours | worktree `worker` |
-| Vague 1 : UI (C, D, E, B6) | en cours | worktree `worker` |
-| Vague 2 : fusion puis thème sombre (F) | à faire | ordre SCAN, SYNC, UI ; un seul `worker` pour F |
+| Vague 1 : SCAN (A) | fait | 23cccd7, 159e6c4 |
+| Vague 1 : SYNC (B1 à B5) | fait | 0fd04d2, 875eb3f, 46c57ea |
+| Vague 1 : UI (C, D, E, B6) | fait | 241816a, 0c29381, 77f01af |
+| Vague 2 : fusion puis thème sombre (F) | en cours : fusion faite, F lancé | ordre SCAN, SYNC, UI ; un seul `worker` pour F |
 | Vague 3 : suite complète, revue | à faire | |
 | Finition, clôture | à faire | |
 

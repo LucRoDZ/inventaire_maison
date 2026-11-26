@@ -1,5 +1,6 @@
 'use client';
 
+import { PendingSyncBadge } from '../../../lib/offline';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ScanFlow } from '../../../components/scanner/ScanFlow';
@@ -19,7 +20,13 @@ function ScannerWithOrigin() {
     if (window.history.length > 1) router.back();
     else router.replace('/inventaire');
   };
-  return <ScanFlow origin={locationId ? { locationId, shelfId } : null} onClose={close} />;
+  return (
+    <ScanFlow
+      origin={locationId ? { locationId, shelfId } : null}
+      onClose={close}
+      statusSlot={<PendingSyncBadge />}
+    />
+  );
 }
 
 export default function ScannerPage() {
