@@ -12,6 +12,9 @@ import {
 } from '@nestjs/common';
 import {
   ADJUST_REASONS,
+  EXPIRY_FILTERS,
+  REMOVAL_REASONS,
+  type StockSummaryDto,
   STOCK_SORTS,
   type StockAdjustResponse,
   type MovementHistoryResponse,
@@ -57,7 +60,9 @@ const moveSchema = z
   })
   .strict();
 
-const removeSchema = z.object({ productId: id }).strict();
+const removeSchema = z
+  .object({ productId: id, reason: z.enum(REMOVAL_REASONS).optional() })
+  .strict();
 
 const historySchema = z.object({
   cursor: z.coerce.number().int().min(1).max(2_147_483_647).optional(),
@@ -70,6 +75,7 @@ const listSchema = z.object({
   category: z.coerce.number().int().min(1).max(2_147_483_647).optional(),
   q: z.string().max(100).optional(),
   sort: z.enum(STOCK_SORTS).default('name'),
+  expiry: z.enum(EXPIRY_FILTERS).optional(),
 });
 
 @Controller('stock')
@@ -86,6 +92,11 @@ export class StockController {
     const parsed = listSchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException('Filtres invalides');
     return this.query.list(parsed.data);
+  }
+
+  @Get('summary')
+  summary(): Promise<StockSummaryDto> {
+    return this.query.summary();
   }
 
   @Post('adjust')
@@ -114,7 +125,7 @@ export class StockController {
   @HttpCode(200)
   remove(@Body() body: unknown, @Req() req: Request): Promise<StockRemoveResponse> {
     const input = parseBody(removeSchema, body, 'Retrait invalide : un produit est requis');
-    return this.remover.removeOne(input.productId, req.user!.id);
+    return this.remover.removeOne(input.productId, req.user!.id, input.reason);
   }
 }
 

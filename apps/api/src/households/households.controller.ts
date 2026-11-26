@@ -13,17 +13,22 @@ import {
 import {
   CATEGORY_ICONS,
   CATEGORY_NAME_MAX_LENGTH,
+  EXPIRY_ALERT_DAYS_MAX,
+  EXPIRY_ALERT_DAYS_MIN,
   HOUSEHOLD_NAME_MAX_LENGTH,
   OFF_TAG_PATTERN,
+  SHELF_LIFE_DAYS_MAX,
   type CategoryDto,
   type HouseholdDto,
   type OffCategoryMapDto,
+  type SettingsDto,
 } from '@inventaire/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { Roles } from '../auth/roles.decorator';
 import { CategoriesService } from '../categories/categories.service';
 import { parseBody, parseId } from '../common/validation';
+import { SettingsService } from '../settings/settings.service';
 import { HouseholdsService } from './households.service';
 
 const householdName = z.string().trim().min(1).max(HOUSEHOLD_NAME_MAX_LENGTH);
@@ -33,14 +38,27 @@ const deleteSchema = z.object({ confirmName: z.string().max(200) }).strict();
 const categoryName = z.string().trim().min(1).max(CATEGORY_NAME_MAX_LENGTH);
 const icon = z.enum(CATEGORY_ICONS);
 const sortOrder = z.number().int().min(0).max(10_000);
+const shelfLifeDays = z.number().int().min(1).max(SHELF_LIFE_DAYS_MAX).nullable();
 const categoryId = z.number().int().min(1).max(2_147_483_647);
 const offTag = z.string().trim().max(100).regex(OFF_TAG_PATTERN);
 
 const categoryCreateSchema = z
-  .object({ name: categoryName, icon, sortOrder: sortOrder.optional() })
+  .object({
+    name: categoryName,
+    icon,
+    sortOrder: sortOrder.optional(),
+    shelfLifeDays: shelfLifeDays.optional(),
+  })
   .strict();
 const categoryPatchSchema = z
-  .object({ name: categoryName, icon, sortOrder })
+  .object({ name: categoryName, icon, sortOrder, shelfLifeDays })
+  .partial()
+  .strict()
+  .refine((v) => Object.keys(v).length > 0);
+const settingsPatchSchema = z
+  .object({
+    expiryAlertDays: z.number().int().min(EXPIRY_ALERT_DAYS_MIN).max(EXPIRY_ALERT_DAYS_MAX),
+  })
   .partial()
   .strict()
   .refine((v) => Object.keys(v).length > 0);
@@ -53,6 +71,7 @@ const mapPatchSchema = z
 
 const NAME_INVALID = 'Nom de foyer invalide : 1 à 40 caractères';
 const CATEGORY_INVALID = 'Catégorie invalide : nom de 1 à 40 caractères et icône de la liste';
+const SETTINGS_INVALID = 'Réglages invalides : seuil d’alerte de 0 à 30 jours';
 const MAP_INVALID = 'Correspondance invalide : tag au format « fr:slug » et catégorie';
 
 /**
@@ -66,6 +85,7 @@ export class HouseholdsController {
   constructor(
     @Inject(HouseholdsService) private readonly households: HouseholdsService,
     @Inject(CategoriesService) private readonly categories: CategoriesService,
+    @Inject(SettingsService) private readonly settings: SettingsService,
   ) {}
 
   @Get()
@@ -92,6 +112,19 @@ export class HouseholdsController {
     const id = parseId(rawId);
     const { confirmName } = parseBody(deleteSchema, body, 'Retapez le nom du foyer pour confirmer');
     await this.households.remove(id, confirmName);
+  }
+
+  // Settings of the chosen household.
+
+  @Get(':id/settings')
+  async getSettings(@Param('id') rawId: string): Promise<SettingsDto> {
+    return this.settings.get(await this.household(rawId));
+  }
+
+  @Patch(':id/settings')
+  async updateSettings(@Param('id') rawId: string, @Body() body: unknown): Promise<SettingsDto> {
+    const id = await this.household(rawId);
+    return this.settings.patch(id, parseBody(settingsPatchSchema, body, SETTINGS_INVALID));
   }
 
   // Categories of the chosen household.

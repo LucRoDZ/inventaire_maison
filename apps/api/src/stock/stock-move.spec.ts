@@ -222,7 +222,7 @@ describe('POST /api/stock/remove', () => {
     const res = await post('/api/stock/remove', { productId });
     expect(res.status).toBe(200);
     expect(res.body.item).toMatchObject({ quantity: 1, expiryDate: '2026-12-01' });
-    expect(res.body.movement).toMatchObject({ delta: -1, reason: 'scan_remove', userId: memberId });
+    expect(res.body.movement).toMatchObject({ delta: -1, reason: 'consumed', userId: memberId });
     expect(res.body.product).toEqual({ id: productId, name: 'Lait' });
     expect(res.body.location).toMatchObject({ id: fridgeId, name: 'Frigo' });
     expect(res.body.shelf).toMatchObject({ id: fridgeShelves[1] });

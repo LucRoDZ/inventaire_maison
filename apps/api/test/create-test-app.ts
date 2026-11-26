@@ -12,6 +12,8 @@ export interface TestAppOptions {
   controllers?: Type<unknown>[];
   /** Global rate limit for this app (the test setup raises it for all the others). */
   rateLimitPerMinute?: number;
+  /** Providers to replace (fakes), by injection token. */
+  overrides?: { token: unknown; value: unknown }[];
   /** Enables the proxy secret check (disabled in the other tests). */
   proxySecret?: string;
 }
@@ -21,6 +23,9 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<INest
     imports: [AppModule],
     controllers: options.controllers ?? [],
   });
+  for (const { token, value } of options.overrides ?? []) {
+    builder = builder.overrideProvider(token as never).useValue(value);
+  }
   if (options.clock) builder = builder.overrideProvider(CLOCK).useValue(options.clock);
   if (options.rateLimitPerMinute !== undefined || options.proxySecret !== undefined) {
     builder = builder.overrideProvider(APP_CONFIG).useValue({

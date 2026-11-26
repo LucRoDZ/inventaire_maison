@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   EXPIRY_SOON_DAYS,
+  type ExpiryFilter,
   type ExpiryStatus,
   type LocationCountDto,
   type StockListItemDto,
   type StockListResponse,
+  type StockSummaryDto,
   type StockSort,
 } from '@inventaire/shared';
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
@@ -13,12 +15,14 @@ import { categories, locations, products, shelves, stockItems } from '../databas
 import { TenantDb } from '../database/tenant-db';
 import type { Transaction } from '../database/database.module';
 import { normalizeSearch } from '../products/search-text';
+import { readExpiryAlertDays } from '../settings/settings.service';
 
 export interface StockFilters {
   location?: number;
   shelf?: number;
   category?: number;
   q?: string;
+  expiry?: ExpiryFilter;
   sort: StockSort;
 }
 
@@ -32,11 +36,27 @@ export function parisToday(now: Date): string {
   }).format(now);
 }
 
-export function expiryStatus(daysLeft: number | null): ExpiryStatus | null {
+export function expiryStatus(
+  daysLeft: number | null,
+  threshold: number = EXPIRY_SOON_DAYS,
+): ExpiryStatus | null {
   if (daysLeft === null) return null;
   if (daysLeft < 0) return { status: 'expired' };
-  if (daysLeft <= EXPIRY_SOON_DAYS) return { status: 'soon', days: daysLeft };
+  if (daysLeft <= threshold) return { status: 'soon', days: daysLeft };
   return null;
+}
+
+/** The lines matching one expiry filter; `today` is the Paris date, `threshold` the household's. */
+function expiryCondition(filter: ExpiryFilter, today: string, threshold: number): SQL {
+  const date = stockItems.expiryDate;
+  switch (filter) {
+    case 'today':
+      return sql`${date} = ${today}::date`;
+    case 'soon':
+      return sql`(${date} > ${today}::date and ${date} <= ${today}::date + ${threshold}::int)`;
+    case 'expired':
+      return sql`${date} < ${today}::date`;
+  }
 }
 
 @Injectable()
@@ -50,18 +70,53 @@ export class StockQuery {
     return this.tenant.run((tx, householdId) => this.listIn(tx, householdId, filters));
   }
 
+  /** The four counters at the top of the inventory. */
+  async summary(): Promise<StockSummaryDto> {
+    return this.tenant.run((tx, householdId) => this.summaryIn(tx, householdId));
+  }
+
+  /** The same counters for a chosen household (the daily push summary, outside any request). */
+  async summaryOf(householdId: number): Promise<StockSummaryDto> {
+    return this.tenant.forHousehold(householdId, (tx, hid) => this.summaryIn(tx, hid));
+  }
+
+  private async summaryIn(tx: Transaction, householdId: number): Promise<StockSummaryDto> {
+    const today = parisToday(this.clock.now());
+    const threshold = await readExpiryAlertDays(tx, householdId);
+    const [row] = await tx
+      .select({
+        inStock: sql<number>`count(distinct ${stockItems.productId})::int`,
+        today: sql<number>`count(*) filter (where ${expiryCondition('today', today, threshold)})::int`,
+        soon: sql<number>`count(*) filter (where ${expiryCondition('soon', today, threshold)})::int`,
+        expired: sql<number>`count(*) filter (where ${expiryCondition('expired', today, threshold)})::int`,
+      })
+      .from(stockItems)
+      .where(eq(stockItems.householdId, householdId));
+    return {
+      inStock: row?.inStock ?? 0,
+      today: row?.today ?? 0,
+      soon: row?.soon ?? 0,
+      expired: row?.expired ?? 0,
+      expiryAlertDays: threshold,
+    };
+  }
+
   private async listIn(
     tx: Transaction,
     householdId: number,
     filters: StockFilters,
   ): Promise<StockListResponse> {
     const today = parisToday(this.clock.now());
+    const threshold = await readExpiryAlertDays(tx, householdId);
     const term = filters.q ? normalizeSearch(filters.q) : '';
 
     // Filters shared by the lines and the per-location counters.
     const shared: SQL[] = [eq(stockItems.householdId, householdId)];
     if (filters.category !== undefined) shared.push(eq(products.categoryId, filters.category));
     if (term !== '') shared.push(sql`position(${term} in ${products.searchText}) > 0`);
+
+    if (filters.expiry !== undefined)
+      shared.push(expiryCondition(filters.expiry, today, threshold));
 
     const lineConditions = [...shared];
     if (filters.location !== undefined)
@@ -112,7 +167,7 @@ export class StockQuery {
       id: row.line.id,
       quantity: row.line.quantity,
       expiryDate: row.line.expiryDate,
-      expiry: expiryStatus(row.daysLeft === null ? null : Number(row.daysLeft)),
+      expiry: expiryStatus(row.daysLeft === null ? null : Number(row.daysLeft), threshold),
       createdAt: row.line.createdAt.toISOString(),
       product: {
         id: row.product.id,

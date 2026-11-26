@@ -10,6 +10,7 @@ export interface CategoryInput {
   name: string;
   icon: CategoryIcon;
   sortOrder?: number;
+  shelfLifeDays?: number | null;
 }
 
 export type CategoryPatch = Partial<CategoryInput>;
@@ -79,7 +80,13 @@ export class CategoriesService {
           )[0]?.top ?? -1) + 1;
         const [row] = await tx
           .insert(categories)
-          .values({ householdId: hid, name: input.name, icon: input.icon, sortOrder })
+          .values({
+            householdId: hid,
+            name: input.name,
+            icon: input.icon,
+            sortOrder,
+            shelfLifeDays: input.shelfLifeDays ?? null,
+          })
           .returning();
         return toCategory(row!);
       });

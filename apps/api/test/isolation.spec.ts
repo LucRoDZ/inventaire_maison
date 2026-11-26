@@ -34,6 +34,7 @@ let A: number;
 let B: number;
 const NAME_A = 'Foyer Alpha Zeta';
 const NAME_B = 'Foyer Beta Omega';
+const B_ENDPOINT = 'https://push.example.test/household-b';
 /** Word carried by every visible name of B's data: it must never reach A. */
 const MARK_B = 'Oméga';
 
@@ -164,10 +165,13 @@ async function snapshotB(): Promise<string> {
     'products',
     'stock_items',
     'stock_movements',
+    'settings',
+    'push_subscriptions',
   ];
   const parts: unknown[] = [];
   for (const table of tables) {
-    parts.push(await q(`SELECT * FROM ${table} WHERE household_id = $1 ORDER BY id`, [B]));
+    // The first column is the key of every table (`id`, or `household_id` for the settings).
+    parts.push(await q(`SELECT * FROM ${table} WHERE household_id = $1 ORDER BY 1`, [B]));
   }
   parts.push(await q('SELECT id, name FROM households WHERE id = $1', [B]));
   return JSON.stringify(parts);
@@ -437,6 +441,46 @@ const checks: Record<string, Check> = {
     assertNothingOfB(res.body, `${who} home`);
     assertNoHousehold(res.body, `${who} home`);
   },
+  'GET /api/settings': async (client) => {
+    // B changed its threshold; A keeps the default.
+    expect((await client.get('/api/settings')).body).toEqual({ expiryAlertDays: 3 });
+  },
+  'GET /api/stock/summary': async (client) => {
+    // A holds one product expiring tomorrow; B's line (also tomorrow) is not counted.
+    const res = await client.get('/api/stock/summary');
+    expect(res.body).toMatchObject({ inStock: 1, expired: 0, expiryAlertDays: 3 });
+    // Paris and the database may disagree on "today" around midnight: tomorrow is one or the other.
+    expect(res.body.today + res.body.soon).toBe(1);
+  },
+  'GET /api/stats': async (client, who) => {
+    const res = await client.get('/api/stats');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ consumed: 2, wasted: 0, topWasted: [] });
+    assertNothingOfB(res.body, `${who} stats`);
+    assertNoHousehold(res.body, `${who} stats`);
+  },
+  'GET /api/push/public-key': async (client) => {
+    expect((await client.get('/api/push/public-key')).body).toEqual({ publicKey: null });
+  },
+  'POST /api/push/subscriptions': async (client) => {
+    // B's endpoint: A gets a row of its own, B's row is left alone (checked by the snapshot).
+    const res = await client
+      .post('/api/push/subscriptions')
+      .send({ endpoint: B_ENDPOINT, keys: { p256dh: 'pa', auth: 'aa' } });
+    expect(res.status).toBe(204);
+    const rows = await q<{ household_id: number; p256dh: string }>(
+      'SELECT household_id, p256dh FROM push_subscriptions WHERE endpoint = $1 ORDER BY household_id',
+      [B_ENDPOINT],
+    );
+    expect(rows.find((r) => r.household_id === B)!.p256dh).toBe('pb');
+  },
+  'DELETE /api/push/subscriptions': async (client) => {
+    expect(
+      (await client.delete('/api/push/subscriptions').send({ endpoint: B_ENDPOINT })).status,
+    ).toBe(204);
+    const rows = await q('SELECT 1 FROM push_subscriptions WHERE household_id = $1', [B]);
+    expect(rows).toHaveLength(1);
+  },
   'ALL /api/{*path}': async (client) => {
     expect((await client.get('/api/route-inconnue')).status).toBe(404);
   },
@@ -455,6 +499,9 @@ const CONSOLE: Record<string, (client: Client) => Promise<request.Response>> = {
     c.patch(`/api/admin/households/${B}`).send({ name: 'Pirate' }),
   'DELETE /api/admin/households/:id': (c) =>
     c.delete(`/api/admin/households/${B}`).send({ confirmName: NAME_B }),
+  'GET /api/admin/households/:id/settings': (c) => c.get(`/api/admin/households/${B}/settings`),
+  'PATCH /api/admin/households/:id/settings': (c) =>
+    c.patch(`/api/admin/households/${B}/settings`).send({ expiryAlertDays: 1 }),
   'GET /api/admin/households/:id/categories': (c) => c.get(`/api/admin/households/${B}/categories`),
   'POST /api/admin/households/:id/categories': (c) =>
     c.post(`/api/admin/households/${B}/categories`).send({ name: 'Pirate', icon: 'wine' }),
@@ -491,6 +538,29 @@ beforeAll(async () => {
   await createUser(app, { username: 'bob', password: 'motdepasse1', householdId: B });
   a = await fill(A, 'Alpha', '5449000000996');
   b = await fill(B, MARK_B, '3017620422003');
+  // Comfort data of phase 3: B has its own threshold, consumption, waste and device.
+  const [userB] = await q<{ id: number }>('SELECT id FROM users WHERE household_id = $1', [B]);
+  const [userA] = await q<{ id: number }>('SELECT id FROM users WHERE household_id = $1 LIMIT 1', [
+    A,
+  ]);
+  await q('INSERT INTO settings (household_id, expiry_alert_days) VALUES ($1, 9)', [B]);
+  await q(
+    `INSERT INTO push_subscriptions (household_id, user_id, endpoint, p256dh, auth)
+     VALUES ($1, $2, $3, 'pb', 'ab')`,
+    [B, userB!.id, B_ENDPOINT],
+  );
+  for (const [household, product, user, delta, reason] of [
+    [B, b.product, userB!.id, -7, 'consumed'],
+    [B, b.product, userB!.id, -5, 'wasted'],
+    [A, a.product, userA!.id, -2, 'consumed'],
+  ] as const) {
+    await q(
+      `INSERT INTO stock_movements (household_id, product_id, location_id, location_name, delta,
+         reason, user_id)
+       VALUES ($1, $2, $3, 'Frigo', $4, $5, $6)`,
+      [household, product, household === B ? b.location : a.location, delta, reason, user],
+    );
+  }
   alice = await login('alice');
   root = await login('root');
   bob = await login('bob');

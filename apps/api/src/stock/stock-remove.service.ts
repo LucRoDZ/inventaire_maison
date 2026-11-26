@@ -1,5 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { StockRemoveResponse } from '@inventaire/shared';
+import {
+  DEFAULT_REMOVAL_REASON,
+  type RemovalReason,
+  type StockRemoveResponse,
+} from '@inventaire/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { locations, products, shelves, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
@@ -18,8 +22,12 @@ const MAX_ATTEMPTS = 5;
 export class StockRemoveService {
   constructor(@Inject(TenantDb) private readonly tenant: TenantDb) {}
 
-  /** Removes one unit: nearest expiry date first, then the oldest line. */
-  async removeOne(productId: number, userId: number): Promise<StockRemoveResponse> {
+  /** Removes one unit (eaten by default, or thrown away): nearest expiry date first, then the oldest line. */
+  async removeOne(
+    productId: number,
+    userId: number,
+    reason: RemovalReason = DEFAULT_REMOVAL_REASON,
+  ): Promise<StockRemoveResponse> {
     return this.tenant.run(async (tx, householdId) => {
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
         const [candidate] = await tx
@@ -61,7 +69,7 @@ export class StockRemoveService {
             ...names,
             expiryDate: line.expiryDate,
             delta: -1,
-            reason: 'scan_remove',
+            reason,
             userId,
           })
           .returning();
