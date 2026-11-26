@@ -1,13 +1,10 @@
 # TASKS.md : suivi d'avancement
 
-> Règles : lis `CLAUDE.md` d'abord. Une tâche = implémenter, tester, commit, cocher.
-> Une tâche n'est cochée que si son critère « Fin » est constaté et que `npm run lint`, `npm run typecheck` et `npm test` passent.
-> Après chaque `git push` : `gh pr checks`, et correction avant de continuer.
-> Tâche bloquée : note la commande et l'erreur dans « Problèmes bloquants ». Si une tâche suivante en dépend, écris le marqueur d'arrêt et arrête-toi ; ne saute pas la tâche.
-> Phase terminée : écris seul sur la dernière ligne de ce fichier `STOP: validation requise` et arrête-toi. Lucas supprime cette ligne pour lancer la phase suivante.
-> Tout est terminé : écris seul sur la dernière ligne `ALL DONE`.
-> Ces deux marqueurs ne doivent jamais commencer une autre ligne de ce fichier.
-> Phases 0, 1, 1.5, « Foyers isolés et meubles » (terminées) et l'ancienne Phase 2 (reprise dans la Phase 3) : `docs/archive/TASKS-phases-0-1.md`, à ne pas lire sauf demande.
+> Règles (détail dans `CLAUDE.md`, « Méthode de travail ») : une tâche = un commit ; vérification ciblée (typecheck de l'espace de travail touché, tests des fichiers touchés, eslint et prettier sur les fichiers modifiés, au plus un e2e) ; suite complète seulement en fin de phase et en CI (`gh pr checks` après chaque push).
+> Coche une tâche avec le hash court de son commit, sans compte rendu. Une ligne par décision réelle.
+> Tâche bloquée : commande et erreur dans « Problèmes bloquants » ; si une tâche suivante en dépend, écris le marqueur d'arrêt et arrête-toi.
+> Phase terminée : écris seul sur la dernière ligne de ce fichier `STOP: validation requise` et arrête-toi. Tout est terminé : `ALL DONE` seul sur la dernière ligne. Ces deux marqueurs ne commencent jamais une autre ligne.
+> Phases terminées et ancienne Phase 2 (reprise dans la Phase 3) : `docs/archive/TASKS-phases-0-1.md`, à ne pas lire sauf demande.
 
 ## Phase 3 : Confort et refonte (branche `phase-3-confort-refonte`)
 
