@@ -80,7 +80,7 @@ export function StatsView({ load = fetchStats }: StatsViewProps) {
         <div className={`${figure} col-span-2`}>
           <dt className="text-small">Taux de gaspillage</dt>
           <dd className="text-stat text-indigo tabular-nums">{formatWasteRate(stats.wasteRate)}</dd>
-          <dd className="text-help">Jeté, sur tout ce qui a quitté le stock.</dd>
+          <dd className="text-help">Jeté, sur tout ce qui a quitté le stock</dd>
         </div>
       </dl>
 
