@@ -55,7 +55,12 @@ export class AuthService {
     });
     await this.throttle.clear(username, ip);
     return {
-      user: { id: row.id, username: row.username, role: row.role as AuthUser['role'] },
+      user: {
+        id: row.id,
+        username: row.username,
+        role: row.role as AuthUser['role'],
+        dataScope: this.sessions.dataScope(row.id, row.householdId),
+      },
       session,
     };
   }

@@ -14,10 +14,10 @@
 - [x] **0.1 Archive** de la Phase 3. Fin : `TASKS.md` sous 150 lignes.
 - [x] **0.2 Section Phase 4**. Fin : une case par tâche.
 - [x] **0.3 Cibles e2e inchangées** (chromium-mobile Pixel 7, webkit-mobile iPhone 14, 360×740, 390×844). Fin : vérifié.
-- [ ] **K.1 Migration unique** `idempotency_keys` (RLS) et purge à 14 jours. Fin : `rls.spec.ts` vert.
-- [ ] **K.2 Jetons** voile, glissement, illustrations (et valeurs sombres). Fin : `check-colors` vert.
-- [ ] **K.3 Types partagés** `SyncOp`, `SyncResult`, constantes de file. Fin : build de `shared`.
-- [ ] **K.4 Plan** `docs/phase-4.md`. Fin : vagues et tableau.
+- [x] **K.1 Migration unique** `idempotency_keys` (RLS) et purge à 14 jours. Fin : `rls.spec.ts` vert.
+- [x] **K.2 Jetons** voile, glissement, illustrations (et valeurs sombres). Fin : `check-colors` vert.
+- [x] **K.3 Types partagés** `SyncOp`, `SyncResult`, constantes de file. Fin : build de `shared`.
+- [x] **K.4 Plan** `docs/phase-4.md`. Fin : vagues et tableau.
 
 ### A. Scanner immersif
 - [ ] **A1 Écran `/scanner` plein écran** sans barre du bas, « Fermer le scanner », voile et coins. Fin : e2e.
@@ -101,6 +101,8 @@
 - P4.1 : appui long sur une ligne non retenu (la fiche ouverte au toucher couvre les actions).
 - P4.2 : pas de miniatures floues côté serveur ; espace réservé neutre aux jetons qui s'estompe.
 - P4.3 : vibration, lampe, zoom, pastille, View Transitions : détection de capacité, repli silencieux, rien de promis sur iPhone.
+- P4.4 : `AuthUser.dataScope` = HMAC(`SESSION_SECRET`, compte et foyer), 32 caractères : la donnée de l'appareil est purgée quand il change, sans envoyer l'identifiant du foyer (D2).
+- P4.5 : `idempotency_keys` sans clé primaire propre : unicité (foyer, clé) ; droits sans `UPDATE`.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

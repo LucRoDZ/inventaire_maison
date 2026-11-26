@@ -24,6 +24,8 @@ export const APP_ROLE_PRIVILEGES: Readonly<Record<string, string>> = {
   settings: 'SELECT, INSERT, UPDATE',
   shopping_items: 'SELECT, INSERT, UPDATE, DELETE',
   push_subscriptions: 'SELECT, INSERT, UPDATE, DELETE',
+  // Written once, read on replay, purged after 14 days.
+  idempotency_keys: 'SELECT, INSERT, DELETE',
 };
 
 /** Tables whose rows belong to a household: row-level secured, reached through TenantDb only. */
@@ -38,6 +40,7 @@ export const HOUSEHOLD_TABLES = [
   'settings',
   'shopping_items',
   'push_subscriptions',
+  'idempotency_keys',
 ] as const;
 
 const ROLE_NAME = /^[a-z_][a-z0-9_]{0,62}$/;

@@ -4,6 +4,11 @@ export interface AuthUser {
   id: number;
   username: string;
   role: UserRole;
+  /**
+   * Opaque scope of the data kept on this device (offline queue, catalogue cache, push owner): it
+   * changes with the account and with its household, and reveals neither (decision D2).
+   */
+  dataScope: string;
 }
 
 export interface LoginRequest {

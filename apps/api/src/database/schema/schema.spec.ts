@@ -98,6 +98,7 @@ describe('migration', () => {
         'settings',
         'shopping_items',
         'push_subscriptions',
+        'idempotency_keys',
       ]),
     );
     const ext = await tmp.pool.query(`SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm'`);
@@ -120,6 +121,7 @@ describe('migration', () => {
         'stock_movements_household_reason_idx',
         'shopping_items_open_product_key',
         'push_subscriptions_household_endpoint_key',
+        'idempotency_keys_household_key',
       ]),
     );
   });

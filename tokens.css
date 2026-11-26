@@ -45,10 +45,37 @@
 
   /* Cibles tactiles */
   --tap-min: 44px;          /* Taille minimale d'une zone cliquable sur mobile. */
+
+  /* Phase 4 : scanner, glissement, chargement, illustrations */
+  --scanner-veil: rgba(10, 6, 40, 0.62);  /* Voile autour du cadre de visée, sur la caméra. */
+  --scanner-frame: #ffffff;               /* Coins du cadre de visée et coche de lecture. */
+  --scanner-ink: #ffffff;                 /* Texte et icônes posés sur la caméra. */
+  --alert-tint: #fbeceb;                  /* Fond d'un bloc de statut négatif (glissement « Jeté »). */
+  --swipe-consumed-bg: var(--ok-tint);    /* Fond révélé en glissant vers « Consommé ». */
+  --swipe-consumed-ink: var(--ok);
+  --swipe-wasted-bg: var(--alert-tint);   /* Fond révélé en glissant vers « Jeté ». */
+  --swipe-wasted-ink: var(--alert);
+  --skeleton: #eef0f5;                    /* Bloc de squelette de chargement, espace réservé d'image. */
+  --illustration-surface: var(--lavender);  /* Aplats des illustrations d'état vide. */
+  --illustration-line: var(--indigo);       /* Traits des illustrations. */
+  --illustration-accent: var(--amber);      /* Seule touche d'accent d'une illustration. */
+  --theme-color: #ffffff;                 /* Barre d'état et écran de lancement. */
+}
+
+/* Thème sombre (Phase 4, vague 2). Le contrat ne pose que les jetons ajoutés en Phase 4 ;
+   la palette sombre complète est écrite par la vague 2. Appliqué par l'attribut
+   `data-theme="dark"` sur <html>, posé avant le premier rendu. */
+:root[data-theme='dark'] {
+  --scanner-veil: rgba(4, 2, 20, 0.7);
+  --scanner-frame: #ffffff;
+  --scanner-ink: #ffffff;
+  --alert-tint: #3a1f2a;
+  --skeleton: #24204a;
+  --theme-color: #0f0b2e;
 }
 
 /* Règles d'usage :
-   - Thème clair uniquement en V1.
+   - Thème clair par défaut ; thème sombre par `data-theme="dark"` (Phase 4).
    - Un seul accent (ambre) : pas de couleur par catégorie.
    - L'ambre sur fond blanc a un contraste faible : jamais pour du texte courant,
      seulement pour un fond (badge, bouton) avec texte indigo ou ink dessus.

@@ -55,7 +55,12 @@ describe('POST /api/auth/login', () => {
   it('logs in with the right credentials and sets the session cookie', async () => {
     const res = await login('lucas', 'motdepasse1');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ id: expect.any(Number), username: 'lucas', role: 'admin' });
+    expect(res.body).toEqual({
+      id: expect.any(Number),
+      username: 'lucas',
+      role: 'admin',
+      dataScope: expect.stringMatching(/^[0-9a-f]{32}$/),
+    });
     expect(JSON.stringify(res.body)).not.toContain('hash');
     expect(setCookieLine(res, 'inv_session')).toBeDefined();
   });
@@ -123,7 +128,12 @@ describe('GET /api/auth/me', () => {
     const cookie = await loginCookie('lucas', 'motdepasse1');
     const res = await request(server()).get('/api/auth/me').set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ id: expect.any(Number), username: 'lucas', role: 'admin' });
+    expect(res.body).toEqual({
+      id: expect.any(Number),
+      username: 'lucas',
+      role: 'admin',
+      dataScope: expect.stringMatching(/^[0-9a-f]{32}$/),
+    });
   });
 
   it('answers 401 for a forged cookie', async () => {
@@ -231,5 +241,15 @@ describe('first admin', () => {
 
   it('does nothing when a user already exists', async () => {
     expect(await app.get(BootstrapAdminService).bootstrap()).toBe(false);
+  });
+});
+
+describe('data scope of the device', () => {
+  it('is opaque, stable for the account, and never the household id', async () => {
+    const signedIn = await login('lucas', 'motdepasse1');
+    const cookie = signedIn.headers['set-cookie'] as unknown as string[];
+    const me = await request(server()).get('/api/auth/me').set('Cookie', cookie);
+    expect(me.body.dataScope).toBe(signedIn.body.dataScope);
+    expect(JSON.stringify(me.body)).not.toMatch(/household/i);
   });
 });

@@ -18,6 +18,18 @@
   --color-ok: var(--ok);
   --color-ok-tint: var(--ok-tint);
   --color-alert: var(--alert);
+  --color-alert-tint: var(--alert-tint);
+  --color-scanner-veil: var(--scanner-veil);
+  --color-scanner-frame: var(--scanner-frame);
+  --color-scanner-ink: var(--scanner-ink);
+  --color-swipe-consumed-bg: var(--swipe-consumed-bg);
+  --color-swipe-consumed-ink: var(--swipe-consumed-ink);
+  --color-swipe-wasted-bg: var(--swipe-wasted-bg);
+  --color-swipe-wasted-ink: var(--swipe-wasted-ink);
+  --color-skeleton: var(--skeleton);
+  --color-illustration-surface: var(--illustration-surface);
+  --color-illustration-line: var(--illustration-line);
+  --color-illustration-accent: var(--illustration-accent);
   --color-transparent: transparent;
   --color-current: currentColor;
   --font-sans: var(--font-sans);

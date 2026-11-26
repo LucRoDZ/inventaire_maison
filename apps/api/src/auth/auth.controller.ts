@@ -80,8 +80,8 @@ export class AuthController {
 
   @Get('me')
   me(@Req() req: Request): AuthUser {
-    const { id, username, role } = req.user!;
-    return { id, username, role };
+    const { id, username, role, householdId } = req.user!;
+    return { id, username, role, dataScope: this.sessions.dataScope(id, householdId) };
   }
 
   @Post('password')
