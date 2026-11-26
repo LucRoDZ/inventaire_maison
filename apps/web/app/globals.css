@@ -177,7 +177,7 @@ body {
   }
 }
 .image-in {
-  animation: image-in 240ms ease-out both;
+  animation: image-in 240ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

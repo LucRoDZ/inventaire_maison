@@ -61,7 +61,7 @@
 ### Clôture
 - [ ] **Z1 Suite complète et e2e**. Fin : vert.
 - [ ] **Z2 Revue `reviewer`** (isolation, accessibilité, identité, replis). Fin : corrections faites.
-- [ ] **Z3 Finition unslop**. Fin : audit noté.
+- [x] **Z3 Finition unslop**. Fin : `docs/audit-finition.md`, section Phase 4.
 - [ ] **Z4 README, PR, CI verte, fusion**. Fin : squash.
 
 ## Décisions prises
