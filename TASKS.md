@@ -51,10 +51,10 @@
 - [x] **D1 Vue Liste triée par date limite** par défaut, compteurs à la place de « Ma maison ». Fin : e2e (b1fbb34).
 
 ### Clôture
-- [ ] **Z1 Suite complète et e2e** (deux navigateurs, deux tailles). Fin : vert.
+- [x] **Z1 Suite complète et e2e** (deux navigateurs, deux tailles). Fin : 191 e2e, API et web verts en CI (5395ad5).
 - [x] **Z2 Revue `reviewer`** (isolation, accessibilité, identité). Fin : 9 points corrigés (194a040).
 - [x] **Z3 Finition unslop** des nouveaux écrans. Fin : `docs/audit-finition.md`, section Phase 3.
-- [ ] **Z4 README, PR, CI verte, fusion**. Fin : squash.
+- [x] **Z4 README, PR, CI verte, fusion**. Fin : squash de la PR #27.
 
 ## Décisions prises
 
@@ -94,3 +94,5 @@
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
 
 - (note) Node 24 obligatoire (`nvm use`) : sous Node 20, `argon2` plante dans les tests API. Le conteneur local `inv-test-pg` occupe `127.0.0.1:5432`.
+
+STOP: validation requise

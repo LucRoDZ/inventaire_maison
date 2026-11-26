@@ -10,8 +10,8 @@
 | Vague 1 : API-B | fait | 43c400c à 285adf1 |
 | Vague 1 : WEB | fait | b1fbb34 à cca39e2 |
 | Vague 2 : fusion | fait | 1fca388, correctif 3d03a30 |
-| Vague 3 : suite complète, revue | en cours | e2e Phase 3 (e7516f6), revue corrigée (194a040), suite complète en cours |
-| Finition, clôture | en cours | unslop fait, README fait ; PR et fusion à faire |
+| Vague 3 : suite complète, revue | fait | 191 e2e verts, revue corrigée (194a040) |
+| Finition, clôture | fait | unslop, README, PR #27 |
 
 ## Contrat (ne change pas sans le pilote)
 
