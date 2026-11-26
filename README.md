@@ -222,6 +222,15 @@ Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
 Après un déploiement, les téléphones passent à la nouvelle version **sans rien demander** : le service worker prend la main tout seul, et une page déjà ouverte change de version à la navigation suivante (jamais pendant un scan, une saisie, un glisser-déposer ou avec un panneau ouvert), ou au prochain lancement. Aucun message « Nouvelle version disponible ».
 
+### Mise à jour vers la Phase 4 (finition, une seule fois)
+
+1. **Sauvegarde d'abord** : `./scripts/backup-db.sh` (ou `./deploy.sh` sans `--no-backup`). La migration `0005_phase4_sync` ajoute la table `idempotency_keys` (clés des scans faits hors ligne, sous sécurité par ligne, une clé unique par foyer). Elle ne modifie aucune donnée existante.
+2. `./deploy.sh`. Aucune nouvelle variable d'environnement.
+
+La tâche planifiée de 8 h (dans l'API) purge aussi les clés de plus de 14 jours : un appareil resté hors ligne plus longtemps renvoie ses scans comme nouveaux, ce qui reste sans danger (chaque opération est revérifiée).
+
+Nouveaux réglages dans Plus › Compte, propres à l'appareil : « Apparence » (Automatique, Clair, Sombre), « Retour tactile » (vibration à la lecture d'un code), et l'écran « À synchroniser » (scans gardés hors ligne, conflits, codes à identifier).
+
 ### Mise à jour vers la Phase 3 (confort, une seule fois)
 
 1. **Sauvegarde d'abord** : `./scripts/backup-db.sh` (ou laisse `./deploy.sh` la faire, sans `--no-backup`). La migration `0004_phase3_comfort` ajoute les tables `settings` (seuil d'alerte par foyer), `shopping_items` (liste de courses) et `push_subscriptions` (un abonnement par appareil), toutes sous sécurité par ligne, et des colonnes sur `categories` (`shelf_life_days`), `products` (`min_quantity`, `amount`, `unit`, `merged_into_id`). Elle ne supprime rien. Les catégories du modèle encore présentes (Viandes, Poissons, Laitiers, Fruits et légumes) reçoivent une durée de conservation suggérée.
@@ -378,6 +387,22 @@ Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécuris�
 2. Mettre un produit à date du jour, attendre 8 h (ou relancer l'API avec l'horloge du serveur avancée) : une notification « urgent » arrive, le toucher ouvre la vue Liste filtrée.
 3. Se déconnecter, se connecter avec un compte d'un autre foyer : l'appareil ne reçoit plus le résumé du premier foyer.
 4. Scanner : cocher « Scan en rafale », scanner dix produits connus à la suite : chacun est ajouté sans fiche, « Annuler » retire le dernier.
+
+### Scanner plein écran, hors ligne et application installée (Phase 4)
+
+Ce que les tests automatiques ne peuvent pas prouver, à vérifier sur Android (Chrome) et iPhone (Safari, application installée) :
+
+1. **Scanner** : l'onglet Scanner ouvre la caméra en plein écran ; un code lu verrouille les coins et affiche la coche ; la fiche monte du bas ; « Fermer le scanner » ramène à l'écran précédent et la caméra s'éteint (témoin de la caméra du téléphone éteint). Passer en arrière-plan éteint aussi la caméra.
+2. **Lampe et zoom** : boutons visibles seulement si le téléphone les propose (souvent Android) ; absents sur iPhone dans la plupart des cas, sans message d'erreur.
+3. **Vibration** : courte vibration à la lecture sur Android si « Retour tactile » est activé ; rien sur iPhone (Safari ne la permet pas).
+4. **Hors ligne** : mode avion, scanner un produit connu : « Hors ligne : le scan est gardé sur cet appareil », pastille « À synchroniser (1) » ; retour du réseau : la pastille disparaît et le stock est à jour. Un code inconnu attend dans « À synchroniser » et passe par la fiche avant tout enregistrement.
+5. **Changement de compte** : se déconnecter, se connecter avec un compte d'un autre foyer : « À synchroniser » est vide.
+6. **Glissement** : en vue Liste et dans Courses, glisser une ligne vers la droite (Consommé) ou la gauche (Jeté), « Annuler » dans les 5 s.
+7. **Icône** : pastille du nombre de produits périmés ou sous le seuil sur l'icône (Android Chrome, iPhone 16.4+ installé, macOS) ; raccourcis Scanner et Courses par appui long sur l'icône (Android) ; écran de lancement aux couleurs de l'application sur iPhone.
+8. **Partage** : « Partager la liste » ouvre la feuille de partage du téléphone ; sur ordinateur, la liste est copiée.
+9. **Thème** : Compte › Apparence › Automatique suit le réglage du téléphone ; aucun éclair blanc au lancement en sombre.
+
+Replis sans erreur visible : vibration, lampe, zoom, pastille d'icône, partage et View Transitions sont détectés avant usage ; sans IndexedDB, les scans hors ligne restent en mémoire jusqu'à la fermeture de l'onglet.
 
 ### Vue Maison (portes et lumière)
 
