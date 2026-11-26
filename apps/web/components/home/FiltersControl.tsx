@@ -227,7 +227,7 @@ export function FiltersControl({
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="tap-target text-indigo relative -mr-2 inline-flex shrink-0 items-center justify-center rounded-full"
+        className="tap-target text-indigo relative inline-flex shrink-0 items-center justify-center rounded-full"
       >
         <SlidersHorizontal size={22} aria-hidden="true" />
         {count > 0 ? (

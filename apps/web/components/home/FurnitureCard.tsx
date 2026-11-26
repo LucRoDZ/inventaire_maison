@@ -78,7 +78,7 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
       onPointerUp={release}
       onPointerCancel={release}
       onPointerLeave={release}
-      className={`fx-card border-line rounded-card shadow-card relative flex flex-col items-center gap-2 border bg-white p-3 ${
+      className={`fx-card border-line rounded-card shadow-card relative flex w-full flex-col items-center gap-2 border bg-white p-3 ${
         highlighted ? 'ring-amber ring-4' : ''
       }`}
     >
@@ -106,7 +106,7 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
       </span>
       {/* After the name in the document, so that the link is always read « Frigo… » first. */}
       {expiringSoon > 0 ? (
-        <span className="text-help bg-amber text-indigo absolute top-2 right-2 rounded-full px-2 py-0.5 font-bold">
+        <span className="text-help bg-amber text-indigo absolute top-2 left-2 rounded-full px-2 py-0.5 font-bold">
           {expiringSoon} {expiringSoon > 1 ? 'bientôt périmés' : 'bientôt périmé'}
         </span>
       ) : null}

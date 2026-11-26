@@ -9,8 +9,9 @@ import type {
 } from '@inventaire/shared';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { FurnitureOptions } from '../../../../components/furniture/FurnitureOptions';
 import { DndProvider } from '../../../../components/home/dnd/DndProvider';
 import { OpenFurniture } from '../../../../components/home/OpenFurniture';
 import { ProductSheet } from '../../../../components/home/ProductSheet';
@@ -44,6 +45,7 @@ function placeOf(location: HomeLocationDto, tile: HomeTileDto) {
 
 function Meuble() {
   const { lieu } = useParams<{ lieu: string }>();
+  const router = useRouter();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
@@ -147,6 +149,21 @@ function Meuble() {
           onChange={setFilters}
           categories={categories}
         />
+        {location ? (
+          <FurnitureOptions
+            locationId={location.id}
+            name={location.name}
+            className="-mr-2"
+            onChanged={(change) => {
+              if (change.kind === 'deleted') {
+                router.replace(`/inventaire${filtersToQuery(filters)}`);
+                return;
+              }
+              setNotice(change.message);
+              load();
+            }}
+          />
+        ) : null}
       </div>
       <FilterReminder
         summary={[filters.q.trim(), filterSummary(filters, 'home', categories, [])]

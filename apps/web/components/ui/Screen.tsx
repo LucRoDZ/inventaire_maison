@@ -138,7 +138,7 @@ export function Screen({
             </Link>
           ) : null}
           <h1 className="text-title line-clamp-2 min-w-0 flex-1 break-words">{title}</h1>
-          {actions}
+          {actions ? <div className="-mr-3 flex shrink-0 items-center">{actions}</div> : null}
         </div>
         {header}
       </header>

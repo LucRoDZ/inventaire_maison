@@ -17,6 +17,11 @@ import {
   useHomeFilters,
 } from '../../lib/home-filters';
 import { CreateFurnitureSheet } from '../furniture/CreateFurnitureSheet';
+import {
+  FurnitureOptions,
+  furnitureOptionsId,
+  type FurnitureChange,
+} from '../furniture/FurnitureOptions';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { FurnitureCard, furnitureCardId } from './FurnitureCard';
@@ -28,6 +33,8 @@ interface HomeViewProps {
 
 /** Search parameter set after a creation elsewhere (screen « Meubles »): focus that new card. */
 export const NEW_FURNITURE_PARAM = 'nouveau';
+
+const ADD_TILE_ID = 'ajouter-un-meuble';
 
 /**
  * The house: one card per piece of furniture, 2 columns on a phone (the page scrolls when there
@@ -49,12 +56,19 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   });
   const loader = useRef(load);
 
-  const reload = useCallback(() => {
+  /** Loads the house again; then gives the focus to the element of that id, if any. */
+  const reload = useCallback((focusAfter?: string) => {
     loader
       .current()
       .then((loaded) => {
         setHome(loaded);
         setError(null);
+        if (focusAfter) {
+          // Once the new house is drawn (two frames: after React has committed it).
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => document.getElementById(focusAfter)?.focus()),
+          );
+        }
       })
       .catch((caught: unknown) =>
         setError(
@@ -85,6 +99,12 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
       router.replace(`/inventaire${query ? `?${query}` : ''}`, { scroll: false });
     }
   }, [focusId, home, params, router]);
+
+  const onChanged = (locationId: number, change: FurnitureChange) => {
+    setAnnouncement(change.message);
+    // Deleted: the card is gone, the focus goes to the tile that adds one (or the first card).
+    reload(change.kind === 'deleted' ? ADD_TILE_ID : furnitureOptionsId(locationId));
+  };
 
   const onCreated = (location: LocationDto) => {
     setCreating(false);
@@ -145,23 +165,33 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
       {live}
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {home.locations.map((location) => (
-          <li key={location.id} className="flex">
-            <div className="flex w-full flex-col">
-              <FurnitureCard
-                location={location}
-                query={filtersToQuery(filters)}
-                highlighted={isFiltering(filters) && locationMatches(location, filters)}
-              />
-            </div>
+          <li key={location.id} className="relative flex">
+            <FurnitureCard
+              location={location}
+              query={filtersToQuery(filters)}
+              highlighted={isFiltering(filters) && locationMatches(location, filters)}
+            />
+            {/* Beside the link, never inside it: a tap on the card still opens the furniture. */}
+            <FurnitureOptions
+              locationId={location.id}
+              name={location.name}
+              onChanged={(change) => onChanged(location.id, change)}
+              className="absolute top-1 right-1"
+            />
           </li>
         ))}
         <li className="flex">
           {atLimit ? (
-            <p className="border-lavender-line rounded-card text-small flex w-full items-center justify-center border-2 border-dashed p-3 text-center">
+            <p
+              id={ADD_TILE_ID}
+              tabIndex={-1}
+              className="border-lavender-line rounded-card text-small flex w-full items-center justify-center border-2 border-dashed p-3 text-center"
+            >
               {MAX_LOCATIONS_PER_HOUSEHOLD} meubles au plus : la maison est complète.
             </p>
           ) : (
             <button
+              id={ADD_TILE_ID}
               type="button"
               onClick={() => setCreating(true)}
               className="tap-target border-lavender-line rounded-card text-indigo flex w-full flex-col items-center justify-center gap-2 border-2 border-dashed bg-white p-3 font-bold"
