@@ -234,7 +234,7 @@ test.describe('portes de la Vue Maison', () => {
     expect(await look('Cave')).toEqual(closed(2));
 
     // Search: the furniture holding a result keeps its amber ring, doors ajar at 12°, light on.
-    const search = page.getByRole('searchbox', { name: 'Rechercher dans la maison' });
+    const search = page.getByRole('searchbox', { name: 'Nom ou marque' });
     await search.fill(pantry);
     const ajar = Math.round(Math.cos((12 * Math.PI) / 180) * 1000) / 1000;
     await expect

@@ -335,6 +335,8 @@ test('console : l’admin crée « Foyer Dupont » et un compte dedans ; ce comp
       member.getByRole('link', { name: new RegExp(`^${name}\\s*\\d+ articles?`) }),
     ).toContainText('0 article');
   }
+  // The totals now live at the top of the list view (no banner over the furniture).
+  await member.getByRole('button', { name: 'Liste', exact: true }).click();
   await expect(member.getByText('0 article · 0 unité')).toBeVisible();
   for (const path of [
     '/',

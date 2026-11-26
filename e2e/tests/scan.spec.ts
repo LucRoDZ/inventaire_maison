@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createMember, pushCode, signIn, startScanner, waitForHydration } from './helpers';
+import {
+  createMember,
+  pushCode,
+  signIn,
+  startScanner,
+  waitForHydration,
+  filterListByFurniture,
+} from './helpers';
 
 // Both browser projects share one database: each one scans its own product.
 const FIXTURES = {
@@ -256,7 +263,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
     .getByRole('link', { name: 'Inventaire' })
     .click();
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
-  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  await filterListByFurniture(page, /^Frigo/);
   const section = page.getByRole('button', { name: /^Produits laitiers et œufs/ });
   await expect(section).toBeVisible();
   const card = page.locator('article').filter({ hasText: name });
@@ -273,7 +280,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
 
   await page.reload();
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
-  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  await filterListByFurniture(page, /^Frigo/);
   await expect(
     page.locator('article').filter({ hasText: name }).getByLabel('Quantité', { exact: true }),
   ).toHaveText('2');

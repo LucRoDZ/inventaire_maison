@@ -2,7 +2,6 @@
 
 import {
   MAX_LOCATIONS_PER_HOUSEHOLD,
-  type CategoryDto,
   type HomeResponse,
   type LocationDto,
 } from '@inventaire/shared';
@@ -17,12 +16,10 @@ import {
   locationMatches,
   useHomeFilters,
 } from '../../lib/home-filters';
-import { fetchCategories } from '../../lib/stock-api';
 import { CreateFurnitureSheet } from '../furniture/CreateFurnitureSheet';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { FurnitureCard, furnitureCardId } from './FurnitureCard';
-import { HomeFilters } from './HomeFilters';
 
 interface HomeViewProps {
   /** Test seam. */
@@ -42,8 +39,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   const params = useSearchParams();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [filters, setFilters] = useHomeFilters();
+  const [filters] = useHomeFilters();
   const [creating, setCreating] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   /** The card to focus once the house is drawn again. */
@@ -71,9 +67,6 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
 
   useEffect(() => {
     reload();
-    fetchCategories()
-      .then(setCategories)
-      .catch(() => undefined);
   }, [reload]);
 
   // Once the new card is drawn: focus it, say it, and forget the parameter of the URL.
@@ -114,8 +107,6 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
     );
   }
 
-  const products = home.locations.reduce((sum, l) => sum + l.counts.products, 0);
-  const units = home.locations.reduce((sum, l) => sum + l.counts.units, 0);
   const atLimit = home.locations.length >= MAX_LOCATIONS_PER_HOUSEHOLD;
   const sheet = creating ? (
     <CreateFurnitureSheet
@@ -152,14 +143,6 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   return (
     <div className="flex flex-col gap-4">
       {live}
-      <header className="rounded-card bg-indigo p-4 text-white">
-        <h2 className="text-card-title text-white">Ma maison</h2>
-        <p className="text-small text-white">
-          {products} {products > 1 ? 'articles' : 'article'} · {units}{' '}
-          {units > 1 ? 'unités' : 'unité'}
-        </p>
-      </header>
-      <HomeFilters filters={filters} onChange={setFilters} categories={categories} />
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {home.locations.map((location) => (
           <li key={location.id} className="flex">

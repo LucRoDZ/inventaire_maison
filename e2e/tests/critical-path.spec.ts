@@ -6,6 +6,7 @@ import {
   pushCode,
   signIn,
   startScanner,
+  filterListByFurniture,
 } from './helpers';
 
 // Both browser projects share one database: each one runs the path with its own products.
@@ -69,7 +70,7 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   const nav = page.getByRole('navigation', { name: 'Navigation principale' });
   await nav.getByRole('link', { name: 'Inventaire' }).click();
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
-  await page.getByRole('tab', { name: /^Frigo/ }).click();
+  await filterListByFurniture(page, /^Frigo/);
   const card = page.locator('article').filter({ hasText: scanned.name });
   await expect(card.getByLabel('Quantité', { exact: true })).toHaveText('2');
   await card.getByRole('button', { name: `Ajouter une unité de ${scanned.name}` }).click();

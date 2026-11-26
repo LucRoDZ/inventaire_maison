@@ -20,9 +20,10 @@ import { ApiError } from '../../../../lib/api';
 import { fetchHome } from '../../../../lib/home-api';
 import { FilterReminder, FiltersControl } from '../../../../components/home/FiltersControl';
 import {
+  clearPanelFilters,
+  filterSummary,
   filtersToQuery,
   isFiltering,
-  NO_FILTER,
   tileMatches,
   useHomeFilters,
 } from '../../../../lib/home-filters';
@@ -140,12 +141,18 @@ function Meuble() {
         ) : (
           <span className="flex-1" />
         )}
-        <FiltersControl filters={filters} onChange={setFilters} categories={categories} />
+        <FiltersControl
+          mode="furniture"
+          filters={filters}
+          onChange={setFilters}
+          categories={categories}
+        />
       </div>
       <FilterReminder
-        filters={filters}
-        categories={categories}
-        onClear={() => setFilters(NO_FILTER)}
+        summary={[filters.q.trim(), filterSummary(filters, 'home', categories, [])]
+          .filter(Boolean)
+          .join(' · ')}
+        onClear={() => setFilters({ ...clearPanelFilters(filters, 'home'), q: '' })}
       />
       {failed ? (
         <Callout role="alert" title="Un instant">

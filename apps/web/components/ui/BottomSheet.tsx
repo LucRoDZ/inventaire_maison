@@ -28,6 +28,8 @@ interface BottomSheetProps {
   closeOnBackdrop?: boolean;
   /** Stacking order: a sheet opened from another sheet goes above it. */
   layer?: 'base' | 'top';
+  /** The whole panel scrolls (default); false when the content scrolls a zone of its own. */
+  scrollable?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -47,6 +49,7 @@ export function BottomSheet({
   restoreFocus = true,
   closeOnBackdrop = true,
   layer = 'base',
+  scrollable = true,
   children,
   className = '',
 }: BottomSheetProps) {
@@ -134,7 +137,7 @@ export function BottomSheet({
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={keyDown}
-        className={`sheet-panel rounded-card mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] outline-none ${className}`}
+        className={`sheet-panel rounded-card mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 ${scrollable ? 'overflow-y-auto' : 'overflow-hidden'} rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] outline-none ${className}`}
       >
         {children}
       </div>

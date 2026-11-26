@@ -59,9 +59,11 @@ describe('HomeView', () => {
     expect(grid).toHaveClass('grid-cols-2', 'md:grid-cols-4');
   });
 
-  it('totals the articles and units in the indigo header', async () => {
+  it('has no « Ma maison » banner and no totals over the furniture', async () => {
     render(<HomeView load={async () => home} />);
-    expect(await screen.findByText('9 articles · 18 unités')).toBeInTheDocument();
+    await screen.findByRole('link', { name: /^Frigo/ });
+    expect(screen.queryByText('Ma maison')).toBeNull();
+    expect(screen.queryByText(/articles · /)).toBeNull();
   });
 
   it('shows an error when the house cannot be loaded', async () => {

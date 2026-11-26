@@ -1,4 +1,6 @@
-export type InventoryView = 'home' | 'list';
+import type { InventoryView } from '../../lib/home-filters';
+
+export type { InventoryView };
 
 interface ViewToggleProps {
   value: InventoryView;
