@@ -22,8 +22,10 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
           type="button"
           aria-pressed={value === view}
           onClick={() => onChange(view)}
-          className={`tap-target flex-1 rounded-lg font-bold ${
-            value === view ? 'bg-indigo text-white' : 'text-indigo-mid'
+          className={`tap-target flex-1 rounded-lg font-semibold ${
+            value === view
+              ? 'bg-white text-indigo shadow-card'
+              : 'text-indigo-mid hover:text-indigo'
           }`}
         >
           {label}

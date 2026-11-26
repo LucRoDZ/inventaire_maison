@@ -136,10 +136,14 @@ export function Screen({
               aria-label={`Retour : ${back.label}`}
               className="tap-target text-indigo -ml-3 inline-flex shrink-0 items-center justify-center rounded-full"
             >
-              <ChevronLeft size={26} aria-hidden="true" />
+              <ChevronLeft size={24} aria-hidden="true" />
             </Link>
           ) : null}
-          <h1 className="text-title line-clamp-2 min-w-0 flex-1 break-words">{title}</h1>
+          <h1
+            className={`${back ? 'text-subtitle' : 'text-title'} line-clamp-2 min-w-0 flex-1 break-words`}
+          >
+            {title}
+          </h1>
           {actions ? <div className="-mr-3 flex shrink-0 items-center">{actions}</div> : null}
         </div>
         {header}

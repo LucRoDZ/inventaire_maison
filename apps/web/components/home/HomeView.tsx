@@ -150,7 +150,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
           <p className="text-body">
             Ajoutez votre garde-manger, votre frigo ou votre cave pour y ranger vos produits.
           </p>
-          <Button variant="add" onClick={() => setCreating(true)}>
+          <Button variant="primary" onClick={() => setCreating(true)}>
             <Plus size={20} aria-hidden="true" />
             Ajouter votre premier meuble
           </Button>
@@ -194,7 +194,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
               id={ADD_TILE_ID}
               type="button"
               onClick={() => setCreating(true)}
-              className="tap-target border-lavender-line rounded-card text-indigo flex min-h-52 w-full flex-col items-center justify-center gap-2 border-2 border-dashed bg-white p-3 font-bold transition-colors duration-150 ease-out hover:bg-lavender"
+              className="tap-target border-lavender-line rounded-card text-indigo flex min-h-52 w-full flex-col items-center justify-center gap-2 border-2 border-dashed bg-white p-3 font-semibold transition-colors duration-150 ease-out hover:bg-lavender"
             >
               <span
                 aria-hidden="true"

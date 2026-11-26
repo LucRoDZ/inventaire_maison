@@ -43,7 +43,7 @@ export function PhotoCodeButton({ onCode, decode = decodePhoto }: PhotoCodeButto
     <div className="flex flex-col gap-2">
       <label
         htmlFor={inputId}
-        className="tap-target text-indigo-mid inline-flex cursor-pointer items-center gap-2 font-bold"
+        className="tap-target text-indigo-mid inline-flex cursor-pointer items-center gap-2 font-semibold"
       >
         <Camera size={18} aria-hidden="true" />
         {busy ? 'Lecture en cours…' : 'Prendre une photo du code'}

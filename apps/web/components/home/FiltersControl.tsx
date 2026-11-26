@@ -234,7 +234,7 @@ export function FiltersControl({
           <span
             data-testid="filters-badge"
             aria-hidden="true"
-            className="bg-amber text-indigo text-help absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white px-1 font-bold"
+            className="bg-amber text-indigo text-help absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white px-1 font-semibold"
           >
             {count}
           </span>
@@ -276,13 +276,13 @@ export function FilterReminder({ summary, onClear }: FilterReminderProps) {
     <div className="flex h-8 shrink-0 items-center gap-2" data-testid="filter-reminder">
       <p className="text-small min-w-0 flex-1 truncate">
         <span className="sr-only">Filtres : </span>
-        <span className="text-indigo font-bold">{summary}</span>
+        <span className="text-indigo font-semibold">{summary}</span>
       </p>
       <button
         type="button"
         onClick={onClear}
         aria-label="Effacer les filtres"
-        className="tap-target text-indigo-mid -my-1.5 -mr-2 inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2 font-bold"
+        className="tap-target text-indigo-mid -my-1.5 -mr-2 inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2 font-semibold"
       >
         Effacer
       </button>

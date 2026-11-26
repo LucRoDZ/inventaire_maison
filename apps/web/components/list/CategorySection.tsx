@@ -23,7 +23,7 @@ export function CategorySection({ name, items, onChange }: CategorySectionProps)
         className="tap-target text-label flex items-center justify-between"
       >
         <span>
-          {name} ({items.length})
+          {name} <span className="text-grey font-normal tabular-nums">({items.length})</span>
         </span>
         <ChevronDown
           size={18}

@@ -166,7 +166,7 @@ function CreateForm({
           <option value="admin">Administrateur</option>
         </select>
       </label>
-      <Button type="submit" variant="add" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         {busy ? 'Création…' : 'Créer le membre'}
       </Button>
     </form>
@@ -246,7 +246,7 @@ function MemberRow({
       className="border-line flex flex-col gap-2 rounded-xl border bg-white p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-bold">
+        <span className="text-ink font-semibold">
           {user.username}
           {isSelf ? ' (vous)' : ''}
         </span>
@@ -351,27 +351,28 @@ function MemberRow({
         </div>
       ) : null}
       {mode === 'idle' ? (
-        <div data-row-actions="" className="flex flex-wrap gap-2">
+        <div data-row-actions="" className="flex flex-wrap gap-x-6">
           {!isSelf && others.length > 0 ? (
-            <Button variant="secondary" onClick={() => setMode('move')}>
+            <Button variant="secondary" className="px-0!" onClick={() => setMode('move')}>
               Changer de foyer
             </Button>
           ) : null}
           {!isSelf ? (
-            <Button variant="secondary" onClick={() => setMode('reset')}>
+            <Button variant="secondary" className="px-0!" onClick={() => setMode('reset')}>
               Nouveau mot de passe
             </Button>
           ) : null}
           {user.disabled ? (
             <Button
               variant="secondary"
+              className="px-0!"
               disabled={busy}
               onClick={() => void run(() => api.reactivateUser(user.id), 'Compte réactivé.')}
             >
               Réactiver
             </Button>
           ) : !isSelf ? (
-            <Button variant="secondary" onClick={() => setMode('confirm')}>
+            <Button variant="secondary" className="px-0!" onClick={() => setMode('confirm')}>
               Désactiver
             </Button>
           ) : null}
@@ -427,7 +428,7 @@ export function MembersAdmin({
   return (
     <div className="flex flex-col gap-6">
       <section aria-labelledby="membres" className="flex flex-col gap-2">
-        <h2 id="membres" className="text-label">
+        <h2 id="membres" className="text-card-title">
           Tous les comptes
         </h2>
         {loadError ? (
@@ -452,7 +453,7 @@ export function MembersAdmin({
         </ul>
       </section>
       <section aria-labelledby="creer" className="flex flex-col gap-2">
-        <h2 id="creer" className="text-label">
+        <h2 id="creer" className="text-card-title">
           Ajouter un compte
         </h2>
         <CreateForm api={api} households={households} onCreated={replace} />

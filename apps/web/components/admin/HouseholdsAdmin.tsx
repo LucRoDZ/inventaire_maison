@@ -246,7 +246,7 @@ function CreateHouseholdForm({
           onChange={(e) => setName(e.target.value)}
         />
       </label>
-      <Button type="submit" variant="add" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         {busy ? 'Création…' : 'Créer le foyer'}
       </Button>
     </form>
@@ -285,7 +285,7 @@ export function HouseholdsAdmin({ api = householdsApi }: { api?: Api }) {
       ) : null}
       <CreateHouseholdForm api={api} onCreated={load} notify={setNotice} />
       {households ? (
-        <h2 ref={heading} tabIndex={-1} className="text-label outline-none">
+        <h2 ref={heading} tabIndex={-1} className="text-card-title outline-none">
           {households.length} {households.length > 1 ? 'foyers' : 'foyer'}
         </h2>
       ) : null}

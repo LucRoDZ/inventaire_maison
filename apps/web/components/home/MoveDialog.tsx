@@ -135,7 +135,7 @@ export function MoveDialog({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Button variant="add" disabled={same || busy} onClick={() => void submit()}>
+        <Button variant="primary" disabled={same || busy} onClick={() => void submit()}>
           Déplacer
         </Button>
         <Button variant="secondary" onClick={onClose}>

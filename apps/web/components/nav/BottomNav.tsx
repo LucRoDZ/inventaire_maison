@@ -42,7 +42,7 @@ export function BottomNav() {
                 >
                   <Icon size={22} aria-hidden="true" />
                 </span>
-                <span className={`text-help ${active ? 'font-bold' : ''}`}>{label}</span>
+                <span className={`text-help ${active ? 'font-semibold' : ''}`}>{label}</span>
               </Link>
             </li>
           );

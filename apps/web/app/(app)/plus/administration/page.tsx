@@ -13,7 +13,7 @@ function Entry({ href, label, icon: Icon }: { href: string; label: string; icon:
         className="tap-target border-line text-indigo flex items-center gap-3 rounded-xl border bg-white px-4"
       >
         <Icon size={20} aria-hidden="true" />
-        <span className="flex-1 font-bold">{label}</span>
+        <span className="flex-1 font-semibold">{label}</span>
         <ChevronRight size={18} aria-hidden="true" />
       </Link>
     </li>
@@ -41,7 +41,7 @@ export default function AdministrationPage() {
           </p>
           <Link
             href="/plus/meubles"
-            className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
+            className="tap-target text-indigo-mid inline-flex items-center gap-1 font-semibold"
           >
             Aller à Meubles et étagères
             <ChevronRight size={18} aria-hidden="true" />
