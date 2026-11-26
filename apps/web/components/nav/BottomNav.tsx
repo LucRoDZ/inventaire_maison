@@ -49,7 +49,7 @@ export function BottomNav() {
                 className="tap-target text-indigo flex flex-col items-center justify-center gap-0.5 py-2"
               >
                 <span
-                  className={`relative flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber' : 'bg-transparent'}`}
+                  className={`relative flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber text-on-amber' : 'bg-transparent'}`}
                 >
                   <Icon size={22} aria-hidden="true" />
                 </span>

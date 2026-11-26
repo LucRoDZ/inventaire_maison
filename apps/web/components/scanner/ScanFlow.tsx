@@ -351,7 +351,7 @@ export function ScanFlow({
                 <button
                   type="button"
                   onClick={() => void undoLast()}
-                  className="tap-target bg-scanner-frame text-indigo rounded-full px-4 font-semibold"
+                  className="tap-target bg-scanner-frame text-scanner-on-frame rounded-full px-4 font-semibold"
                 >
                   Annuler le dernier
                 </button>

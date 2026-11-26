@@ -50,6 +50,7 @@
   --scanner-veil: rgba(10, 6, 40, 0.62);  /* Voile autour du cadre de visée, sur la caméra. */
   --scanner-frame: #ffffff;               /* Coins du cadre de visée et coche de lecture. */
   --scanner-ink: #ffffff;                 /* Texte et icônes posés sur la caméra. */
+  --scanner-on-frame: #1800ad;            /* Texte posé sur un aplat blanc du scanner (même valeur dans les deux thèmes). */
   --alert-tint: #fbeceb;                  /* Fond d'un bloc de statut négatif (glissement « Jeté »). */
   --swipe-consumed-bg: var(--ok-tint);    /* Fond révélé en glissant vers « Consommé ». */
   --swipe-consumed-ink: var(--ok);
@@ -60,18 +61,38 @@
   --illustration-line: var(--indigo);       /* Traits des illustrations. */
   --illustration-accent: var(--amber);      /* Seule touche d'accent d'une illustration. */
   --theme-color: #ffffff;                 /* Barre d'état et écran de lancement. */
+  --on-amber: #1800ad;                    /* Texte et icône posés sur un aplat ambre (indigo en clair). */
 }
 
-/* Thème sombre (Phase 4, vague 2). Le contrat ne pose que les jetons ajoutés en Phase 4 ;
-   la palette sombre complète est écrite par la vague 2. Appliqué par l'attribut
-   `data-theme="dark"` sur <html>, posé avant le premier rendu. */
+/* Thème sombre : fonds indigo profond, aucune couleur nouvelle, un seul accent ambre.
+   Appliqué par `data-theme="dark"` sur <html>, posé avant le premier rendu (réglage « Apparence »).
+   Les jetons clairs sont employés par sens : --white est le fond (et les cartes), --indigo le texte
+   de marque et le fond des boutons principaux (le texte « white » dessus devient donc le fond sombre),
+   --lavender les pastilles. Chaque couple texte/fond est au moins AA (4.5:1). */
 :root[data-theme='dark'] {
+  color-scheme: dark;
+  --indigo: #cfc8ff;
+  --indigo-mid: #e6e2ff;
+  --lavender: #2a2370;
+  --lavender-line: #4a42a0;
+  --amber: #ffcc65;
+  --amber-tint: #2f2650;
+  --white: #151040;
+  --ink: #f5f3ff;
+  --grey: #c9c4ec;
+  --line: #3b3480;
+  --ok: #7fd99a;
+  --ok-tint: #123a2a;
+  --alert: #ff9a8c;
+  --alert-tint: #3a1f2a;
+  --shadow-card: 0 4px 8px rgba(0, 0, 0, 0.5);
   --scanner-veil: rgba(4, 2, 20, 0.7);
   --scanner-frame: #ffffff;
   --scanner-ink: #ffffff;
-  --alert-tint: #3a1f2a;
+  --scanner-on-frame: #1800ad;
   --skeleton: #24204a;
-  --theme-color: #0f0b2e;
+  --on-amber: #151040;
+  --theme-color: #151040;
 }
 
 /* Règles d'usage :

@@ -290,7 +290,7 @@ export function ScannerView({
             {locked ? (
               <>
                 <span className="border-scanner-frame absolute inset-0 rounded-xl border-2" />
-                <span className="bg-scanner-frame text-indigo absolute top-1/2 left-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full">
+                <span className="bg-scanner-frame text-scanner-on-frame absolute top-1/2 left-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full">
                   <Check size={28} aria-hidden="true" />
                 </span>
               </>
@@ -336,7 +336,7 @@ export function ScannerView({
                   type="button"
                   aria-pressed={mode === value}
                   onClick={() => onModeChange(value)}
-                  className={`tap-target rounded-full px-4 font-semibold ${mode === value ? 'bg-scanner-frame text-indigo' : 'text-scanner-ink'}`}
+                  className={`tap-target rounded-full px-4 font-semibold ${mode === value ? 'bg-scanner-frame text-scanner-on-frame' : 'text-scanner-ink'}`}
                 >
                   {label}
                 </button>

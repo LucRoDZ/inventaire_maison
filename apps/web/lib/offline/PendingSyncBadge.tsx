@@ -12,7 +12,7 @@ export function PendingSyncBadge({ className = '' }: { className?: string }) {
   return (
     <Link
       href={PENDING_SYNC_HREF}
-      className={`bg-amber text-indigo text-small inline-flex min-h-8 items-center rounded-full px-3 font-semibold ${className}`}
+      className={`bg-amber text-on-amber text-small inline-flex min-h-8 items-center rounded-full px-3 font-semibold ${className}`}
     >
       À synchroniser ({count})
     </Link>

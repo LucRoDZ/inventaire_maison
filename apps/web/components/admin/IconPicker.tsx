@@ -28,7 +28,7 @@ export function IconPicker({
             aria-label={iconLabel(name)}
             onClick={() => onChange(name)}
             className={`tap-target text-indigo flex w-11 items-center justify-center rounded-xl ${
-              selected ? 'bg-amber' : 'bg-lavender'
+              selected ? 'bg-amber text-on-amber' : 'bg-lavender'
             }`}
           >
             <Icon size={20} aria-hidden="true" />

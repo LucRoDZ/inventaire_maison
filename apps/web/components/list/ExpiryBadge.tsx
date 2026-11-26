@@ -8,7 +8,7 @@ export function expiryLabel(expiry: ExpiryStatus): string {
 /** Amber for « J-3 » and « Aujourd'hui », red for « Périmé »: always with the word, never colour alone. */
 export function ExpiryBadge({ expiry }: { expiry: ExpiryStatus | null }) {
   if (!expiry) return null;
-  const colors = expiry.status === 'expired' ? 'bg-alert text-white' : 'bg-amber text-indigo';
+  const colors = expiry.status === 'expired' ? 'bg-alert text-white' : 'bg-amber text-on-amber';
   return (
     <span
       className={`text-help inline-flex items-center rounded-full px-2 py-0.5 font-semibold tabular-nums ${colors}`}

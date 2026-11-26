@@ -6,7 +6,7 @@ export const APP_SHORT_NAME = 'Inventaire';
 export const THEME_COLOR = '#1800ad'; // check-colors:allow
 // Status bar: --theme-color of tokens.css, light and dark.
 export const THEME_COLOR_LIGHT = '#ffffff'; // check-colors:allow
-export const THEME_COLOR_DARK = '#0f0b2e'; // check-colors:allow
+export const THEME_COLOR_DARK = '#151040'; // check-colors:allow
 export const BACKGROUND_COLOR = '#ffffff'; // check-colors:allow
 
 export default function manifest(): MetadataRoute.Manifest {

@@ -26,7 +26,7 @@ export function Callout({
     >
       <span
         aria-hidden="true"
-        className="bg-amber text-indigo inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+        className="bg-amber text-on-amber inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
       >
         <Icon size={18} />
       </span>

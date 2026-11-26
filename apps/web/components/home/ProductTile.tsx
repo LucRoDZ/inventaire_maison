@@ -48,7 +48,7 @@ export function ProductTile({
       )}
       <span
         aria-hidden="true"
-        className="bg-amber text-indigo text-help absolute top-1 right-1 min-w-5 rounded-full px-1 text-center font-semibold"
+        className="bg-amber text-on-amber text-help absolute top-1 right-1 min-w-5 rounded-full px-1 text-center font-semibold"
       >
         {tile.quantity}
       </span>

@@ -11,6 +11,7 @@
   --color-lavender-line: var(--lavender-line);
   --color-amber: var(--amber);
   --color-amber-tint: var(--amber-tint);
+  --color-on-amber: var(--on-amber);
   --color-white: var(--white);
   --color-ink: var(--ink);
   --color-grey: var(--grey);
@@ -22,6 +23,7 @@
   --color-scanner-veil: var(--scanner-veil);
   --color-scanner-frame: var(--scanner-frame);
   --color-scanner-ink: var(--scanner-ink);
+  --color-scanner-on-frame: var(--scanner-on-frame);
   --color-swipe-consumed-bg: var(--swipe-consumed-bg);
   --color-swipe-consumed-ink: var(--swipe-consumed-ink);
   --color-swipe-wasted-bg: var(--swipe-wasted-bg);
