@@ -3,7 +3,7 @@ import {
   createMember,
   pushCode,
   signIn,
-  startScanner,
+  openScanner,
   waitForHydration,
   filterListByFurniture,
 } from './helpers';
@@ -19,7 +19,7 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
 }, testInfo) => {
   const { code, name, search } = FIXTURES[testInfo.project.name as keyof typeof FIXTURES];
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
 
   // First scan: Open Food Facts answers, the product is created with a proposed category.
   await pushCode(page, code);
@@ -95,7 +95,7 @@ async function describeAndAdd(page: Page, name: string) {
 test('code inconnu : formulaire, ajout, second scan reconnu', async ({ page }, testInfo) => {
   const { code, name } = UNKNOWN[testInfo.project.name as keyof typeof UNKNOWN];
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
 
   await pushCode(page, code);
   const form = page.getByRole('dialog', { name: 'Nouveau produit' });
@@ -112,7 +112,7 @@ test('code inconnu : formulaire, ajout, second scan reconnu', async ({ page }, t
 test('Open Food Facts en panne : formulaire vide et ajout possible', async ({ page }, testInfo) => {
   const { code, name } = OUTAGE[testInfo.project.name as keyof typeof OUTAGE];
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
 
   await pushCode(page, code);
   const form = page.getByRole('dialog', { name: 'Nouveau produit' });
@@ -134,6 +134,7 @@ const BY_NAME = {
 test('ajout manuel d’un produit sans code-barres', async ({ page }, testInfo) => {
   const name = BY_NAME[testInfo.project.name as keyof typeof BY_NAME];
   await signIn(page);
+  await openScanner(page);
 
   await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
   const search = page.getByRole('dialog', { name: 'Ajouter sans code-barres' });
@@ -194,7 +195,7 @@ test('mode Retirer : stock 2, deux retraits, l’article disparaît du stock', a
     return body.items.reduce((sum, item) => sum + item.quantity, 0);
   };
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
 
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
@@ -250,7 +251,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
     return body.items.reduce((sum, item) => sum + item.quantity, 0);
   };
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
   await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
@@ -381,7 +382,7 @@ const MOVES = {
 test('« Déplacer vers… » : d’une étagère à une autre par le menu', async ({ page }, testInfo) => {
   const { code, name, from, toLocation, to } = MOVES[testInfo.project.name as keyof typeof MOVES];
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
   await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
@@ -461,7 +462,7 @@ const DRAGS = {
 type Drag = { code: string; name: string; place: string; from: string; to: string };
 
 async function putOnShelf(page: Page, { code, name, place, from }: Drag) {
-  await startScanner(page);
+  await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
   await sheet.getByLabel('Lieu').selectOption({ label: place });
@@ -586,7 +587,7 @@ test('deux membres, même stock : l’historique nomme chacun, la catégorie mod
 
   // The admin adds two units to the fridge.
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
   await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
@@ -599,7 +600,7 @@ test('deux membres, même stock : l’historique nomme chacun, la catégorie mod
   const other = await browser.newContext({ baseURL });
   const memberPage = await other.newPage();
   await signIn(memberPage, member, 'mot-de-passe-membre');
-  await startScanner(memberPage);
+  await openScanner(memberPage);
   await pushCode(memberPage, code);
   const memberSheet = memberPage.getByRole('dialog', { name });
   await memberSheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
@@ -661,7 +662,7 @@ test('la catégorie proposée est confirmée par l’ajout, sans écran de relec
 }, testInfo) => {
   const { code, name } = REVIEW_ADDED[testInfo.project.name as keyof typeof REVIEW_ADDED];
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
   await expect(sheet.getByText(/Catégorie proposée/)).toBeVisible();
@@ -886,7 +887,7 @@ test('administration : une correspondance ajoutée classe un produit scanné ens
 
 async function startScannerFrom(page: Page) {
   await page.goto('/');
-  await startScanner(page);
+  await openScanner(page);
 }
 
 test('installation : jamais sur la connexion, proposée après connexion, « Plus tard » mémorisé', async ({
@@ -912,7 +913,7 @@ test('installation : jamais sur la connexion, proposée après connexion, « Plu
 
   await signIn(page, undefined, undefined, { keepInstallInvite: true });
   // The page is hydrated (the scanner has opened) before the browser event is simulated.
-  await startScanner(page);
+  await openScanner(page);
   await fire();
   const sheet = page.getByRole('dialog', { name: 'Installer l’application' });
   await expect(sheet).toBeVisible();

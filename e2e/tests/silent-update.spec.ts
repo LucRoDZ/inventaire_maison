@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pushCode, signIn, startScanner } from './helpers';
+import { pushCode, signIn, openScanner } from './helpers';
 
 // Silent update: once a new version has taken over (simulated with window.__e2eUpdateReady, set
 // in end-to-end builds only), nothing is shown, nothing reloads during an action, and the next
@@ -40,10 +40,13 @@ test('mise à jour silencieuse : rien ne s’affiche, la navigation suivante ouv
   await expectNothingShown(page);
   expect(await marked(page)).toBe(true);
 
-  // Sign-in lands on the full-screen scanner: closing it is the next navigation.
-  await page.getByRole('button', { name: 'Fermer le scanner' }).click();
-  await expect(page).toHaveURL(/\/inventaire$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Inventaire' })).toBeVisible();
+  // Sign-in lands on the inventory: the next navigation is a tab.
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Courses' })
+    .click();
+  await expect(page).toHaveURL(/\/courses$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Courses' })).toBeVisible();
   await expect.poll(() => marked(page)).toBe(false);
   await expectNothingShown(page);
 
@@ -57,7 +60,7 @@ test('mise à jour silencieuse : rien ne s’affiche, la navigation suivante ouv
 
 test('mise à jour silencieuse : jamais pendant un scan, caméra active', async ({ page }) => {
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   await mark(page);
   await newVersionTakesOver(page);
   await page.waitForTimeout(1000);

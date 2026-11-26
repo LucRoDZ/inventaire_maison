@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { ensureAccountInOwnHousehold, pushCode, signIn, startScanner } from './helpers';
+import { ensureAccountInOwnHousehold, openScanner, pushCode, signIn } from './helpers';
 
 const VIEWPORTS = [
   { width: 360, height: 740 },
@@ -216,7 +216,7 @@ for (const viewport of VIEWPORTS) {
         defaultLocationId: app.place('Frigo').id,
       });
 
-      await startScanner(page);
+      await openScanner(page);
       await page.getByRole('checkbox', { name: 'Scan en rafale' }).check();
       await pushCode(page, code);
       const toast = page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` });
@@ -242,7 +242,7 @@ for (const viewport of VIEWPORTS) {
         defaultLocationId: app.place('Frigo').id,
       });
 
-      await startScanner(page);
+      await openScanner(page);
       await pushCode(page, code);
       const sheet = page.getByRole('dialog', { name });
       await sheet.getByRole('button', { name: 'Plus d’options' }).click();
@@ -252,12 +252,12 @@ for (const viewport of VIEWPORTS) {
       await axeClean(page, '[role="dialog"]');
     });
 
-    test('navigation à quatre onglets, sans défilement de page', async ({ page }, testInfo) => {
+    test('navigation à trois onglets, sans défilement de page', async ({ page }, testInfo) => {
       await setup(page, testInfo, viewport.width);
-      // Sign-in lands on the full-screen scanner, without the bottom bar.
+      // Sign-in lands on the inventory; the scanner is no tab.
       await page.goto('/inventaire');
       const nav = page.getByRole('navigation', { name: 'Navigation principale' });
-      await expect(nav.getByRole('link')).toHaveText(['Scanner', 'Inventaire', 'Courses', 'Plus']);
+      await expect(nav.getByRole('link')).toHaveText(['Inventaire', 'Courses', 'Plus']);
 
       await nav.getByRole('link', { name: 'Courses' }).click();
       await expect(page.getByRole('heading', { name: 'Courses', level: 1 })).toBeVisible();
@@ -275,7 +275,11 @@ for (const viewport of VIEWPORTS) {
         'aria-current',
         'page',
       );
-      await nav.getByRole('link', { name: 'Scanner' }).click();
+      await page.getByRole('button', { name: 'Ajouter un produit' }).click();
+      await page
+        .getByRole('dialog', { name: 'Ajouter' })
+        .getByRole('button', { name: /^Scanner/ })
+        .click();
       await expect(page.getByRole('heading', { name: 'Scanner', level: 1 })).toBeVisible();
     });
   });

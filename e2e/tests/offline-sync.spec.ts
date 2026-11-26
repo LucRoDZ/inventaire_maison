@@ -96,6 +96,7 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
 }) => {
   await signInOwnHousehold(page);
   const productId = await createKnownProduct(page);
+  await page.goto('/scanner');
 
   // The catalogue is downloaded when the app opens; the shell is cached by the service worker.
   await page.evaluate(async () => {
@@ -125,7 +126,7 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
 test('la déconnexion vide la file et le cache de l’appareil', async ({ page, context }) => {
   await signInOwnHousehold(page);
   await createKnownProduct(page).catch(() => undefined);
-  await page.reload();
+  await page.goto('/scanner');
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
   await expect.poll(async () => (await offlineState(page))?.catalog).toBe(true);
 

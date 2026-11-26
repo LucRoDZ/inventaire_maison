@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-/** The scanner is a full-screen route of its own; an old `/?lieu=2` link keeps its origin. */
+/** The inventory is the home screen; an old `/?lieu=2` link keeps its origin. */
 export default async function HomePage({
   searchParams,
 }: {
@@ -13,5 +13,5 @@ export default async function HomePage({
     if (typeof value === 'string') query.set(key, value);
   }
   const suffix = query.size > 0 ? `?${query.toString()}` : '';
-  redirect(`/scanner${suffix}`);
+  redirect(`/inventaire${suffix}`);
 }
