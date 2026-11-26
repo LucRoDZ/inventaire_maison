@@ -330,7 +330,7 @@ describe('ListView batch edit', () => {
     expect(screen.getByRole('button', { name: 'Retirer une unité de Lait' })).toBeInTheDocument();
   });
 
-  it('removes the ticked lines as consumed and undoes with corrections', async () => {
+  it('removes the ticked lines as consumed and undoes with the same reason', async () => {
     const { adjust } = renderList(twoLines());
     await select('Lait', 'Eau');
     await userEvent.click(screen.getByRole('button', { name: 'Consommé' }));
@@ -347,7 +347,7 @@ describe('ListView batch edit', () => {
     await userEvent.click(within(toast).getByRole('button', { name: 'Annuler' }));
     await waitFor(() => expect(adjust).toHaveBeenCalledTimes(4));
     expect(adjust).toHaveBeenLastCalledWith(
-      expect.objectContaining({ delta: 2, reason: 'correction' }),
+      expect.objectContaining({ delta: 2, reason: 'consumed' }),
     );
   });
 

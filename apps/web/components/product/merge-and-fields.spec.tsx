@@ -99,7 +99,7 @@ describe('MergeProduct', () => {
     );
     await pickTarget();
     const dialog = screen.getByRole('alertdialog');
-    expect(dialog).toHaveTextContent('Le stock, les lignes de courses et l’historique de « Lait »');
+    expect(dialog).toHaveTextContent('Le stock et les lignes de courses de « Lait »');
     expect(dialog).toHaveTextContent('« Lait demi-écrémé »');
     expect(merge).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: /Fusionner dans/ }));

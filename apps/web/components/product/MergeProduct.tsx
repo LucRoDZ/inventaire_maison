@@ -77,9 +77,9 @@ export function MergeProduct({ product, onMerged, api = {} }: MergeProductProps)
             Fusionner ces deux produits ?
           </h2>
           <p id={descId} className="text-body">
-            Le stock, les lignes de courses et l’historique de « {product.name} » passent à «{' '}
-            {step.target.name} ». « {product.name} » disparaît du catalogue. Cette action ne se
-            défait pas.
+            Le stock et les lignes de courses de « {product.name} » passent à « {step.target.name}{' '}
+            ». « {product.name} » disparaît du catalogue ; son journal d’origine est conservé. Cette
+            action ne se défait pas.
           </p>
           {error ? (
             <Callout role="alert" title="Un instant">

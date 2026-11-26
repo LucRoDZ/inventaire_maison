@@ -44,6 +44,8 @@ export class StatsService {
         )
         .where(and(period, eq(stockMovements.reason, 'wasted')))
         .groupBy(stockMovements.productId, products.name)
+        // A removal undone within 5 s nets out to 0: not a wasted product.
+        .having(sql`sum(-${stockMovements.delta}) > 0`)
         .orderBy(desc(wastedUnits), products.name, stockMovements.productId)
         .limit(TOP_WASTED);
 

@@ -46,10 +46,43 @@ export async function currentSubscription(): Promise<PushSubscription | null> {
   return (await registration?.pushManager.getSubscription()) ?? null;
 }
 
+/** Account that subscribed this device (not private: an id), to drop it when another one signs in. */
+const OWNER_KEY = 'inventaire-push-owner';
+
+function readOwner(): string | null {
+  try {
+    return localStorage.getItem(OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeOwner(userId: number | null): void {
+  try {
+    if (userId === null) localStorage.removeItem(OWNER_KEY);
+    else localStorage.setItem(OWNER_KEY, String(userId));
+  } catch {
+    // Private mode: the subscription is then dropped at every sign-in.
+  }
+}
+
+/**
+ * Called after a sign-in. A subscription left by another account (session expired without
+ * sign-out, maybe of another household) is dropped in the browser: its endpoint dies, and the server
+ * deletes the old row at the next send (410). The same account keeps its notifications.
+ */
+export async function dropForeignSubscription(userId: number): Promise<void> {
+  const subscription = await currentSubscription();
+  if (!subscription) return;
+  if (readOwner() === String(userId)) return;
+  await subscription.unsubscribe().catch(() => false);
+  writeOwner(null);
+}
+
 export type SubscribeResult = 'subscribed' | 'denied' | 'no-key';
 
 /** Asks the permission, subscribes this device and tells the server. */
-export async function subscribeThisDevice(): Promise<SubscribeResult> {
+export async function subscribeThisDevice(userId: number): Promise<SubscribeResult> {
   const { publicKey } = await fetchPushPublicKey();
   if (!publicKey) return 'no-key';
   if ((await Notification.requestPermission()) !== 'granted') return 'denied';
@@ -69,6 +102,7 @@ export async function subscribeThisDevice(): Promise<SubscribeResult> {
       keys: { p256dh: keys.p256dh, auth: keys.auth },
     } satisfies PushSubscriptionInput,
   });
+  writeOwner(userId);
   return 'subscribed';
 }
 
@@ -83,5 +117,6 @@ export async function unsubscribeThisDevice(): Promise<void> {
     });
   } finally {
     await subscription.unsubscribe().catch(() => false);
+    writeOwner(null);
   }
 }

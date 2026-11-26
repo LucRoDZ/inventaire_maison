@@ -70,7 +70,7 @@ describe('RemoveFlow', () => {
     expect(removeOne).toHaveBeenCalledWith(7);
   });
 
-  it('undoes with a +1 correction on the very line that was touched', async () => {
+  it('undoes with a +1 of the same reason on the very line that was touched', async () => {
     const { adjust } = setup({});
     await userEvent.click(await screen.findByRole('button', { name: 'Annuler' }));
     expect(adjust).toHaveBeenCalledWith({
@@ -79,7 +79,7 @@ describe('RemoveFlow', () => {
       shelfId: 21,
       expiryDate: '2026-12-01',
       delta: 1,
-      reason: 'correction',
+      reason: 'consumed',
     });
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
   });
@@ -90,7 +90,7 @@ describe('RemoveFlow', () => {
     await waitFor(() => expect(adjust).toHaveBeenCalledTimes(2));
     expect(adjust).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ delta: 1, reason: 'correction' }),
+      expect.objectContaining({ delta: 1, reason: 'consumed' }),
     );
     expect(adjust).toHaveBeenNthCalledWith(
       2,

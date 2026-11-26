@@ -22,7 +22,7 @@ import {
   type StockFilters,
 } from '../../lib/stock-api';
 import type { LocationChoice } from '../home/FiltersControl';
-import { RemovalToast, type RemovalPlan } from '../add/RemovalToast';
+import { RemovalToast, type RemovalPlan, removalKey } from '../add/RemovalToast';
 import { UndoToast } from '../add/UndoToast';
 import { Callout } from '../ui/Callout';
 import { MoveDialog } from '../home/MoveDialog';
@@ -189,6 +189,8 @@ export function ListView({
         reason: delta < 0 ? 'consumed' : 'manual',
       });
       if (delta < 0) {
+        // One toast at a time: a new removal replaces the batch toast.
+        setBatchToast(null);
         setRemoval({
           productId: item.product.id,
           locationId: item.location.id,
@@ -262,6 +264,7 @@ export function ListView({
     }
     setBatchBusy(false);
     if (done.length > 0) {
+      setRemoval(null);
       setBatchToast({
         message: `${reason === 'consumed' ? 'Consommé' : 'Jeté'} : ${done.length} ${
           done.length > 1 ? 'produits' : 'produit'
@@ -416,6 +419,7 @@ export function ListView({
 
       {removal ? (
         <RemovalToast
+          key={removalKey(removal)}
           plan={removal}
           adjust={api.adjust}
           onChanged={() => {

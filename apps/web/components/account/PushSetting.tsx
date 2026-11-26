@@ -15,6 +15,8 @@ import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 
 interface PushSettingProps {
+  /** The signed-in account, remembered as the owner of the subscription of this device. */
+  userId: number;
   /** Test seams. */
   api?: {
     support?: () => PushSupport;
@@ -42,7 +44,7 @@ const failure = (error: unknown) =>
  * device only. Without support (iOS outside the installed app) a help text explains what to do;
  * without a server key the option is not shown at all.
  */
-export function PushSetting({ api = {} }: PushSettingProps) {
+export function PushSetting({ userId, api = {} }: PushSettingProps) {
   const seams = useRef(api);
   const [state, setState] = useState<State>({ name: 'loading' });
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -95,7 +97,7 @@ export function PushSetting({ api = {} }: PushSettingProps) {
         setState({ name: 'ready', subscribed: false });
         setMessage({ kind: 'ok', text: 'Notifications désactivées sur cet appareil.' });
       } else {
-        const result = await (seams.current.subscribe ?? subscribeThisDevice)();
+        const result = await (seams.current.subscribe ?? (() => subscribeThisDevice(userId)))();
         if (result === 'subscribed') {
           setState({ name: 'ready', subscribed: true });
           setMessage({ kind: 'ok', text: 'Notifications activées sur cet appareil.' });

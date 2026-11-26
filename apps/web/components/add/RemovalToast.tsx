@@ -1,7 +1,7 @@
 'use client';
 
 import type { RemovalReason, StockAdjustInput, StockAdjustResponse } from '@inventaire/shared';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { adjustStock } from '../../lib/stock-api';
 import { UndoToast } from './UndoToast';
@@ -30,6 +30,21 @@ interface RemovalToastProps {
   adjust?: (input: StockAdjustInput) => Promise<StockAdjustResponse>;
 }
 
+const keys = new WeakMap<RemovalPlan, number>();
+let lastKey = 0;
+/**
+ * A key per removal, for `<RemovalToast key={removalKey(plan)}>`: a new removal gets a new toast
+ * (its own reason, its own 5 s), never the state of the previous one.
+ */
+export function removalKey(plan: RemovalPlan): number {
+  let key = keys.get(plan);
+  if (key === undefined) {
+    key = ++lastKey;
+    keys.set(plan, key);
+  }
+  return key;
+}
+
 const REASON_TEXT: Record<RemovalReason, string> = { consumed: 'Consommé', wasted: 'Jeté' };
 
 const failure = (error: unknown) =>
@@ -51,6 +66,8 @@ export function RemovalToast({
   adjust = adjustStock,
 }: RemovalToastProps) {
   const [reason, setReason] = useState<RemovalReason>(initial);
+  /** One change at a time: a double tap must not put the units back twice. */
+  const acting = useRef(false);
   const key = {
     productId: plan.productId,
     locationId: plan.locationId,
@@ -63,6 +80,9 @@ export function RemovalToast({
     adjust({ ...key, delta: plan.units, reason: undone });
 
   const undo = async () => {
+    if (acting.current) return;
+    // Never released: the toast closes after the undo.
+    acting.current = true;
     try {
       await putBack();
       onChanged?.();
@@ -73,6 +93,8 @@ export function RemovalToast({
   };
 
   const throwAway = async () => {
+    if (acting.current) return;
+    acting.current = true;
     try {
       await putBack('consumed');
       await adjust({ ...key, delta: -plan.units, reason: 'wasted' });
@@ -81,6 +103,7 @@ export function RemovalToast({
       onError?.(failure(error));
       onClose();
     }
+    acting.current = false;
     onChanged?.();
   };
 

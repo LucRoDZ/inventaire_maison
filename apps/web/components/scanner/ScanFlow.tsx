@@ -296,7 +296,7 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
           </label>
         ) : null}
       </div>
-      {mode === 'add' && burst ? (
+      {mode === 'add' ? (
         <p id="burst-help" className="text-help -mt-2">
           Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les autres
           ouvrent le formulaire.

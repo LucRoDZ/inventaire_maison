@@ -31,13 +31,15 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
       {selection ? (
         <>
           <span className="text-ink font-semibold tabular-nums">× {item.quantity}</span>
-          <input
-            type="checkbox"
-            aria-label={`Sélectionner ${product.name}`}
-            checked={selection.selected}
-            onChange={selection.onToggle}
-            className="accent-indigo h-6 w-6 shrink-0"
-          />
+          <label className="tap-target flex shrink-0 cursor-pointer items-center justify-center">
+            <input
+              type="checkbox"
+              aria-label={`Sélectionner ${product.name}`}
+              checked={selection.selected}
+              onChange={selection.onToggle}
+              className="accent-indigo h-6 w-6"
+            />
+          </label>
         </>
       ) : (
         <div

@@ -17,7 +17,7 @@ export default function ComptePage() {
           <dd className="text-ink">{user.role === 'admin' ? 'Administrateur' : 'Membre'}</dd>
         </dl>
       ) : null}
-      <PushSetting />
+      {user ? <PushSetting userId={user.id} /> : null}
       <h2 className="text-card-title mt-2">Changer le mot de passe</h2>
       <PasswordForm />
     </Screen>

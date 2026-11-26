@@ -213,7 +213,10 @@ export class ShoppingService {
       const deleted = await tx
         .delete(shoppingItems)
         .where(and(eq(shoppingItems.householdId, householdId), eq(shoppingItems.checked, true)))
-        .returning({ id: shoppingItems.id });
+        .returning({ id: shoppingItems.id, productId: shoppingItems.productId });
+      // A checked line held back the automatic line of its product: give it back if still needed.
+      const productIds = new Set(deleted.flatMap((row) => (row.productId ? [row.productId] : [])));
+      for (const productId of productIds) await syncAutoShopping(tx, householdId, productId);
       return { removed: deleted.length };
     });
   }

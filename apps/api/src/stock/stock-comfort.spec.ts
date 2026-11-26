@@ -133,11 +133,15 @@ describe('consumed and wasted reasons', () => {
     expect(undone.status).toBe(200);
     const stats = await get('/api/stats');
     expect(stats.body).toMatchObject({ consumed: 0, wasted: 2 });
+    // The wasted removal undone too: nothing left in the top of wasted products.
+    await post('/api/stock/adjust').send({ ...base, delta: 2, reason: 'wasted' });
+    expect((await get('/api/stats')).body).toMatchObject({ wasted: 0, topWasted: [] });
     expect(
       (await post('/api/stock/adjust').send({ ...base, delta: 1, reason: 'scan_remove' })).status,
     ).toBe(400);
     const history = await get(`/api/products/${productId}/movements`);
     expect(history.body.items.map((i: { reason: string }) => i.reason)).toEqual([
+      'wasted',
       'consumed',
       'wasted',
       'consumed',

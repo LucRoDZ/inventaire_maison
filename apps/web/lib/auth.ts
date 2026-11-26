@@ -1,7 +1,7 @@
 import type { AuthUser } from '@inventaire/shared';
 import { ApiError, apiFetch } from './api';
 import { clearAppCaches } from './clear-caches';
-import { unsubscribeThisDevice } from './push';
+import { dropForeignSubscription, unsubscribeThisDevice } from './push';
 
 /**
  * Signs in. The caches of the device are emptied first: another account, maybe of another
@@ -14,6 +14,7 @@ export async function login(username: string, password: string): Promise<AuthUse
     skipLoginRedirect: true,
   });
   await clearAppCaches().catch(() => undefined);
+  await dropForeignSubscription(user.id).catch(() => undefined);
   return user;
 }
 

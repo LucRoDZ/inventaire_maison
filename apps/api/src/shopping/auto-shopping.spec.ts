@@ -142,6 +142,14 @@ describe('automatic shopping line', () => {
     expect(await lines()).toMatchObject([{ id: auto!.id, checked: true }]);
   });
 
+  it('gives the auto line back when a checked line is cleared without being stored', async () => {
+    await setMin(2);
+    const [auto] = await lines();
+    await api.patch(`/api/shopping/${auto!.id}`).send({ checked: true });
+    await api.post('/api/shopping/clear-checked').send({});
+    expect(await lines()).toMatchObject([{ origin: 'auto', checked: false }]);
+  });
+
   it('stores the checked lines then evaluates the minimum again', async () => {
     await setMin(3);
     const [auto] = await lines();
