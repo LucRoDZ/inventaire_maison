@@ -16,6 +16,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Transaction } from '../database/database.module';
 import { locations, products, shelves, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
+import { syncAutoShopping } from '../shopping/auto-shopping';
 
 export const toStockLine = (row: typeof stockItems.$inferSelect): StockLineDto => ({
   id: row.id,
@@ -202,6 +203,7 @@ export class StockService {
           userId,
         })
         .returning();
+      await syncAutoShopping(tx, householdId, input.productId);
       return { item: item ? toStockLine(item) : null, movement: toMovement(movement!) };
     });
   }
