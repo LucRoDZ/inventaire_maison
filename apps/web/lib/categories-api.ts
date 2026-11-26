@@ -7,7 +7,13 @@ export interface CategoriesApi {
   createCategory(input: { name: string; icon: CategoryIcon }): Promise<CategoryDto>;
   updateCategory(
     id: number,
-    patch: { name?: string; icon?: CategoryIcon; sortOrder?: number },
+    patch: {
+      name?: string;
+      icon?: CategoryIcon;
+      sortOrder?: number;
+      /** Null removes the suggestion. */
+      shelfLifeDays?: number | null;
+    },
   ): Promise<CategoryDto>;
   deleteCategory(id: number): Promise<void>;
   fetchMappings(): Promise<OffCategoryMapDto[]>;
