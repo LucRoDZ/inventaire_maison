@@ -24,31 +24,31 @@
 - [x] **K.4 Plan** : `docs/phase-3.md`. Fin : vagues et tableau.
 
 ### A. Péremption et gaspillage
-- [ ] **A1 Seuil d'alerte par foyer** (3 j), réglé dans la console. Fin : seuil à 5, J-5 devient « bientôt ».
-- [ ] **A2 Quatre compteurs** en tête de zone, filtres d'échéance dans l'URL. Fin : e2e « Bientôt » filtre.
-- [ ] **A3 Pastille d'urgence** par ligne et tri par date limite. Fin : test de composant.
-- [ ] **A4 Consommé / Jeté** : raisons `consumed`, `wasted`, partout où l'on retire. Fin : journal affiche la raison.
-- [ ] **A5 Statistiques** 30 jours (Plus). Fin : tests API et e2e.
-- [ ] **A6 Durée suggérée par catégorie** : `shelf_life_days`, date « Suggérée ». Fin : e2e fiche.
-- [ ] **A7 Notifications push** : abonnement, résumé 8 h, clic vers la liste filtrée. Fin : tests horloge et envoi simulés.
+- [x] **A1 Seuil d'alerte par foyer** (3 j), réglé dans la console. Fin : seuil à 5, J-5 devient « bientôt » (8a675df).
+- [x] **A2 Quatre compteurs** en tête de zone, filtres d'échéance dans l'URL. Fin : e2e « Bientôt » filtre (b1fbb34).
+- [x] **A3 Pastille d'urgence** par ligne et tri par date limite. Fin : test de composant (b1fbb34).
+- [x] **A4 Consommé / Jeté** : raisons `consumed`, `wasted`, partout où l'on retire. Fin : journal affiche la raison (3d03a30).
+- [x] **A5 Statistiques** 30 jours (Plus). Fin : tests API et e2e (c076b89).
+- [x] **A6 Durée suggérée par catégorie** : `shelf_life_days`, date « Suggérée ». Fin : e2e fiche (2570359).
+- [x] **A7 Notifications push** : abonnement, résumé 8 h, clic vers la liste filtrée. Fin : tests horloge et envoi simulés (cca39e2).
 
 ### B. Courses
-- [ ] **B1 Onglet Courses** : liste, cocher, quantité, vider. Fin : e2e.
-- [ ] **B2 Saisie rapide** : analyseur déterministe dans `shared`. Fin : ~30 cas unitaires.
-- [ ] **B3 Récemment consommés** : 12 puces. Fin : tests API.
-- [ ] **B4 Seuil minimum** et ajout ou retrait automatique. Fin : tests d'intégration.
-- [ ] **B5 Ranger les achats** cochés. Fin : e2e.
+- [x] **B1 Onglet Courses** : liste, cocher, quantité, vider. Fin : e2e (fd1138e).
+- [x] **B2 Saisie rapide** : analyseur déterministe dans `shared`. Fin : ~30 cas unitaires (43c400c).
+- [x] **B3 Récemment consommés** : 12 puces. Fin : tests API (0567801).
+- [x] **B4 Seuil minimum** et ajout ou retrait automatique. Fin : tests d'intégration (06c7115).
+- [x] **B5 Ranger les achats** cochés. Fin : e2e (fd1138e).
 
 ### C. Ajout et fiche article
-- [ ] **C1 Fiche article unique** avec montant et unité. Fin : e2e.
-- [ ] **C2 Scanner, point d'entrée unique**. Fin : e2e.
-- [ ] **C3 Scan en rafale**. Fin : e2e avec Annuler.
-- [ ] **C4 Rattacher un code-barres** à un produit existant. Fin : tests API et e2e.
-- [ ] **C5 Édition en lot** en vue Liste. Fin : e2e.
-- [ ] **C6 Fusion de doublons**. Fin : tests d'intégration, journal intact.
+- [x] **C1 Fiche article unique** avec montant et unité. Fin : e2e (2570359).
+- [x] **C2 Scanner, point d'entrée unique**. Fin : e2e (2570359).
+- [x] **C3 Scan en rafale**. Fin : e2e avec Annuler (636e9b8).
+- [x] **C4 Rattacher un code-barres** à un produit existant. Fin : tests API et e2e (56af27a).
+- [x] **C5 Édition en lot** en vue Liste. Fin : e2e (4c2531f).
+- [x] **C6 Fusion de doublons**. Fin : tests d'intégration, journal intact (56af27a).
 
 ### D. Inventaire
-- [ ] **D1 Vue Liste triée par date limite** par défaut, compteurs à la place de « Ma maison ». Fin : e2e.
+- [x] **D1 Vue Liste triée par date limite** par défaut, compteurs à la place de « Ma maison ». Fin : e2e (b1fbb34).
 
 ### Clôture
 - [ ] **Z1 Suite complète et e2e** (deux navigateurs, deux tailles). Fin : vert.
@@ -82,6 +82,10 @@
 - P3.3 : durées suggérées du modèle : Viandes 3 j, Poissons 2 j, Laitiers et œufs 7 j, Fruits et légumes 5 j ; appliquées aussi aux foyers existants par la migration (catégories au même nom).
 - P3.4 : « Aujourd'hui » = statut `soon` avec `days: 0` (forme d'`ExpiryStatus` inchangée) ; filtres d'échéance `today`, `soon` (1 à seuil), `expired`.
 - P3.5 : variables VAPID vides lues comme absentes : notifications désactivées, l'API démarre.
+- P3.6 : une annulation de retrait écrit la même raison avec un delta positif (`consumed` +n) ; les statistiques la neutralisent, l'historique affiche « Annulation : consommé ».
+- P3.7 : une ligne de courses cochée bloque une nouvelle ligne automatique du même produit tant qu'elle n'est pas vidée ou rangée ; la ligne automatique vaut 1.
+- P3.8 : la date d'achat de la fiche sert au calcul de la date suggérée, elle n'est pas enregistrée (pas de colonne au contrat).
+- P3.9 : fiche d'ajout et formulaire produit inconnu gardent leurs deux étapes, avec les mêmes champs (contenance, date suggérée, rescan).
 - U2 : barre du bas dans le flux (dernière ligne de la colonne du `body`), pas `fixed`.
 
 ## Problèmes bloquants
