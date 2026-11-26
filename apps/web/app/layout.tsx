@@ -6,10 +6,8 @@ import type { ReactNode } from 'react';
 import { InstallCapture } from '../components/pwa/InstallCapture';
 import { OfflineCallout } from '../components/pwa/OfflineCallout';
 import { RegisterSW } from '../components/pwa/RegisterSW';
-import { ThemeSync } from '../components/pwa/ThemeSync';
-import { THEME_INIT_SCRIPT } from '../lib/theme';
 import startupImages from '../lib/startup-images.json';
-import { APP_NAME, APP_SHORT_NAME, THEME_COLOR_DARK, THEME_COLOR_LIGHT } from './manifest';
+import { APP_NAME, APP_SHORT_NAME, STATUS_BAR_COLOR } from './manifest';
 
 /** iPhone launch screens: one image per common portrait size. */
 const startupLinks = startupImages.map(({ width, height, ratio, cssWidth, cssHeight }) => ({
@@ -39,19 +37,14 @@ export const viewport: Viewport = {
   // Android: the keyboard shrinks the layout, so the scroll zone shrinks and the fixed header with
   // its search field stays on screen (iOS keeps the layout and pans to the field, at the top).
   interactiveWidget: 'resizes-content',
-  // The status bar follows the theme of the device (the tokens `theme-color`, light and dark).
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: THEME_COLOR_LIGHT },
-    { media: '(prefers-color-scheme: dark)', color: THEME_COLOR_DARK },
-  ],
+  // Light theme only (Phase 5): one status bar colour, whatever the setting of the phone.
+  themeColor: STATUS_BAR_COLOR,
+  colorScheme: 'light',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-      </head>
+    <html lang="fr">
       <body className="font-sans">
         <div className="mx-auto flex w-full max-w-xl shrink-0 flex-col gap-2 px-4 pt-4 empty:hidden">
           <OfflineCallout />
@@ -59,7 +52,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Silent update: renders nothing, never asks anything. */}
         <RegisterSW />
         <InstallCapture />
-        <ThemeSync />
         {children}
       </body>
     </html>

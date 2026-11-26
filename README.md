@@ -229,7 +229,7 @@ Après un déploiement, les téléphones passent à la nouvelle version **sans r
 
 La tâche planifiée de 8 h (dans l'API) purge aussi les clés de plus de 14 jours : un appareil resté hors ligne plus longtemps renvoie ses scans comme nouveaux, ce qui reste sans danger (chaque opération est revérifiée).
 
-Nouveaux réglages dans Plus › Compte, propres à l'appareil : « Apparence » (Automatique, Clair, Sombre), « Retour tactile » (vibration à la lecture d'un code), et l'écran « À synchroniser » (scans gardés hors ligne, conflits, codes à identifier).
+Nouveaux réglages dans Plus › Compte, propres à l'appareil : « Retour tactile » (vibration à la lecture d'un code), et l'écran « À synchroniser » (scans gardés hors ligne, conflits, codes à identifier).
 
 ### Mise à jour vers la Phase 3 (confort, une seule fois)
 
@@ -400,7 +400,7 @@ Ce que les tests automatiques ne peuvent pas prouver, à vérifier sur Android (
 6. **Glissement** : en vue Liste et dans Courses, glisser une ligne vers la droite (Consommé) ou la gauche (Jeté), « Annuler » dans les 5 s.
 7. **Icône** : pastille du nombre de produits périmés ou sous le seuil sur l'icône (Android Chrome, iPhone 16.4+ installé, macOS) ; raccourcis Scanner et Courses par appui long sur l'icône (Android) ; écran de lancement aux couleurs de l'application sur iPhone.
 8. **Partage** : « Partager la liste » ouvre la feuille de partage du téléphone ; sur ordinateur, la liste est copiée.
-9. **Thème** : Compte › Apparence › Automatique suit le réglage du téléphone ; aucun éclair blanc au lancement en sombre.
+9. **Thème** : l'application reste claire même quand le téléphone est en mode sombre (thème clair uniquement, décision Phase 5).
 
 Replis sans erreur visible : vibration, lampe, zoom, pastille d'icône, partage et View Transitions sont détectés avant usage ; sans IndexedDB, les scans hors ligne restent en mémoire jusqu'à la fermeture de l'onglet.
 
