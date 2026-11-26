@@ -56,6 +56,8 @@ interface ProductFormProps {
   onCancel: () => void;
   /** Read the code again (a wrong read): the scanner comes back. Shown when there is a code. */
   onRescan?: () => void;
+  /** The code belongs to a product that already exists: pick it instead of creating one. */
+  onExisting?: () => void;
   /** Test seams. */
   api?: {
     createProduct?: (input: NewProductInput) => Promise<ProductDto>;
@@ -76,6 +78,7 @@ export function ProductForm({
   onCreated,
   onCancel,
   onRescan,
+  onExisting,
   api = {},
 }: ProductFormProps) {
   const titleId = useId();
@@ -164,6 +167,11 @@ export function ProductForm({
         {barcode ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-small">Code-barres : {barcode}</p>
+            {onExisting ? (
+              <Button variant="outline" onClick={onExisting}>
+                C’est un produit existant
+              </Button>
+            ) : null}
             {onRescan ? (
               <Button variant="secondary" onClick={onRescan}>
                 Rescanner
