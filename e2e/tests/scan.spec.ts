@@ -695,7 +695,7 @@ test('la catégorie proposée est confirmée par l’ajout, sans écran de relec
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(
     page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link'),
-  ).toHaveCount(3);
+  ).toHaveCount(4);
 });
 
 const PASSWORD_CHANGE = { 'chromium-mobile': 'sophie', 'webkit-mobile': 'julien' } as const;

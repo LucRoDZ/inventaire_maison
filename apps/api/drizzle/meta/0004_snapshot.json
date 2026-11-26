@@ -225,12 +225,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -338,12 +334,8 @@
           "name": "users_household_id_households_id_fk",
           "tableFrom": "users",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -457,12 +449,8 @@
           "name": "locations_household_id_households_id_fk",
           "tableFrom": "locations",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -472,10 +460,7 @@
         "locations_id_household_key": {
           "name": "locations_id_household_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "household_id"
-          ]
+          "columns": ["id", "household_id"]
         }
       },
       "policies": {},
@@ -579,12 +564,8 @@
           "name": "shelves_household_id_households_id_fk",
           "tableFrom": "shelves",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -592,14 +573,8 @@
           "name": "shelves_location_household_fk",
           "tableFrom": "shelves",
           "tableTo": "locations",
-          "columnsFrom": [
-            "location_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["location_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -609,10 +584,7 @@
         "shelves_id_location_key": {
           "name": "shelves_id_location_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "location_id"
-          ]
+          "columns": ["id", "location_id"]
         }
       },
       "policies": {},
@@ -744,12 +716,8 @@
           "name": "categories_household_id_households_id_fk",
           "tableFrom": "categories",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -759,10 +727,7 @@
         "categories_id_household_key": {
           "name": "categories_id_household_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "household_id"
-          ]
+          "columns": ["id", "household_id"]
         }
       },
       "policies": {},
@@ -837,12 +802,8 @@
           "name": "off_category_map_household_id_households_id_fk",
           "tableFrom": "off_category_map",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -850,14 +811,8 @@
           "name": "off_category_map_category_household_fk",
           "tableFrom": "off_category_map",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["category_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -867,10 +822,7 @@
         "off_category_map_household_tag_key": {
           "name": "off_category_map_household_tag_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "off_tag"
-          ]
+          "columns": ["household_id", "off_tag"]
         }
       },
       "policies": {},
@@ -1087,12 +1039,8 @@
           "name": "products_household_id_households_id_fk",
           "tableFrom": "products",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1100,12 +1048,8 @@
           "name": "products_created_by_users_id_fk",
           "tableFrom": "products",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1113,14 +1057,8 @@
           "name": "products_category_household_fk",
           "tableFrom": "products",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["category_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1128,14 +1066,8 @@
           "name": "products_default_location_household_fk",
           "tableFrom": "products",
           "tableTo": "locations",
-          "columnsFrom": [
-            "default_location_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["default_location_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1143,14 +1075,8 @@
           "name": "products_merged_into_household_fk",
           "tableFrom": "products",
           "tableTo": "products",
-          "columnsFrom": [
-            "merged_into_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["merged_into_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1160,18 +1086,12 @@
         "products_id_household_key": {
           "name": "products_id_household_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "household_id"
-          ]
+          "columns": ["id", "household_id"]
         },
         "products_household_barcode_key": {
           "name": "products_household_barcode_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "barcode"
-          ]
+          "columns": ["household_id", "barcode"]
         }
       },
       "policies": {},
@@ -1330,12 +1250,8 @@
           "name": "stock_items_household_id_households_id_fk",
           "tableFrom": "stock_items",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1343,14 +1259,8 @@
           "name": "stock_items_product_household_fk",
           "tableFrom": "stock_items",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["product_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1358,14 +1268,8 @@
           "name": "stock_items_location_household_fk",
           "tableFrom": "stock_items",
           "tableTo": "locations",
-          "columnsFrom": [
-            "location_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["location_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1373,14 +1277,8 @@
           "name": "stock_items_shelf_location_fk",
           "tableFrom": "stock_items",
           "tableTo": "shelves",
-          "columnsFrom": [
-            "shelf_id",
-            "location_id"
-          ],
-          "columnsTo": [
-            "id",
-            "location_id"
-          ],
+          "columnsFrom": ["shelf_id", "location_id"],
+          "columnsTo": ["id", "location_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1390,12 +1288,7 @@
         "stock_items_identity_key": {
           "name": "stock_items_identity_key",
           "nullsNotDistinct": true,
-          "columns": [
-            "product_id",
-            "location_id",
-            "shelf_id",
-            "expiry_date"
-          ]
+          "columns": ["product_id", "location_id", "shelf_id", "expiry_date"]
         }
       },
       "policies": {},
@@ -1567,12 +1460,8 @@
           "name": "stock_movements_household_id_households_id_fk",
           "tableFrom": "stock_movements",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1580,12 +1469,8 @@
           "name": "stock_movements_user_id_users_id_fk",
           "tableFrom": "stock_movements",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1593,14 +1478,8 @@
           "name": "stock_movements_product_household_fk",
           "tableFrom": "stock_movements",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["product_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1744,12 +1623,8 @@
           "name": "push_subscriptions_household_id_households_id_fk",
           "tableFrom": "push_subscriptions",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1757,12 +1632,8 @@
           "name": "push_subscriptions_user_id_users_id_fk",
           "tableFrom": "push_subscriptions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1805,12 +1676,8 @@
           "name": "settings_household_id_households_id_fk",
           "tableFrom": "settings",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1963,12 +1830,8 @@
           "name": "shopping_items_household_id_households_id_fk",
           "tableFrom": "shopping_items",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1976,12 +1839,8 @@
           "name": "shopping_items_created_by_users_id_fk",
           "tableFrom": "shopping_items",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1989,14 +1848,8 @@
           "name": "shopping_items_product_household_fk",
           "tableFrom": "shopping_items",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id",
-            "household_id"
-          ],
-          "columnsTo": [
-            "id",
-            "household_id"
-          ],
+          "columnsFrom": ["product_id", "household_id"],
+          "columnsTo": ["id", "household_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
