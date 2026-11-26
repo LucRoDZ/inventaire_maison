@@ -5,6 +5,7 @@ import {
   clearPanelFilters,
   filterSummary,
   filtersToQuery,
+  withKnownFilters,
   isFiltering,
   locationMatches,
   NO_FILTER,
@@ -124,5 +125,18 @@ describe('panel filters', () => {
     expect(filterSummary(filters, 'list', categories, places)).toBe('Frigo · Boissons · Viandes');
     expect(filterSummary(filters, 'home', categories, places)).toBe('Boissons · Viandes');
     expect(filterSummary(NO_FILTER, 'list', categories, places)).toBe('');
+  });
+});
+
+describe('withKnownFilters', () => {
+  it('drops the ids that no longer exist, once the lists are loaded', () => {
+    const filters = { ...NO_FILTER, categoryIds: [1, 9], locationId: 7 };
+    expect(withKnownFilters(filters, [{ id: 1 }], [{ id: 3 }])).toEqual({
+      ...NO_FILTER,
+      categoryIds: [1],
+      locationId: null,
+    });
+    expect(withKnownFilters(filters, null, null)).toBe(filters);
+    expect(withKnownFilters(filters, [{ id: 1 }, { id: 9 }], [{ id: 7 }])).toBe(filters);
   });
 });

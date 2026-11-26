@@ -69,7 +69,9 @@ export function ScrollZone({ label, memoryKey, children, className = '' }: Scrol
     node.addEventListener('wheel', stop, { passive: true });
     node.addEventListener('touchmove', stop, { passive: true });
     node.addEventListener('keydown', stop);
+    node.addEventListener('pointerdown', stop);
     return () => {
+      node.removeEventListener('pointerdown', stop);
       node.removeEventListener('wheel', stop);
       node.removeEventListener('touchmove', stop);
       node.removeEventListener('keydown', stop);

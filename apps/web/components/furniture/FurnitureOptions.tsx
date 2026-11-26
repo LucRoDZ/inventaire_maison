@@ -78,6 +78,8 @@ export function FurnitureOptions({
   const [step, setStep] = useState<Step>('closed');
   const [locations, setLocations] = useState<LocationDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** A double tap on « Monter » sends the change once. */
+  const moving = useRef(false);
 
   const open = () => {
     setStep('menu');
@@ -99,10 +101,12 @@ export function FurnitureOptions({
 
   async function move(direction: -1 | 1) {
     const changes = reorder(sorted, index, direction);
-    if (changes.length === 0) return;
+    if (changes.length === 0 || moving.current) return;
+    moving.current = true;
     try {
       await Promise.all(changes.map((c) => api.updateLocation(c.id, { sortOrder: c.sortOrder })));
     } catch (caught) {
+      moving.current = false;
       setError(
         caught instanceof ApiError && caught.status !== 0
           ? caught.message
@@ -110,6 +114,7 @@ export function FurnitureOptions({
       );
       return;
     }
+    moving.current = false;
     close();
     onChanged({
       kind: 'moved',

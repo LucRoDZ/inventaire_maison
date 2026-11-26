@@ -13,6 +13,7 @@ import {
   filterSummary,
   useHomeFilters,
   useInventoryView,
+  withKnownFilters,
 } from '../../../lib/home-filters';
 import { fetchCategories } from '../../../lib/stock-api';
 
@@ -23,9 +24,11 @@ import { fetchCategories } from '../../../lib/stock-api';
  */
 function Inventaire() {
   const [view, setView] = useInventoryView();
-  const [filters, setFilters] = useHomeFilters();
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [summary, setSummary] = useState<ListSummary>({ locations: [], total: 0 });
+  const [urlFilters, setFilters] = useHomeFilters();
+  const [categories, setCategories] = useState<CategoryDto[] | null>(null);
+  const [summary, setSummary] = useState<ListSummary | null>(null);
+  // Ids that no longer exist are ignored, so the badge and the reminder always agree.
+  const filters = withKnownFilters(urlFilters, categories, summary?.locations ?? null);
 
   useEffect(() => {
     fetchCategories()
@@ -33,7 +36,7 @@ function Inventaire() {
       .catch(() => undefined);
   }, []);
 
-  const reminder = filterSummary(filters, view, categories, summary.locations);
+  const reminder = filterSummary(filters, view, categories ?? [], summary?.locations ?? []);
 
   return (
     <Screen
@@ -43,9 +46,9 @@ function Inventaire() {
           mode={view}
           filters={filters}
           onChange={setFilters}
-          categories={categories}
-          locations={summary.locations}
-          total={summary.total}
+          categories={categories ?? []}
+          locations={summary?.locations ?? []}
+          total={summary?.total ?? 0}
         />
       }
       header={

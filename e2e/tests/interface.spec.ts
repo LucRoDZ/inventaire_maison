@@ -172,7 +172,9 @@ test('filtres : meuble et catégorie, pastille, rappel, recherche combinée, ét
 
   // The search narrows what the filters keep.
   const search = page.getByRole('searchbox', { name: 'Nom ou marque' });
-  await search.fill('Rutabaga 02');
+  // Typed key by key, space included: the URL coming back trimmed never eats it.
+  await search.pressSequentially('Rutabaga 02', { delay: 30 });
+  await expect(search).toHaveValue('Rutabaga 02');
   await expect.poll(() => cards.count()).toBeLessThanOrEqual(filtered);
   for (const text of await cards.allTextContents()) expect(text).toContain('Rutabaga 02');
 

@@ -58,6 +58,30 @@ const house: HomeResponse = {
 };
 
 describe('SearchField', () => {
+  it('keeps the spaces being typed and writes the search after a pause', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const onChange = vi.fn();
+    const { rerender } = render(<SearchField value="" onChange={onChange} delay={200} />);
+    const field = screen.getByRole('searchbox', { name: 'Nom ou marque' });
+    await userEvent.type(field, 'pâte ');
+    await vi.advanceTimersByTimeAsync(250);
+    expect(onChange).toHaveBeenLastCalledWith('pâte ');
+    await userEvent.type(field, 'à');
+    // The URL gives « pâte » back, trimmed and late: the field keeps its space and its letter.
+    rerender(<SearchField value="pâte" onChange={onChange} delay={200} />);
+    expect(field).toHaveValue('pâte à');
+    await vi.advanceTimersByTimeAsync(250);
+    expect(onChange).toHaveBeenLastCalledWith('pâte à');
+    // Leaving the field writes what was typed at once.
+    await userEvent.type(field, 'x');
+    field.blur();
+    expect(onChange).toHaveBeenLastCalledWith('pâte àx');
+    // Cleared from elsewhere: the field follows.
+    rerender(<SearchField value="" onChange={onChange} delay={200} />);
+    expect(field).toHaveValue('');
+    vi.useRealTimers();
+  });
+
   it('is named « Nom ou marque » and gives each typed text', async () => {
     const onChange = vi.fn();
     render(<SearchField value="" onChange={onChange} />);

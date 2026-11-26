@@ -80,20 +80,29 @@ describe('LocationsAdmin', () => {
     expect(button).toHaveAttribute('aria-expanded', 'false');
     expect(button).toHaveTextContent('Garde-manger');
     expect(button).toHaveTextContent('Vide');
-    expect(within(line).queryByLabelText('Nom du meuble')).toBeNull();
+    expect(within(line).getByLabelText('Nom du meuble')).not.toBeVisible();
     expect(screen.queryByRole('combobox', { name: /Icône/ })).toBeNull();
   });
 
   it('opens one line at a time', async () => {
     const { user } = await setup();
     await open(user, 'Garde-manger');
-    expect(within(row('Garde-manger')).getByLabelText('Nom du meuble')).toBeInTheDocument();
+    expect(within(row('Garde-manger')).getByLabelText('Nom du meuble')).toBeVisible();
     await open(user, 'Frigo');
-    expect(within(row('Frigo')).getByLabelText('Nom du meuble')).toBeInTheDocument();
-    expect(within(row('Garde-manger')).queryByLabelText('Nom du meuble')).toBeNull();
+    expect(within(row('Frigo')).getByLabelText('Nom du meuble')).toBeVisible();
+    expect(within(row('Garde-manger')).getByLabelText('Nom du meuble')).not.toBeVisible();
     expect(
       screen.getAllByRole('button').filter((b) => b.getAttribute('aria-expanded') === 'true'),
     ).toHaveLength(1);
+  });
+
+  it('keeps what was typed when the line is folded and opened again', async () => {
+    const { user } = await setup();
+    const pantry = await open(user, 'Garde-manger');
+    await user.type(within(pantry).getByLabelText('Nom de Haut'), ' gauche');
+    await open(user, 'Frigo');
+    await open(user, 'Garde-manger');
+    expect(within(row('Garde-manger')).getByLabelText('Nom de Haut')).toHaveValue('Haut gauche');
   });
 
   it('renames, changes the icon in a grid and saves both with one « Enregistrer »', async () => {

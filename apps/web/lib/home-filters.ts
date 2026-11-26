@@ -55,6 +55,29 @@ export const clearPanelFilters = (filters: HomeFilters, view: InventoryView): Ho
   ...(view === 'list' ? { locationId: null, sort: DEFAULT_SORT } : {}),
 });
 
+/**
+ * The filters without the categories or the piece of furniture that no longer exist (old link,
+ * deleted since): the badge and the reminder then always agree. A list not loaded yet (null)
+ * keeps its ids.
+ */
+export function withKnownFilters(
+  filters: HomeFilters,
+  categories: readonly { id: number }[] | null,
+  locations: readonly { id: number }[] | null,
+): HomeFilters {
+  const categoryIds = categories
+    ? filters.categoryIds.filter((id) => categories.some((c) => c.id === id))
+    : filters.categoryIds;
+  const locationId =
+    locations && filters.locationId !== null && !locations.some((l) => l.id === filters.locationId)
+      ? null
+      : filters.locationId;
+  // Nothing to drop: the very same object, so that what depends on it does not run again.
+  if (categoryIds.length === filters.categoryIds.length && locationId === filters.locationId)
+    return filters;
+  return { ...filters, categoryIds, locationId };
+}
+
 /** « Frigo · Boissons »: what the reminder line under the search says. */
 export function filterSummary(
   filters: HomeFilters,

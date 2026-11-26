@@ -133,7 +133,8 @@ function ShelfLine({
         aria-label={`Nom de ${shelf.name}`}
         className={`${field} min-w-0`}
         value={draft.name}
-        maxLength={PLACE_NAME_MAX_LENGTH}
+        // One more than allowed, so that a name too long is said at saving, not cut silently.
+        maxLength={PLACE_NAME_MAX_LENGTH + 1}
         autoComplete="off"
         onChange={(e) => onDraft({ ...draft, name: e.target.value })}
       />
@@ -248,6 +249,17 @@ function FurnitureForm({
     if (emptyShelf) {
       notify({ kind: 'error', text: `Le nom de l’étagère est obligatoire (${emptyShelf.name}).` });
       document.getElementById(`etagere-${emptyShelf.id}`)?.focus();
+      return;
+    }
+    const longShelf = dirtyShelves.find(
+      (shelf) => draftOf(shelf).name.trim().length > PLACE_NAME_MAX_LENGTH,
+    );
+    if (longShelf) {
+      notify({
+        kind: 'error',
+        text: `Nom d’étagère trop long (${longShelf.name}) : ${PLACE_NAME_MAX_LENGTH} caractères au plus.`,
+      });
+      document.getElementById(`etagere-${longShelf.id}`)?.focus();
       return;
     }
     setBusy(true);
@@ -492,11 +504,10 @@ function FurnitureRow({
           />
         </button>
       </h2>
-      {open ? (
-        <div id={panelId} className="px-4 pb-4">
-          {children}
-        </div>
-      ) : null}
+      {/* Kept while folded: what was typed and not saved yet is still there when it opens again. */}
+      <div id={panelId} hidden={!open} className="px-4 pb-4">
+        {children}
+      </div>
     </li>
   );
 }

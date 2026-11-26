@@ -27,6 +27,7 @@ import {
   isFiltering,
   tileMatches,
   useHomeFilters,
+  withKnownFilters,
 } from '../../../../lib/home-filters';
 import { fetchCategories, fetchLocations, moveStock } from '../../../../lib/stock-api';
 
@@ -49,7 +50,13 @@ function Meuble() {
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [filters, setFilters] = useHomeFilters();
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [urlFilters, setFilters] = useHomeFilters();
+  // Categories that no longer exist are ignored: the badge, the reminder and its height agree.
+  const filters = withKnownFilters(urlFilters, categoriesLoaded ? categories : null, null);
+  const reminder = [filters.q.trim(), filterSummary(filters, 'home', categories, [])]
+    .filter(Boolean)
+    .join(' · ');
   const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<HomeTileDto | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -70,7 +77,10 @@ function Meuble() {
       .then(setLocations)
       .catch(() => undefined);
     fetchCategories()
-      .then(setCategories)
+      .then((loaded) => {
+        setCategories(loaded);
+        setCategoriesLoaded(true);
+      })
       .catch(() => undefined);
   }, [load]);
 
@@ -126,7 +136,7 @@ function Meuble() {
     <main
       className="fx-fit flex min-h-0 flex-1 flex-col gap-1 px-4"
       // The reminder line (32 px and its gap) is taken from the height of the shelves.
-      style={{ '--fx-reminder': isFiltering(filters) ? '36px' : '0px' } as CSSProperties}
+      style={{ '--fx-reminder': reminder ? '36px' : '0px' } as CSSProperties}
     >
       {/* One row of 48 px: back (icon only), the name of the furniture, the filters. */}
       <div className="flex h-12 shrink-0 items-center gap-1">
@@ -166,14 +176,17 @@ function Meuble() {
         ) : null}
       </div>
       <FilterReminder
-        summary={[filters.q.trim(), filterSummary(filters, 'home', categories, [])]
-          .filter(Boolean)
-          .join(' · ')}
+        summary={reminder}
         onClear={() => setFilters({ ...clearPanelFilters(filters, 'home'), q: '' })}
       />
       {/* Portrait phone: the furniture fits, nothing scrolls. Elsewhere (landscape, computer) it
           scrolls here, never the page. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto">
+      <div
+        role="region"
+        aria-label={location ? `Étagères de ${location.name}` : 'Meuble'}
+        tabIndex={0}
+        className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto focus-visible:outline-offset-[-2px]"
+      >
         {failed ? (
           <Callout role="alert" title="Un instant">
             Impossible de charger le meuble : vérifiez la connexion.
