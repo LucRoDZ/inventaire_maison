@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
+import { purgeLegacyTheme } from '../../lib/legacy-theme';
 import {
   applyPendingUpdate,
   isBusy,
@@ -98,6 +99,17 @@ export function RegisterSW({
       if (onVisible) document.removeEventListener('visibilitychange', onVisible);
     };
   }, [enabled]);
+
+  // A dark choice stored before Phase 5 leaves no trace (light theme only).
+  useEffect(() => {
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      storage = null;
+    }
+    purgeLegacyTheme(storage, document.documentElement);
+  }, []);
 
   // What a reload must never cut short: typed text not yet saved.
   useEffect(() => {
