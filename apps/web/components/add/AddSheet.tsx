@@ -9,7 +9,7 @@ import type {
   StockAdjustResponse,
 } from '@inventaire/shared';
 import { Package } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import {
   pickInitialPlace,
@@ -17,8 +17,17 @@ import {
   saveLastLocation,
   type Place,
 } from '../../lib/add-place';
+import { addDaysIso, todayIso } from '../../lib/dates';
 import { useOnline } from '../../lib/online';
+import { updateProduct, type ProductPatch } from '../../lib/products-api';
 import { adjustStock, updateProductCategory } from '../../lib/stock-api';
+import {
+  amountError,
+  amountFrom,
+  amountPayload,
+  AmountField,
+  type AmountValue,
+} from '../product/AmountField';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
@@ -47,6 +56,7 @@ interface AddSheetProps {
   /** Test seams. */
   adjust?: (input: StockAdjustInput) => Promise<StockAdjustResponse>;
   confirmCategory?: (productId: number, categoryId: number) => Promise<unknown>;
+  saveProduct?: (id: number, patch: ProductPatch) => Promise<unknown>;
 }
 
 const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
@@ -61,11 +71,19 @@ export function AddSheet({
   onClose,
   adjust = adjustStock,
   confirmCategory = updateProductCategory,
+  saveProduct = updateProduct,
 }: AddSheetProps) {
   const titleId = useId();
   const online = useOnline();
   const [quantity, setQuantity] = useState(1);
   const [expiryDate, setExpiryDate] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState(() => todayIso());
+  /** The date in the field was proposed from the category: shown as « Suggérée ». */
+  const [suggested, setSuggested] = useState(false);
+  /** The person emptied the date on purpose: nothing is proposed again. */
+  const [declined, setDeclined] = useState(false);
+  const [content, setContent] = useState<AmountValue>(() => amountFrom(product));
+  const [contentError, setContentError] = useState<string | null>(null);
   const [place, setPlace] = useState<Place | null>(() =>
     pickInitialPlace({
       locations,
@@ -89,8 +107,29 @@ export function AddSheet({
     () => product.categoryGuessed && (proposedCategory?.isFallback ?? true),
   );
 
+  const shelfLife = category?.shelfLifeDays ?? null;
+  // Empty date and a category with a shelf life: purchase date + N days, shown and editable. A date
+  // the person typed is never replaced; a proposed one follows the purchase date and the category.
+  useEffect(() => {
+    if (declined || (expiryDate !== '' && !suggested)) return;
+    if (shelfLife === null) {
+      if (suggested) {
+        setExpiryDate('');
+        setSuggested(false);
+      }
+      return;
+    }
+    const proposal = addDaysIso(purchaseDate, shelfLife);
+    if (proposal === '') return;
+    setExpiryDate(proposal);
+    setSuggested(true);
+  }, [shelfLife, purchaseDate, expiryDate, suggested, declined]);
+
   const submit = async (scanNext: boolean) => {
     if (!place || busy) return;
+    const invalid = amountError(content);
+    setContentError(invalid);
+    if (invalid) return;
     setBusy(true);
     setError(null);
     const input: StockAdjustInput = {
@@ -104,6 +143,13 @@ export function AddSheet({
     try {
       if (product.categoryGuessed || categoryId !== product.categoryId) {
         await confirmCategory(product.id, categoryId);
+      }
+      const changedContent = amountPayload(content);
+      if (
+        changedContent.amount !== (product.amount ?? null) ||
+        changedContent.unit !== (product.unit ?? null)
+      ) {
+        await saveProduct(product.id, changedContent);
       }
       await adjust(input);
     } catch (caught) {
@@ -194,14 +240,55 @@ export function AddSheet({
         {place ? <LocationPicker locations={locations} value={place} onChange={setPlace} /> : null}
 
         <label className="text-label flex flex-col gap-1">
-          Date limite (facultative)
+          Date d’achat
           <input
             type="date"
-            value={expiryDate}
-            onChange={(event) => setExpiryDate(event.target.value)}
-            className="tap-target border-line text-ink rounded-xl border bg-white px-3"
+            value={purchaseDate}
+            max={todayIso()}
+            onChange={(event) => setPurchaseDate(event.target.value || todayIso())}
+            className="tap-target border-line text-ink rounded-xl border bg-white px-3 text-base"
           />
         </label>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-label flex flex-col gap-1">
+            Date limite (facultative)
+            <input
+              type="date"
+              value={expiryDate}
+              onChange={(event) => {
+                setExpiryDate(event.target.value);
+                setSuggested(false);
+                setDeclined(event.target.value === '');
+              }}
+              className="tap-target border-line text-ink rounded-xl border bg-white px-3 text-base"
+            />
+          </label>
+          {suggested ? (
+            <p className="text-help flex flex-wrap items-center gap-x-2">
+              <span className="bg-amber-tint text-indigo rounded-full px-2 py-0.5 font-semibold">
+                Suggérée
+              </span>
+              <span>
+                {shelfLife} {shelfLife !== null && shelfLife > 1 ? 'jours' : 'jour'} après l’achat,
+                modifiable.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setExpiryDate('');
+                  setSuggested(false);
+                  setDeclined(true);
+                }}
+                className="tap-target text-indigo-mid font-semibold"
+              >
+                Pas de date
+              </button>
+            </p>
+          ) : null}
+        </div>
+
+        <AmountField value={content} onChange={setContent} error={contentError} />
 
         {error ? (
           <Callout role="alert" title="Ajout impossible">

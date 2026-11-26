@@ -12,9 +12,22 @@ import {
 import { useId, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import { useOnline } from '../../lib/online';
-import { createProduct, uploadProductImage, type NewProductInput } from '../../lib/products-api';
+import {
+  createProduct,
+  updateProduct,
+  uploadProductImage,
+  type NewProductInput,
+  type ProductPatch,
+} from '../../lib/products-api';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
+import {
+  amountError,
+  amountFrom,
+  amountPayload,
+  AmountField,
+  type AmountValue,
+} from './AmountField';
 import { PhotoField } from './PhotoField';
 import { LocationOptions } from '../ui/LocationOptions';
 
@@ -41,9 +54,12 @@ interface ProductFormProps {
   /** `notice` is set when the product was kept but its photo could not be sent. */
   onCreated: (product: ProductDto, notice?: string) => void;
   onCancel: () => void;
+  /** Read the code again (a wrong read): the scanner comes back. Shown when there is a code. */
+  onRescan?: () => void;
   /** Test seams. */
   api?: {
     createProduct?: (input: NewProductInput) => Promise<ProductDto>;
+    updateProduct?: (id: number, patch: ProductPatch) => Promise<unknown>;
     uploadImage?: (productId: number, photo: File) => Promise<unknown>;
   };
 }
@@ -59,6 +75,7 @@ export function ProductForm({
   locations,
   onCreated,
   onCancel,
+  onRescan,
   api = {},
 }: ProductFormProps) {
   const titleId = useId();
@@ -69,6 +86,8 @@ export function ProductForm({
   const [sizeLabel] = useState(hints?.sizeLabel ?? '');
   const [locationId, setLocationId] = useState<number | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [content, setContent] = useState<AmountValue>(() => amountFrom(null));
+  const [contentError, setContentError] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string; category?: string }>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,7 +100,9 @@ export function ProductForm({
     if (trimmed === '') next.name = 'Le nom est obligatoire.';
     if (categoryId === null) next.category = 'Choisissez une catégorie.';
     setErrors(next);
-    if (next.name || next.category || categoryId === null) return;
+    const contentProblem = amountError(content);
+    setContentError(contentProblem);
+    if (next.name || next.category || contentProblem || categoryId === null) return;
 
     setBusy(true);
     setFailure(null);
@@ -106,6 +127,15 @@ export function ProductForm({
     }
 
     let notice: string | undefined;
+    const { amount, unit } = amountPayload(content);
+    if (amount !== null && unit !== null) {
+      try {
+        await (api.updateProduct ?? updateProduct)(product.id, { amount, unit });
+      } catch {
+        // The product exists: only its content is lost, it can be set from the product page.
+        notice = 'Produit enregistré, mais la contenance n’a pas pu être enregistrée.';
+      }
+    }
     if (photo) {
       try {
         await (api.uploadImage ?? uploadProductImage)(product.id, photo);
@@ -131,7 +161,16 @@ export function ProductForm({
           Nouveau produit
         </h2>
         <Callout role="note">{REASON_MESSAGES[reason]}</Callout>
-        {barcode ? <p className="text-small">Code-barres : {barcode}</p> : null}
+        {barcode ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-small">Code-barres : {barcode}</p>
+            {onRescan ? (
+              <Button variant="secondary" onClick={onRescan}>
+                Rescanner
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         <label className="text-label flex flex-col gap-1">
           Nom
@@ -198,6 +237,8 @@ export function ProductForm({
             <LocationOptions locations={locations} />
           </select>
         </label>
+
+        <AmountField value={content} onChange={setContent} error={contentError} />
 
         <PhotoField file={photo} onChange={setPhoto} />
 

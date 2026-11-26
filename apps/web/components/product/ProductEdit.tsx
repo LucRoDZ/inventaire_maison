@@ -12,6 +12,13 @@ import { ApiError } from '../../lib/api';
 import { updateProduct, uploadProductImage, type ProductPatch } from '../../lib/products-api';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
+import {
+  amountError,
+  amountFrom,
+  amountPayload,
+  AmountField,
+  type AmountValue,
+} from './AmountField';
 import { PhotoField } from './PhotoField';
 import { LocationOptions } from '../ui/LocationOptions';
 
@@ -42,6 +49,10 @@ export function ProductEdit({
   const [categoryId, setCategoryId] = useState(product.categoryId);
   const [locationId, setLocationId] = useState<number | null>(product.defaultLocationId);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [minQuantity, setMinQuantity] = useState(product.minQuantity?.toString() ?? '');
+  const [minError, setMinError] = useState<string | null>(null);
+  const [content, setContent] = useState<AmountValue>(() => amountFrom(product));
+  const [contentError, setContentError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,6 +66,17 @@ export function ProductEdit({
       return;
     }
     setNameError(null);
+    const minText = minQuantity.trim();
+    const min = minText === '' ? null : Number(minText);
+    const minProblem =
+      min !== null && (!Number.isInteger(min) || min < 1 || min > 999)
+        ? 'Entrez un nombre entier entre 1 et 999, ou laissez vide.'
+        : null;
+    const contentProblem = amountError(content);
+    setMinError(minProblem);
+    setContentError(contentProblem);
+    if (minProblem || contentProblem) return;
+    const { amount, unit } = amountPayload(content);
     setBusy(true);
     setMessage(null);
     let saved: ProductDto;
@@ -65,6 +87,10 @@ export function ProductEdit({
         brand: brand.trim() || null,
         categoryId,
         defaultLocationId: locationId,
+        ...(min !== (product.minQuantity ?? null) ? { minQuantity: min } : {}),
+        ...(amount !== (product.amount ?? null) || unit !== (product.unit ?? null)
+          ? { amount, unit }
+          : {}),
       });
     } catch (error) {
       setBusy(false);
@@ -151,6 +177,29 @@ export function ProductEdit({
           <LocationOptions locations={locations} />
         </select>
       </label>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="min-quantity" className="text-label">
+          Stock minimum (facultatif)
+        </label>
+        <input
+          id="min-quantity"
+          className={field}
+          inputMode="numeric"
+          value={minQuantity}
+          aria-invalid={minError !== null}
+          aria-describedby="min-quantity-help"
+          onChange={(event) => setMinQuantity(event.target.value)}
+        />
+        <p id="min-quantity-help" className="text-help">
+          Sous ce nombre d’unités en stock, le produit s’ajoute à la liste de courses.
+        </p>
+        {minError ? (
+          <p role="alert" className="text-small text-alert">
+            {minError}
+          </p>
+        ) : null}
+      </div>
+      <AmountField value={content} onChange={setContent} error={contentError} />
       <PhotoField file={photo} onChange={setPhoto} />
       {message ? (
         <Callout
