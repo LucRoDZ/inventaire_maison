@@ -126,7 +126,10 @@ export class StockService {
     // The reason must agree with the direction of the movement, or the journal would lie.
     if (
       (input.reason === 'scan_add' && input.delta < 0) ||
-      (input.reason === 'scan_remove' && input.delta > 0)
+      ((input.reason === 'scan_remove' ||
+        input.reason === 'consumed' ||
+        input.reason === 'wasted') &&
+        input.delta > 0)
     ) {
       throw new BadRequestException('La raison ne correspond pas au sens du mouvement');
     }
