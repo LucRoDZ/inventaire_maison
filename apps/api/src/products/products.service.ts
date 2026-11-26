@@ -20,6 +20,7 @@ import { isUniqueViolation } from '../common/pg-errors';
 import type { Transaction } from '../database/database.module';
 import { categories, locations, products, shelves, stockItems } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
+import { syncAutoShopping } from '../shopping/auto-shopping';
 import { buildSearchText, normalizeSearch } from './search-text';
 
 export interface ProductCreateInput {
@@ -266,6 +267,7 @@ export class ProductsService {
         })
         .where(and(eq(products.id, id), eq(products.householdId, householdId)))
         .returning();
+      if (patch.minQuantity !== undefined) await syncAutoShopping(tx, householdId, id);
       return toProductDto(row!);
     });
   }

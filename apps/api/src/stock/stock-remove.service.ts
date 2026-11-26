@@ -3,6 +3,7 @@ import type { StockRemoveResponse } from '@inventaire/shared';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { locations, products, shelves, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
+import { syncAutoShopping } from '../shopping/auto-shopping';
 import {
   findLine,
   lockProductLocation,
@@ -66,6 +67,7 @@ export class StockRemoveService {
           })
           .returning();
 
+        await syncAutoShopping(tx, householdId, productId);
         const [product] = await tx
           .select({ id: products.id, name: products.name })
           .from(products)

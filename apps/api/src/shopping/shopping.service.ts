@@ -17,6 +17,7 @@ import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { Transaction } from '../database/database.module';
 import { products, shoppingItems, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
+import { syncAutoShopping } from './auto-shopping';
 import { findLine, lockProductLocation, placeNames } from '../stock/stock.service';
 
 type Row = typeof shoppingItems.$inferSelect;
@@ -266,6 +267,7 @@ export class ShoppingService {
         await tx
           .delete(shoppingItems)
           .where(and(eq(shoppingItems.id, item.id), eq(shoppingItems.householdId, householdId)));
+        await syncAutoShopping(tx, householdId, product.id);
         stored.push({
           shoppingItemId: item.id,
           productId: product.id,
