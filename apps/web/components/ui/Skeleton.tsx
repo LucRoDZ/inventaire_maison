@@ -13,7 +13,7 @@ interface ListSkeletonProps {
  * Loading state of a list: blocks as tall as the lines they stand for, so the content replaces
  * them without moving anything. Announced once, politely.
  */
-export function ListSkeleton({ rows = 4, rowClassName = 'h-[76px]' }: ListSkeletonProps) {
+export function ListSkeleton({ rows = 4, rowClassName = 'h-20' }: ListSkeletonProps) {
   return (
     <div role="status" aria-label="Chargement" className="flex flex-col gap-2">
       {Array.from({ length: rows }, (_, index) => (

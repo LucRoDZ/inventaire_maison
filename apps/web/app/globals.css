@@ -16,6 +16,12 @@
   --color-ink: var(--ink);
   --color-grey: var(--grey);
   --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-group: var(--surface-group);
+  --color-expiry-soon: var(--expiry-soon);
+  --color-expiry-soon-tint: var(--expiry-soon-tint);
+  --color-out-of-stock: var(--out-of-stock);
   --color-ok: var(--ok);
   --color-ok-tint: var(--ok-tint);
   --color-alert: var(--alert);
@@ -38,6 +44,9 @@
   --font-sans: var(--font-sans);
   --radius-card: var(--radius-card);
   --shadow-card: var(--shadow-card);
+  --shadow-none: var(--shadow-none);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-sheet: var(--shadow-sheet);
 }
 
 @utility text-title {
@@ -71,6 +80,7 @@
 }
 @utility text-stat {
   font: var(--text-stat);
+  font-variant-numeric: tabular-nums;
 }
 @utility tap-target {
   min-height: var(--tap-min);
@@ -83,7 +93,7 @@ html {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--white);
+  background: var(--surface);
 }
 
 body {

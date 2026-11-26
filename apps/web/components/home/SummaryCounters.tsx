@@ -23,7 +23,7 @@ const COUNTERS: { key: ExpiryFilter; label: string }[] = [
 ];
 
 const TILE =
-  'rounded-card border-line shadow-card flex min-h-16 flex-col justify-center border bg-white px-3 py-2 text-left';
+  'rounded-card border-line bg-surface-raised flex min-h-16 flex-col justify-center border px-3 py-2 text-left';
 
 /**
  * The four counters at the top of the scroll zone of the inventory: in stock, to eat today,
@@ -55,9 +55,9 @@ export function SummaryCounters({
   }, [version]);
 
   return (
-    <section aria-label="Résumé du stock" className="grid grid-cols-2 gap-2">
+    <section aria-label="Résumé du stock" className="grid grid-cols-2 items-stretch gap-2">
       <div className={TILE}>
-        <span className="text-title tabular-nums">{summary?.inStock ?? '–'}</span>
+        <span className="text-subtitle tabular-nums">{summary?.inStock ?? '–'}</span>
         <span className="text-small">En stock</span>
       </div>
       {COUNTERS.map(({ key, label }) => {
@@ -69,10 +69,10 @@ export function SummaryCounters({
             aria-pressed={pressed}
             onClick={() => onSelect(pressed ? null : key)}
             className={`${TILE} tap-target transition-colors duration-150 ${
-              pressed ? 'border-indigo bg-lavender' : 'hover:bg-lavender'
+              pressed ? 'border-indigo bg-lavender' : 'hover:bg-surface-group'
             }`}
           >
-            <span className="text-title tabular-nums">{summary ? summary[key] : '–'}</span>
+            <span className="text-subtitle tabular-nums">{summary ? summary[key] : '–'}</span>
             <span className="text-small">{label}</span>
           </button>
         );
