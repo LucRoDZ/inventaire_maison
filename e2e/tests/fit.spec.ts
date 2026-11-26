@@ -278,7 +278,7 @@ test.describe('meuble ouvert sans défilement vertical', () => {
     await expect(page).toHaveURL(/\/inventaire\?q=beurre$/);
   });
 
-  test('paysage : le défilement vertical redevient permis, rien n’est rogné', async ({
+  test('paysage : le meuble défile dans sa zone (jamais la page), rien n’est rogné', async ({
     page,
   }, testInfo) => {
     const tag = TAG[testInfo.project.name as keyof typeof TAG];
@@ -288,6 +288,16 @@ test.describe('meuble ouvert sans défilement vertical', () => {
     expect(state.overlaps).toEqual([]);
     expect(state.outside).toEqual([]);
     for (const tile of state.tiles) expect(tile.clipped).toBe(false);
-    expect(state.scrollHeight).toBeGreaterThan(state.innerHeight);
+    // The page never scrolls; the furniture scrolls inside the screen, under its top bar.
+    expect(state.scrollHeight).toBeLessThanOrEqual(state.innerHeight);
+    const inner = await page
+      .locator('main')
+      .evaluate((main) =>
+        [...main.querySelectorAll<HTMLElement>('div')].some(
+          (el) =>
+            getComputedStyle(el).overflowY === 'auto' && el.scrollHeight > el.clientHeight + 1,
+        ),
+      );
+    expect(inner).toBe(true);
   });
 });

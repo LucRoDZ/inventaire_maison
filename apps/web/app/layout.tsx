@@ -22,6 +22,9 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // Android: the keyboard shrinks the layout, so the scroll zone shrinks and the fixed header with
+  // its search field stays on screen (iOS keeps the layout and pans to the field, at the top).
+  interactiveWidget: 'resizes-content',
   themeColor: THEME_COLOR,
 };
 
@@ -29,7 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
       <body className="font-sans">
-        <div className="mx-auto flex max-w-xl flex-col gap-2 px-4 pt-4 empty:hidden">
+        <div className="mx-auto flex w-full max-w-xl shrink-0 flex-col gap-2 px-4 pt-4 empty:hidden">
           <OfflineCallout />
         </div>
         {/* Silent update: renders nothing, never asks anything. */}

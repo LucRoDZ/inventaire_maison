@@ -1,14 +1,13 @@
 'use client';
 
 import type { CategoryDto, LocationDto, ProductDetailDto } from '@inventaire/shared';
-import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { MovementList } from '../../../../components/product/MovementList';
 import { ProductEdit } from '../../../../components/product/ProductEdit';
 import { StockByLocation } from '../../../../components/product/StockByLocation';
 import { Callout } from '../../../../components/ui/Callout';
+import { Screen } from '../../../../components/ui/Screen';
 import { ApiError } from '../../../../lib/api';
 import { getProduct } from '../../../../lib/products-api';
 import { fetchCategories, fetchLocations } from '../../../../lib/stock-api';
@@ -51,26 +50,26 @@ export default function ProduitPage() {
   }, [load]);
 
   return (
-    <main className="flex flex-col gap-4">
-      <Link
-        href="/inventaire"
-        className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        Inventaire
-      </Link>
+    <Screen
+      title={
+        state.name === 'ready'
+          ? state.product.name
+          : state.name === 'missing'
+            ? 'Produit introuvable'
+            : 'Produit'
+      }
+      zoneLabel="Fiche du produit"
+      back={{ href: '/inventaire', label: 'Inventaire' }}
+    >
       {state.name === 'loading' ? (
         <p role="status" className="text-small">
           Chargement…
         </p>
       ) : null}
       {state.name === 'missing' ? (
-        <>
-          <h1 className="text-title">Produit introuvable</h1>
-          <Callout role="note" title="Ce produit n’existe pas">
-            Il a peut-être été saisi avec une mauvaise adresse.
-          </Callout>
-        </>
+        <Callout role="note" title="Ce produit n’existe pas">
+          Il a peut-être été saisi avec une mauvaise adresse.
+        </Callout>
       ) : null}
       {state.name === 'error' ? (
         <Callout role="alert" title="Un instant">
@@ -79,7 +78,6 @@ export default function ProduitPage() {
       ) : null}
       {state.name === 'ready' ? (
         <>
-          <h1 className="text-title">{state.product.name}</h1>
           {state.product.barcode ? (
             <p className="text-small">Code-barres : {state.product.barcode}</p>
           ) : null}
@@ -118,6 +116,6 @@ export default function ProduitPage() {
           </section>
         </>
       ) : null}
-    </main>
+    </Screen>
   );
 }

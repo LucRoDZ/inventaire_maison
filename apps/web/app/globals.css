@@ -59,11 +59,21 @@
   min-width: var(--tap-min);
 }
 
+/* The page never scrolls: each screen has its own scroll zone between its fixed header and the
+   bottom bar (components/ui/Screen.tsx). */
 html {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--white);
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
   margin: 0;
   padding-top: env(safe-area-inset-top);
   padding-right: env(safe-area-inset-right);
@@ -73,6 +83,21 @@ body {
 :focus-visible {
   outline: 2px solid var(--indigo-mid);
   outline-offset: 2px;
+}
+
+/* The scroll zone of a screen: a 1 px line at its top once it has left the top, no horizontal
+   scroll, and room so that a focused element never sits against the header. */
+.scroll-zone {
+  overflow-x: hidden;
+  border-top: 1px solid transparent;
+  scroll-padding-block: 12px;
+  transition: border-color 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.scroll-zone[data-scrolled='true'] {
+  border-top-color: var(--line);
+}
+.scroll-zone:focus-visible {
+  outline-offset: -2px;
 }
 
 /* Sheets and dialogs: they rise from the bottom and decelerate, never linear (cut by the rule below). */

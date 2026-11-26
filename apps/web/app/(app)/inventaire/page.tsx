@@ -7,6 +7,7 @@ import { HomeView } from '../../../components/home/HomeView';
 import { SearchField } from '../../../components/home/SearchField';
 import { ListView, type ListSummary } from '../../../components/list/ListView';
 import { ViewToggle } from '../../../components/list/ViewToggle';
+import { Screen } from '../../../components/ui/Screen';
 import {
   clearPanelFilters,
   filterSummary,
@@ -35,30 +36,34 @@ function Inventaire() {
   const reminder = filterSummary(filters, view, categories, summary.locations);
 
   return (
-    <main className="flex flex-col gap-4">
-      <header className="flex shrink-0 flex-col gap-2">
-        <div className="flex h-11 items-center justify-between gap-2">
-          <h1 className="text-title">Inventaire</h1>
-          <FiltersControl
-            mode={view}
-            filters={filters}
-            onChange={setFilters}
-            categories={categories}
-            locations={summary.locations}
-            total={summary.total}
-          />
-        </div>
-        <ViewToggle value={view} onChange={setView} />
-        <SearchField value={filters.q} onChange={(q) => setFilters({ ...filters, q })} />
-      </header>
-      <div className="flex flex-col gap-3">
-        <FilterReminder
-          summary={reminder}
-          onClear={() => setFilters(clearPanelFilters(filters, view))}
+    <Screen
+      title="Inventaire"
+      actions={
+        <FiltersControl
+          mode={view}
+          filters={filters}
+          onChange={setFilters}
+          categories={categories}
+          locations={summary.locations}
+          total={summary.total}
         />
-        {view === 'list' ? <ListView filters={filters} onSummary={setSummary} /> : <HomeView />}
-      </div>
-    </main>
+      }
+      header={
+        <>
+          <ViewToggle value={view} onChange={setView} />
+          <SearchField value={filters.q} onChange={(q) => setFilters({ ...filters, q })} />
+        </>
+      }
+      zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}
+      memoryKey={`inventaire-${view}`}
+    >
+      {/* In the zone that scrolls: its coming and going never moves the zone itself. */}
+      <FilterReminder
+        summary={reminder}
+        onClear={() => setFilters(clearPanelFilters(filters, view))}
+      />
+      {view === 'list' ? <ListView filters={filters} onSummary={setSummary} /> : <HomeView />}
+    </Screen>
   );
 }
 

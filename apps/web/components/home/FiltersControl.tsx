@@ -170,7 +170,6 @@ export function FiltersSheet({
       <div className="grid shrink-0 grid-cols-2 gap-2">
         <Button
           variant="secondary"
-          className="bg-lavender text-indigo"
           onClick={() => {
             const cleared = clearPanelFilters(filters, panelView(mode));
             onApply(mode === 'furniture' ? { ...cleared, q: '' } : cleared);

@@ -1,22 +1,13 @@
 'use client';
 
-import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 import { PasswordForm } from '../../../../components/account/PasswordForm';
 import { useCurrentUser } from '../../../../components/auth/AuthProvider';
+import { Screen } from '../../../../components/ui/Screen';
 
 export default function ComptePage() {
   const user = useCurrentUser();
   return (
-    <main className="flex flex-col gap-4">
-      <Link
-        href="/plus"
-        className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        Plus
-      </Link>
-      <h1 className="text-title">Compte</h1>
+    <Screen title="Compte" back={{ href: '/plus', label: 'Plus' }}>
       {user ? (
         <dl className="flex flex-col gap-1">
           <div className="flex gap-2">
@@ -31,6 +22,6 @@ export default function ComptePage() {
       ) : null}
       <h2 className="text-label">Changer le mot de passe</h2>
       <PasswordForm />
-    </main>
+    </Screen>
   );
 }

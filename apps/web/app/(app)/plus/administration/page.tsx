@@ -1,16 +1,9 @@
 'use client';
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  House,
-  Refrigerator,
-  Tag,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronRight, House, Refrigerator, Tag, Users, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AdminGate } from '../../../../components/admin/AdminGate';
+import { Screen } from '../../../../components/ui/Screen';
 
 function Entry({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
   return (
@@ -29,15 +22,7 @@ function Entry({ href, label, icon: Icon }: { href: string; label: string; icon:
 
 export default function AdministrationPage() {
   return (
-    <main className="flex flex-col gap-4">
-      <Link
-        href="/plus"
-        className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        Plus
-      </Link>
-      <h1 className="text-title">Administration</h1>
+    <Screen title="Administration" back={{ href: '/plus', label: 'Plus' }}>
       <AdminGate>
         <ul className="flex flex-col gap-2">
           <Entry href="/plus/administration/foyers" label="Foyers" icon={House} />
@@ -51,6 +36,6 @@ export default function AdministrationPage() {
           />
         </ul>
       </AdminGate>
-    </main>
+    </Screen>
   );
 }
