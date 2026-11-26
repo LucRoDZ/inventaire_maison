@@ -8,6 +8,7 @@ import { ProductsModule } from './products/products.module';
 import { ScanModule } from './scan/scan.module';
 import { ShoppingModule } from './shopping/shopping.module';
 import { StockModule } from './stock/stock.module';
+import { SyncModule } from './sync/sync.module';
 import { RateLimitModule } from './common/rate-limit.module';
 import { NotFoundModule } from './common/not-found.module';
 import { ConfigModule } from './config/config.module';
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     ScanModule,
     StockModule,
+    SyncModule,
     ShoppingModule,
     HomeModule,
     ImagesModule,
