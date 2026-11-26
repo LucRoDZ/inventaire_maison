@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, House, Refrigerator, Tag, Users, type LucideIcon } from 'lucide-react';
+import { ChevronRight, House, Tag, Users, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AdminGate } from '../../../../components/admin/AdminGate';
 import { Screen } from '../../../../components/ui/Screen';
