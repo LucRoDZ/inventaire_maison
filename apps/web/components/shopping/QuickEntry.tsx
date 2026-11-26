@@ -69,11 +69,22 @@ export function QuickEntry({ onAdd, search = searchProducts }: QuickEntryProps) 
     if (busy) return;
     setBusy(true);
     setError(null);
-    try {
-      await onAdd(input);
+    // A free line is drawn by the list at once: the field empties with it, and gets its text back
+    // if the server refuses. A catalogue product waits for the answer.
+    const previous = text;
+    const optimistic = !input.productId;
+    if (optimistic) {
       setText('');
       setSuggestions([]);
+    }
+    try {
+      await onAdd(input);
+      if (!optimistic) {
+        setText('');
+        setSuggestions([]);
+      }
     } catch (caught) {
+      if (optimistic) setText(previous);
       setError(caught instanceof Error ? caught.message : 'Ajout impossible.');
     } finally {
       setBusy(false);

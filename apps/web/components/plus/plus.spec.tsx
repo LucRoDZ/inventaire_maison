@@ -12,7 +12,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn(), refres
 
 describe('PlusMenu', () => {
   it('hides Administration from a member', () => {
-    user = { id: 2, username: 'marie', role: 'member' };
+    user = { id: 2, username: 'marie', role: 'member', dataScope: 'scope-test' };
     render(<PlusMenu />);
     expect(screen.getByRole('link', { name: 'Compte' })).toHaveAttribute('href', '/plus/compte');
     expect(screen.queryByRole('link', { name: 'Administration' })).not.toBeInTheDocument();
@@ -20,7 +20,7 @@ describe('PlusMenu', () => {
   });
 
   it('shows Administration to the admin', () => {
-    user = { id: 1, username: 'root', role: 'admin' };
+    user = { id: 1, username: 'root', role: 'admin', dataScope: 'scope-test' };
     render(<PlusMenu />);
     expect(screen.getByRole('link', { name: 'Administration' })).toHaveAttribute(
       'href',

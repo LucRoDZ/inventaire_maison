@@ -245,6 +245,7 @@ for (const viewport of VIEWPORTS) {
       await startScanner(page);
       await pushCode(page, code);
       const sheet = page.getByRole('dialog', { name });
+      await sheet.getByRole('button', { name: 'Plus d’options' }).click();
       await expect(sheet.getByText('Suggérée')).toBeVisible();
       await expect(sheet).toContainText('7 jours après l’achat');
       await expect(sheet.getByLabel('Date limite (facultative)')).toHaveValue(inDays(7));
@@ -253,6 +254,8 @@ for (const viewport of VIEWPORTS) {
 
     test('navigation à quatre onglets, sans défilement de page', async ({ page }, testInfo) => {
       await setup(page, testInfo, viewport.width);
+      // Sign-in lands on the full-screen scanner, without the bottom bar.
+      await page.goto('/inventaire');
       const nav = page.getByRole('navigation', { name: 'Navigation principale' });
       await expect(nav.getByRole('link')).toHaveText(['Scanner', 'Inventaire', 'Courses', 'Plus']);
 

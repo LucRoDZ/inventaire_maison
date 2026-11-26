@@ -10,6 +10,7 @@ import type {
 } from '@inventaire/shared';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../lib/api';
+import { handleOfflineScan, OFFLINE_SCAN_MESSAGE } from '../../lib/offline';
 import { useOnline } from '../../lib/online';
 import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import { attachBarcode } from '../../lib/products-api';
@@ -26,6 +27,7 @@ import { InAppBrowserNotice } from './InAppBrowserNotice';
 import { ManualCodeInput } from './ManualCodeInput';
 import { PhotoCodeButton } from './PhotoCodeButton';
 import { RemoveFlow, type RemoveRequest } from './RemoveFlow';
+import { ScanSheet } from './ScanSheet';
 import { ScannerView, type ScanMode, type ScannerControls } from './ScannerView';
 
 export interface UnknownContext {
@@ -40,6 +42,10 @@ export interface UnknownContext {
 interface ScanFlowProps {
   /** Furniture and shelf the scanner was opened from, when it was. */
   origin?: { locationId: number; shelfId?: number | null } | null;
+  /** « Fermer le scanner ». */
+  onClose?: () => void;
+  /** Free slot at the top of the screen (the offline « À synchroniser (n) » badge). */
+  statusSlot?: ReactNode;
   /** Replaces the creation form for a code Open Food Facts could not describe (tests). */
   renderUnknown?: (context: UnknownContext) => ReactNode;
   /** Test seams. */
@@ -57,7 +63,7 @@ interface ScanFlowProps {
 type Step =
   | { name: 'scanning' }
   | { name: 'resolving' }
-  | { name: 'add'; product: ProductDto; reason: 'scan_add' | 'manual' }
+  | { name: 'add'; product: ProductDto; reason: 'scan_add' | 'manual'; full: boolean }
   | { name: 'search' }
   | { name: 'create'; productName: string }
   | { name: 'existing'; barcode: string; reason: ScanUnknownReason; hints: ScanHints | null }
@@ -70,13 +76,28 @@ interface References {
 
 const NOTICE_MS = 4000;
 
-export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }: ScanFlowProps) {
+export function ScanFlow({
+  origin = null,
+  onClose = () => undefined,
+  statusSlot,
+  renderUnknown,
+  api = {},
+  makeScanner,
+}: ScanFlowProps) {
   const online = useOnline();
   const [mode, setMode] = useState<ScanMode>('add');
   const [step, setStep] = useState<Step>({ name: 'scanning' });
   const [notice, setNotice] = useState<{ title: string; text: string } | null>(null);
   const showNotice = (text: string, title = 'Scan impossible') => setNotice({ title, text });
   const [toast, setToast] = useState<AddedInfo | null>(null);
+  /** Undo of each add of this session, the last one on top (« Annuler le dernier »). */
+  const sessionStack = useRef<{ undo: () => Promise<void> }[]>([]);
+  const [sessionCount, setSessionCount] = useState(0);
+  const pushSession = (undo: () => Promise<void>) => {
+    sessionStack.current.push({ undo });
+    setSessionCount(sessionStack.current.length);
+  };
+  const [readLabel, setReadLabel] = useState<string | null>(null);
   const [refs, setRefs] = useState<References | null>(null);
   /** Burst scan: a known product with a usual place is added in one gesture, without the form. */
   const [burst, setBurst] = useState(false);
@@ -113,10 +134,10 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
   }, [notice]);
 
   const openAdd = useCallback(
-    async (product: ProductDto, reason: 'scan_add' | 'manual' = 'scan_add') => {
+    async (product: ProductDto, reason: 'scan_add' | 'manual' = 'scan_add', full = false) => {
       try {
         await loadReferences();
-        setStep({ name: 'add', product, reason });
+        setStep({ name: 'add', product, reason, full: full || reason === 'manual' });
       } catch {
         setStep({ name: 'scanning' });
         showNotice('Impossible de charger les lieux et les catégories, réessayez.');
@@ -149,11 +170,12 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
       const loaded = await loadReferences().catch(() => null);
       await adjustStock(input);
       const where = loaded?.locations.find((l) => l.id === locationId)?.name;
+      pushSession(async () => {
+        await adjustStock({ ...input, delta: -1, reason: 'correction' });
+      });
       setToast({
         message: `Ajouté : 1 × ${product.name}${where ? `, ${where}` : ''}`,
-        undo: async () => {
-          await adjustStock({ ...input, delta: -1, reason: 'correction' });
-        },
+        undo: () => undoLast(),
       });
       setStep({ name: 'scanning' });
     } catch (caught) {
@@ -185,7 +207,18 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
             setStep({ name: 'scanning' });
             break;
           case 'offline':
-            showNotice('Réessayez quand la connexion sera revenue.', OFFLINE_MESSAGE);
+            try {
+              // Kept on the device (known product queued, unknown code to identify later).
+              const kept = await handleOfflineScan(result.code);
+              showNotice(
+                kept.kind === 'queued'
+                  ? `${kept.productName} : ${OFFLINE_SCAN_MESSAGE}`
+                  : `Code ${kept.barcode} inconnu : ${OFFLINE_SCAN_MESSAGE}`,
+                OFFLINE_MESSAGE,
+              );
+            } catch {
+              showNotice('Réessayez quand la connexion sera revenue.', OFFLINE_MESSAGE);
+            }
             setStep({ name: 'scanning' });
             break;
           case 'error':
@@ -208,6 +241,7 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
             });
             break;
           case 'product':
+            setReadLabel(outcome.product.name);
             if (burstRef.current && outcome.product.defaultLocationId !== null) {
               await burstAdd(outcome.product, outcome.product.defaultLocationId);
             } else {
@@ -227,6 +261,7 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
   const [removeRequest, setRemoveRequest] = useState<RemoveRequest | null>(null);
 
   const onCode = (result: ScanResult, scanMode: ScanMode) => {
+    setReadLabel(result.code);
     if (scanMode === 'remove') {
       setNotice(null);
       removeCount.current += 1;
@@ -240,10 +275,11 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
     setNotice(null);
   };
 
-  const added = (info: AddedInfo, scanNext: boolean) => {
-    setToast(info);
+  // The full-screen scanner stays on after an add: it is the screen for scanning (decision P4.14).
+  const added = (info: AddedInfo) => {
+    pushSession(info.undo);
+    setToast({ ...info, undo: () => undoLast() });
     setStep({ name: 'scanning' });
-    if (!scanNext) controls.current?.stopCamera();
   };
 
   const attach = async (picked: ProductDto, barcode: string) => {
@@ -261,82 +297,119 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
     }
   };
 
-  const undo = async () => {
-    const current = toast;
+  /** Takes back the last add of the session (the toast and the chip do the same). */
+  const undoLast = async () => {
+    const last = sessionStack.current.pop();
+    if (!last) return;
+    setSessionCount(sessionStack.current.length);
     setToast(null);
     try {
-      await current?.undo();
+      await last.undo();
     } catch (error) {
+      sessionStack.current.push(last);
+      setSessionCount(sessionStack.current.length);
       showNotice(error instanceof ApiError ? error.message : 'Impossible d’annuler, réessayez.');
     }
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {notice ? (
-        <Callout role="alert" title={notice.title}>
-          {notice.text}
-        </Callout>
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-x-4">
-        <Button variant="secondary" className="self-start" onClick={() => void openSearch()}>
-          Ajouter sans code-barres
-        </Button>
-        {mode === 'add' ? (
-          <label className="tap-target text-indigo flex cursor-pointer items-center gap-2 font-semibold">
-            <input
-              type="checkbox"
-              checked={burst}
-              onChange={(event) => setBurst(event.target.checked)}
-              aria-describedby="burst-help"
-              className="accent-indigo h-5 w-5"
-            />
-            Scan en rafale
-          </label>
-        ) : null}
-      </div>
-      {mode === 'add' ? (
-        <p id="burst-help" className="text-help -mt-2">
-          Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les autres
-          ouvrent le formulaire.
-        </p>
-      ) : null}
-
+    <div className="flex min-h-0 flex-1 flex-col">
       <ScannerView
         mode={mode}
         onModeChange={changeMode}
         onCode={onCode}
+        onClose={onClose}
         paused={step.name !== 'scanning'}
         controlRef={controls}
         makeScanner={makeScanner}
+        readLabel={readLabel}
+        topSlot={statusSlot}
+        overlay={
+          <>
+            {notice ? (
+              <Callout role="alert" title={notice.title} className="w-full max-w-xl">
+                {notice.text}
+              </Callout>
+            ) : null}
+            {mode === 'remove' ? (
+              <div className="w-full max-w-xl">
+                <RemoveFlow
+                  request={removeRequest}
+                  api={api.remove}
+                  onSwitchToAdd={(result) => {
+                    changeMode('add');
+                    void handleCode(result);
+                  }}
+                />
+              </div>
+            ) : null}
+            {sessionCount > 0 ? (
+              <div className="bg-scanner-veil text-scanner-ink flex items-center gap-3 rounded-full py-1 pr-1 pl-4">
+                <p aria-live="polite" className="font-semibold">
+                  {sessionCount} {sessionCount > 1 ? 'produits ajoutés' : 'produit ajouté'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void undoLast()}
+                  className="tap-target bg-scanner-frame text-scanner-on-frame rounded-full px-4 font-semibold"
+                >
+                  Annuler le dernier
+                </button>
+              </div>
+            ) : null}
+          </>
+        }
         fallbacks={
           <div className="flex flex-col gap-3">
             <InAppBrowserNotice />
             <ManualCodeInput onCode={(result) => onCode(result, mode)} />
+            <div className="flex flex-wrap items-center gap-x-4">
+              <Button variant="secondary" onClick={() => void openSearch()}>
+                Ajouter sans code-barres
+              </Button>
+              {mode === 'add' ? (
+                <label className="tap-target text-indigo flex cursor-pointer items-center gap-2 font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={burst}
+                    onChange={(event) => setBurst(event.target.checked)}
+                    aria-describedby="burst-help"
+                    className="accent-indigo h-5 w-5"
+                  />
+                  Scan en rafale
+                </label>
+              ) : null}
+            </div>
+            {mode === 'add' ? (
+              <p id="burst-help" className="text-help -mt-2">
+                Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les
+                autres ouvrent le formulaire.
+              </p>
+            ) : null}
             <PhotoCodeButton onCode={(result) => onCode(result, mode)} />
           </div>
         }
       />
 
-      {mode === 'remove' ? (
-        <RemoveFlow
-          request={removeRequest}
-          api={api.remove}
-          onSwitchToAdd={(result) => {
-            changeMode('add');
-            void handleCode(result);
-          }}
-        />
-      ) : null}
-
       {step.name === 'resolving' ? (
-        <p role="status" className="text-small">
+        <p role="status" className="text-small text-scanner-ink!">
           Recherche du produit…
         </p>
       ) : null}
 
-      {step.name === 'add' && refs ? (
+      {step.name === 'add' && refs && !step.full ? (
+        <ScanSheet
+          product={step.product}
+          categories={refs.categories}
+          locations={refs.locations}
+          origin={origin}
+          onAdded={(info) => added(info)}
+          onMore={() => setStep({ ...step, full: true })}
+          onClose={() => setStep({ name: 'scanning' })}
+        />
+      ) : null}
+
+      {step.name === 'add' && refs && step.full ? (
         <AddSheet
           product={step.product}
           categories={refs.categories}
@@ -429,7 +502,7 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
       {toast ? (
         <UndoToast
           message={toast.message}
-          onUndo={() => void undo()}
+          onUndo={() => void undoLast()}
           onExpire={() => setToast(null)}
         />
       ) : null}

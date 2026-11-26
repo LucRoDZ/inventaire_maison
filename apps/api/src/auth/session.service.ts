@@ -36,6 +36,14 @@ export class SessionService {
     @Inject(APP_CONFIG) private readonly config: Pick<AppConfig, 'SESSION_SECRET'>,
   ) {}
 
+  /** Opaque scope of the device data of an account in its household (`AuthUser.dataScope`). */
+  dataScope(userId: number, householdId: number): string {
+    return createHmac('sha256', this.config.SESSION_SECRET)
+      .update(`data-scope:${userId}:${householdId}`)
+      .digest('hex')
+      .slice(0, 32);
+  }
+
   private idOf(token: string): string {
     return sessionId(this.config.SESSION_SECRET, token);
   }

@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { rememberScreen } from '../../lib/last-screen';
 
 interface Tab {
   href: string;
@@ -17,14 +19,14 @@ interface Tab {
 }
 
 export const TABS: readonly Tab[] = [
-  { href: '/', label: 'Scanner', icon: ScanBarcode },
+  { href: '/scanner', label: 'Scanner', icon: ScanBarcode },
   { href: '/inventaire', label: 'Inventaire', icon: Package },
   { href: '/courses', label: 'Courses', icon: ShoppingBasket },
   { href: '/plus', label: 'Plus', icon: EllipsisVertical },
 ];
 
 export function isActive(pathname: string, href: string): boolean {
-  return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /**
@@ -33,6 +35,10 @@ export function isActive(pathname: string, href: string): boolean {
  */
 export function BottomNav() {
   const pathname = usePathname();
+  // Read in the effect (not `useSearchParams`, which would need a Suspense boundary in the layout).
+  useEffect(() => {
+    rememberScreen(`${pathname}${window.location.search}`);
+  }, [pathname]);
   return (
     <nav
       aria-label="Navigation principale"
@@ -49,7 +55,7 @@ export function BottomNav() {
                 className="tap-target text-indigo flex flex-col items-center justify-center gap-0.5 py-2"
               >
                 <span
-                  className={`relative flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber' : 'bg-transparent'}`}
+                  className={`relative flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber text-on-amber' : 'bg-transparent'}`}
                 >
                   <Icon size={22} aria-hidden="true" />
                 </span>

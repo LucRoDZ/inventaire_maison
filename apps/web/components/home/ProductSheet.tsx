@@ -19,6 +19,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
+import { FadeImage } from '../ui/FadeImage';
 import { IconBadge } from '../ui/IconBadge';
 import { MoveDialog } from './MoveDialog';
 
@@ -67,6 +68,9 @@ export function ProductSheet({
     if (busy) return;
     setBusy(true);
     setError(null);
+    const before = quantity;
+    // Optimistic: the number changes at once and goes back, with a message, if the server refuses.
+    setQuantity(before + delta);
     try {
       await (api.adjust ?? adjustStock)({
         productId: tile.productId,
@@ -78,6 +82,7 @@ export function ProductSheet({
       });
     } catch (caught) {
       setBusy(false);
+      setQuantity(before);
       setError(
         caught instanceof ApiError && caught.status !== 0
           ? caught.message
@@ -86,8 +91,7 @@ export function ProductSheet({
       return;
     }
     setBusy(false);
-    const next = quantity + delta;
-    setQuantity(next);
+    const next = before + delta;
     onChanged();
     if (next <= 0) onClose();
   };
@@ -97,7 +101,7 @@ export function ProductSheet({
       <BottomSheet labelledBy={titleId} onClose={onClose}>
         <div className="flex items-center gap-3">
           {tile.imageUrl ? (
-            <img src={tile.imageUrl} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            <FadeImage src={tile.imageUrl} className="h-16 w-16 rounded-xl object-cover" />
           ) : (
             <IconBadge icon={Glyph} />
           )}

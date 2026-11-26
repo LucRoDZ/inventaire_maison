@@ -62,11 +62,11 @@ describe('AdminGate', () => {
   it('waits while the session is checked, refuses a member, accepts the admin', () => {
     const { rerender } = render(<AdminGate>secret</AdminGate>);
     expect(screen.queryByText('secret')).not.toBeInTheDocument();
-    current = { id: 2, username: 'marie', role: 'member' };
+    current = { id: 2, username: 'marie', role: 'member', dataScope: 'scope-test' };
     rerender(<AdminGate>secret</AdminGate>);
     expect(screen.getByRole('alert')).toHaveTextContent('Accès réservé à l’administrateur');
     expect(screen.queryByText('secret')).not.toBeInTheDocument();
-    current = { id: 1, username: 'root', role: 'admin' };
+    current = { id: 1, username: 'root', role: 'admin', dataScope: 'scope-test' };
     rerender(<AdminGate>secret</AdminGate>);
     expect(screen.getByText('secret')).toBeInTheDocument();
   });

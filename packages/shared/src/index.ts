@@ -9,6 +9,7 @@ export * from './products';
 export * from './quick-entry';
 export * from './scan';
 export * from './stock';
+export * from './sync';
 export * from './users';
 
 export interface HealthResponse {

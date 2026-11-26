@@ -37,6 +37,8 @@ const NAME_B = 'Foyer Beta Omega';
 const B_ENDPOINT = 'https://push.example.test/household-b';
 /** Word carried by every visible name of B's data: it must never reach A. */
 const MARK_B = 'Oméga';
+/** Idempotency key held by both households: the same key never collides across them. */
+const SHARED_KEY = 'shared-key-fixture';
 
 interface Ids {
   location: number;
@@ -143,6 +145,11 @@ async function fill(householdId: number, mark: string, barcode: string): Promise
       user!.id,
     ],
   );
+  await q(
+    `INSERT INTO idempotency_keys (household_id, key, device_id, result)
+     VALUES ($1, $2, 'device-fixture', '{"status":"applied"}')`,
+    [householdId, SHARED_KEY],
+  );
   const [shopping] = await q<{ id: number }>(
     `INSERT INTO shopping_items (household_id, product_id, quantity, checked, checked_at)
      VALUES ($1, $2, 2, $3, CASE WHEN $3 THEN now() END) RETURNING id`,
@@ -181,6 +188,7 @@ async function snapshotB(): Promise<string> {
     // The first column is the key of every table (`id`, or `household_id` for the settings).
     parts.push(await q(`SELECT * FROM ${table} WHERE household_id = $1 ORDER BY 1`, [B]));
   }
+  parts.push(await q('SELECT * FROM idempotency_keys WHERE household_id = $1 ORDER BY key', [B]));
   parts.push(await q('SELECT id, name FROM households WHERE id = $1', [B]));
   return JSON.stringify(parts);
 }
@@ -211,7 +219,7 @@ const checks: Record<string, Check> = {
       .post('/api/auth/login')
       .set('Origin', ORIGIN)
       .send({ username: 'alice', password: 'motdepasse1' });
-    expect(Object.keys(res.body).sort()).toEqual(['id', 'role', 'username']);
+    expect(Object.keys(res.body).sort()).toEqual(['dataScope', 'id', 'role', 'username']);
     assertNoHousehold(res.body, 'login');
   },
   'POST /api/auth/logout': async () => {
@@ -222,7 +230,7 @@ const checks: Record<string, Check> = {
   'GET /api/auth/me': async (client, who) => {
     const res = await client.get('/api/auth/me');
     expect(res.status).toBe(200);
-    expect(Object.keys(res.body).sort()).toEqual(['id', 'role', 'username']);
+    expect(Object.keys(res.body).sort()).toEqual(['dataScope', 'id', 'role', 'username']);
     assertNoHousehold(res.body, `${who} me`);
   },
   'POST /api/auth/password': async (client) => {
@@ -478,6 +486,52 @@ const checks: Record<string, Check> = {
     expect((await client.post('/api/stock/remove').send({ productId: b.product })).status).toBe(
       404,
     );
+  },
+  'GET /api/sync/catalog': async (client, who) => {
+    const res = await client.get('/api/sync/catalog');
+    expect(res.status).toBe(200);
+    const ids = res.body.map((p: { id: number }) => p.id);
+    expect(ids).toContain(a.product);
+    expect(ids).not.toContain(b.product);
+    assertNothingOfB(res.body, `${who} catalog`);
+    assertNoHousehold(res.body, `${who} catalog`);
+  },
+  'POST /api/sync': async (client) => {
+    const base = {
+      kind: 'add',
+      deviceId: 'device-isolation',
+      createdAt: '2026-06-01T09:00:00.000Z',
+      quantity: 1,
+    };
+    // Products and locations of B are unknown to A: rejected, nothing written.
+    const res = await client.post('/api/sync').send({
+      ops: [
+        {
+          ...base,
+          key: `iso-product-${Math.random()}`,
+          productId: b.product,
+          locationId: a.location,
+        },
+        {
+          ...base,
+          key: `iso-location-${Math.random()}`,
+          productId: a.product,
+          locationId: b.location,
+        },
+        { ...base, key: `iso-remove-${Math.random()}`, kind: 'remove', productId: b.product },
+        { ...base, key: SHARED_KEY, productId: a.product, locationId: a.location },
+      ],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.results.map((r: { status: string }) => r.status)).toEqual([
+      'rejected',
+      'rejected',
+      'rejected',
+      'duplicate',
+    ]);
+    assertNothingOfB(res.body, 'sync');
+    const rows = await q('SELECT 1 FROM idempotency_keys WHERE household_id = $1', [B]);
+    expect(rows).toHaveLength(1);
   },
   'GET /api/shopping': async (client, who) => {
     const res = await client.get('/api/shopping');

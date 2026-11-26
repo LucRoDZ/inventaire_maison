@@ -29,7 +29,8 @@ test('hors connexion, la coquille s’ouvre et l’encadré « Pas de connexion 
 
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Pas de connexion' })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
+  // The shell of the full-screen scanner (no bottom bar there) is drawn offline too.
+  await expect(page.getByRole('button', { name: 'Fermer le scanner' })).toBeVisible();
 
   await context.setOffline(false);
   await expect(page.getByRole('status').filter({ hasText: 'Pas de connexion' })).toBeHidden();

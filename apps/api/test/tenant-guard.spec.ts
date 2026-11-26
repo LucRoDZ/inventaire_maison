@@ -19,6 +19,7 @@ const DATA_TABLES = [
   'settings',
   'shoppingItems',
   'pushSubscriptions',
+  'idempotencyKeys',
 ];
 const SQL_TABLES = [
   'locations',
@@ -31,6 +32,7 @@ const SQL_TABLES = [
   'settings',
   'shopping_items',
   'push_subscriptions',
+  'idempotency_keys',
 ];
 /** The gate itself. */
 const ALLOWED = new Set(['database/tenant-db.ts']);

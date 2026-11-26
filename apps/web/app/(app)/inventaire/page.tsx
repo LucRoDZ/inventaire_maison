@@ -16,6 +16,7 @@ import {
   useInventoryView,
   withKnownFilters,
 } from '../../../lib/home-filters';
+import { PendingSyncBadge } from '../../../lib/offline';
 import { fetchCategories } from '../../../lib/stock-api';
 
 /**
@@ -44,14 +45,17 @@ function Inventaire() {
     <Screen
       title="Inventaire"
       actions={
-        <FiltersControl
-          mode={view}
-          filters={filters}
-          onChange={setFilters}
-          categories={categories ?? []}
-          locations={summary?.locations ?? []}
-          total={summary?.total ?? 0}
-        />
+        <>
+          <PendingSyncBadge className="mr-3" />
+          <FiltersControl
+            mode={view}
+            filters={filters}
+            onChange={setFilters}
+            categories={categories ?? []}
+            locations={summary?.locations ?? []}
+            total={summary?.total ?? 0}
+          />
+        </>
       }
       header={
         <>

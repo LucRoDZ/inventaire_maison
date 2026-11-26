@@ -234,7 +234,7 @@ export function FiltersControl({
           <span
             data-testid="filters-badge"
             aria-hidden="true"
-            className="bg-amber text-indigo text-help absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white px-1 font-semibold"
+            className="bg-amber text-on-amber text-help absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white px-1 font-semibold"
           >
             {count}
           </span>

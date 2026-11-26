@@ -3,6 +3,7 @@
 import type { AuthUser } from '@inventaire/shared';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { fetchMe } from '../../lib/auth';
+import { bindDataScope, startOfflineSync, syncNow } from '../../lib/offline/runtime';
 
 const AuthContext = createContext<AuthUser | null>(null);
 
@@ -11,10 +12,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
+    startOfflineSync();
     let cancelled = false;
     fetchMe()
       .then((me) => {
         if (!cancelled) setUser(me);
+        // The device data belongs to this account; then the catalogue is refreshed and the queue sent.
+        void bindDataScope(me.dataScope)
+          .then(() => syncNow())
+          .catch(() => undefined);
       })
       .catch(() => {
         // 401 already redirected; other errors keep the shell usable.

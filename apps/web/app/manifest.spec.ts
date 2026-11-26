@@ -47,6 +47,24 @@ describe('manifest', () => {
     }
   });
 
+  it('has the Scanner and Courses shortcuts', () => {
+    expect((m.shortcuts ?? []).map((s) => [s.name, s.url])).toEqual([
+      ['Scanner', '/scanner'],
+      ['Courses', '/courses'],
+    ]);
+  });
+
+  it('ships an iPhone startup image of the declared size for each link', async () => {
+    const sizes = (await import('../lib/startup-images.json')).default;
+    expect(sizes.length).toBeGreaterThanOrEqual(6);
+    for (const { width, height } of sizes) {
+      const meta = await sharp(
+        path.join(publicDir, `splash/splash-${width}x${height}.png`),
+      ).metadata();
+      expect([meta.width, meta.height]).toEqual([width, height]);
+    }
+  });
+
   it('ships a 180 px apple-touch-icon', async () => {
     const { width, height } = await sharp(
       path.join(publicDir, 'icons/apple-touch-icon.png'),

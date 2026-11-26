@@ -120,6 +120,7 @@ describe('migration 0003 on a populated database', () => {
     );
     expect(secured.map((r) => r.relname)).toEqual([
       'categories',
+      'idempotency_keys',
       'locations',
       'off_category_map',
       'products',

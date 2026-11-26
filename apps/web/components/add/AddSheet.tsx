@@ -31,8 +31,10 @@ import {
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
+import { FadeImage } from '../ui/FadeImage';
 import { IconBadge } from '../ui/IconBadge';
 import { CategoryPicker } from './CategoryPicker';
+import { ExpiryChips } from './ExpiryChips';
 import { LocationPicker } from './LocationPicker';
 import { QuantityStepper } from './QuantityStepper';
 
@@ -191,7 +193,7 @@ export function AddSheet({
       >
         <div className="flex items-center gap-3">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt="" className="h-14 w-14 rounded-xl object-cover" />
+            <FadeImage src={product.imageUrl} className="h-14 w-14 rounded-xl object-cover" />
           ) : (
             <IconBadge icon={Glyph} />
           )}
@@ -264,6 +266,14 @@ export function AddSheet({
               className="tap-target border-line text-ink rounded-xl border bg-white px-3 text-base"
             />
           </label>
+          <ExpiryChips
+            value={expiryDate}
+            onPick={(iso) => {
+              setExpiryDate(iso);
+              setSuggested(false);
+              setDeclined(false);
+            }}
+          />
           {suggested ? (
             <p className="text-help flex flex-wrap items-center gap-x-2">
               <span className="bg-amber-tint text-indigo rounded-full px-2 py-0.5 font-semibold">

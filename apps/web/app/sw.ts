@@ -6,6 +6,7 @@ import {
   Serwist,
   type SerwistGlobalConfig,
 } from 'serwist';
+import { applyBadge, badgeCount } from '../lib/badge';
 import { PAGES_CACHE, RETIRED_CACHES } from '../lib/cache-names';
 import { notificationFor, parsePushPayload, safePushUrl } from '../lib/push-payload';
 
@@ -65,6 +66,18 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(Promise.all(RETIRED_CACHES.map((name) => caches.delete(name))));
 });
 
+/** The count on the app icon, read from the API with the session cookie; cleared at 0. */
+async function updateBadge(): Promise<void> {
+  try {
+    const response = await fetch('/api/stock/summary', { credentials: 'same-origin' });
+    if (!response.ok) return;
+    const summary = (await response.json()) as { today: number; soon: number; expired: number };
+    await applyBadge(badgeCount(summary), self.navigator as never);
+  } catch {
+    // Offline or signed out: the badge stays as it was.
+  }
+}
+
 // Daily summary: shown as a notification; a message that is not a summary shows nothing.
 self.addEventListener('push', (event) => {
   let raw: unknown = null;
@@ -76,7 +89,7 @@ self.addEventListener('push', (event) => {
   const payload = parsePushPayload(raw);
   if (!payload) return;
   const { title, options } = notificationFor(payload);
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(Promise.all([self.registration.showNotification(title, options), updateBadge()]));
 });
 
 // A tap opens the list filtered on the expiry: an open window of the app is reused.

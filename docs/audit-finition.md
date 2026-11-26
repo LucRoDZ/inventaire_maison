@@ -88,3 +88,11 @@ Audit `unslop` (mode polissage, identité Indigo Ambre prioritaire) sur Courses,
 - Aucun dégradé, aucune lueur, aucun emoji, aucune couleur en dur (`check-colors`), une seule famille d'icônes (Lucide), chiffres en `tabular-nums`, mouvements nommés (`transition-colors`), aucune boucle d'animation.
 - Corrigé : l'étiquette « Proposée » du choix de catégorie était en capitales espacées (contraire à U1), elle passe en casse normale ; la légende du taux de gaspillage perd son point final.
 - Rien d'autre à changer : l'ambre reste réservé à l'état actif, aux pastilles et aux dates proches.
+
+## Phase 4 : écrans touchés (27/11/2026)
+
+Audit `unslop` (mode polissage) sur le scanner plein écran, la fiche du bas, « À synchroniser », les glissements, les squelettes, les états vides illustrés et le thème sombre.
+
+- Aucun dégradé, aucune lueur, aucun emoji, aucune capitale espacée, aucune couleur en dur (`check-colors`) ; les illustrations n'utilisent que les jetons `illustration-*`, avec l'ambre comme seule touche.
+- Seule boucle d'animation : le squelette de chargement (état vivant), coupé par `prefers-reduced-motion`.
+- Corrigé : une seule courbe d'accélération ; l'apparition des images reprend celle des feuilles (`cubic-bezier(0.2, 0, 0, 1)`).

@@ -294,7 +294,10 @@ describe('ListView', () => {
   it('shows the empty state with a way to the scanner', async () => {
     renderList([]);
     expect(await screen.findByText('Rien ici pour l’instant')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Scanner un produit' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Scanner un produit' })).toHaveAttribute(
+      'href',
+      '/scanner',
+    );
     expect(screen.getByText('0 article · 0 unité')).toBeInTheDocument();
   });
 

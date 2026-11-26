@@ -4,57 +4,65 @@
 > Coche une tâche avec le hash court de son commit, sans compte rendu. Une ligne par décision réelle.
 > Tâche bloquée : commande et erreur dans « Problèmes bloquants » ; si une tâche suivante en dépend, écris le marqueur d'arrêt et arrête-toi.
 > Phase terminée : écris seul sur la dernière ligne de ce fichier `STOP: validation requise` et arrête-toi. Tout est terminé : `ALL DONE` seul sur la dernière ligne. Ces deux marqueurs ne commencent jamais une autre ligne.
-> Phases terminées et ancienne Phase 2 (reprise dans la Phase 3) : `docs/archive/TASKS-phases-0-1.md`, à ne pas lire sauf demande.
+> Phases terminées : `docs/archive/TASKS-phases-0-1.md` et `docs/archive/TASKS-phase-3.md`, à ne pas lire sauf demande.
 
-## Phase 3 : Confort et refonte (branche `phase-3-confort-refonte`)
+## Phase 4 : Finition premium (branche `phase-4-premium`)
 
-> Plan, vagues et tableau d'avancement : `docs/phase-3.md`.
+> Plan, vagues et tableau d'avancement : `docs/phase-4.md`.
 
-### Étape 0 : processus
-- [x] **0.1 Archive** : phases terminées vers `docs/archive/`. Fin : `TASKS.md` sous 150 lignes (20b0f92).
-- [x] **0.2 Règles** : vérification ciblée, index des documents, sous-agents. Fin : `CLAUDE.md`, en-tête, `run-loop.sh` (8e16dc4).
-- [x] **0.3 Agents** : `.claude/agents/worker.md`, `reviewer.md`. Fin : fichiers versionnés.
-- [x] **0.4 CI** : cache Playwright, pas d'annulation sur `main`. Fin : CI verte.
-- [x] **0.5 Mesures** dans la PR. Fin : avant et après dans la description.
+### Étape 0 et contrat
+- [x] **0.1 Archive** de la Phase 3. Fin : `TASKS.md` sous 150 lignes.
+- [x] **0.2 Section Phase 4**. Fin : une case par tâche.
+- [x] **0.3 Cibles e2e inchangées** (chromium-mobile Pixel 7, webkit-mobile iPhone 14, 360×740, 390×844). Fin : vérifié.
+- [x] **K.1 Migration unique** `idempotency_keys` (RLS) et purge à 14 jours. Fin : `rls.spec.ts` vert.
+- [x] **K.2 Jetons** voile, glissement, illustrations (et valeurs sombres). Fin : `check-colors` vert.
+- [x] **K.3 Types partagés** `SyncOp`, `SyncResult`, constantes de file. Fin : build de `shared`.
+- [x] **K.4 Plan** `docs/phase-4.md`. Fin : vagues et tableau.
 
-### Contrat
-- [x] **K.1 Migration unique** : `settings`, `shopping_items`, `push_subscriptions`, colonnes `categories`, `products`, `stock_movements`, RLS. Fin : `rls.spec.ts` vert.
-- [x] **K.2 Types partagés** : DTO, unités, raisons, filtres d'échéance, signature de l'analyseur. Fin : build de `shared`.
-- [x] **K.3 Navigation** : barre `Scanner · Inventaire · Courses · Plus`, `/courses` vide, redirections. Fin : e2e navigation.
-- [x] **K.4 Plan** : `docs/phase-3.md`. Fin : vagues et tableau.
+### A. Scanner immersif
+- [x] **A1 Écran `/scanner` plein écran** sans barre du bas, « Fermer le scanner », voile et coins. Fin : e2e (23cccd7).
+- [x] **A2 Retour à la lecture** : coins verrouillés, coche, `aria-live`, vibration réglable, anti-doublon 1,5 s. Fin : test de composant (23cccd7).
+- [x] **A3 Fiche en bas** de l'écran (ajout ou formulaire inconnu). Fin : e2e saisie manuelle (23cccd7).
+- [x] **A4 Compteur de session** et « Annuler le dernier ». Fin : e2e (23cccd7).
+- [x] **A5 Lampe et zoom** selon `getCapabilities()`, saisie manuelle toujours là. Fin : test de composant (23cccd7).
+- [x] **A6 Cycle de vie de la caméra** et refus d'accès. Fin : e2e flux simulé (159e6c4).
 
-### A. Péremption et gaspillage
-- [x] **A1 Seuil d'alerte par foyer** (3 j), réglé dans la console. Fin : seuil à 5, J-5 devient « bientôt » (8a675df).
-- [x] **A2 Quatre compteurs** en tête de zone, filtres d'échéance dans l'URL. Fin : e2e « Bientôt » filtre (b1fbb34).
-- [x] **A3 Pastille d'urgence** par ligne et tri par date limite. Fin : test de composant (b1fbb34).
-- [x] **A4 Consommé / Jeté** : raisons `consumed`, `wasted`, partout où l'on retire. Fin : journal affiche la raison (3d03a30).
-- [x] **A5 Statistiques** 30 jours (Plus). Fin : tests API et e2e (c076b89).
-- [x] **A6 Durée suggérée par catégorie** : `shelf_life_days`, date « Suggérée ». Fin : e2e fiche (2570359).
-- [x] **A7 Notifications push** : abonnement, résumé 8 h, clic vers la liste filtrée. Fin : tests horloge et envoi simulés (cca39e2).
+### B. Scans hors ligne
+- [x] **B1 File IndexedDB** avec clés d'idempotence, codes inconnus « à identifier ». Fin : tests unitaires (875eb3f).
+- [x] **B2 Cache du catalogue** du foyer. Fin : test unitaire (875eb3f).
+- [x] **B3 `POST /sync`** : une transaction par opération, rejeu sans effet, conflits. Fin : tests d'API (0fd04d2).
+- [x] **B4 Interface** : pastille « À synchroniser (n) », écran dédié. Fin : e2e hors ligne (875eb3f).
+- [x] **B5 Purge** de la file et du cache à la déconnexion ou au changement de compte. Fin : e2e (46c57ea).
+- [x] **B6 Mises à jour optimistes** sûres, avec retour arrière. Fin : tests de composant (77f01af).
 
-### B. Courses
-- [x] **B1 Onglet Courses** : liste, cocher, quantité, vider. Fin : e2e (fd1138e).
-- [x] **B2 Saisie rapide** : analyseur déterministe dans `shared`. Fin : ~30 cas unitaires (43c400c).
-- [x] **B3 Récemment consommés** : 12 puces. Fin : tests API (0567801).
-- [x] **B4 Seuil minimum** et ajout ou retrait automatique. Fin : tests d'intégration (06c7115).
-- [x] **B5 Ranger les achats** cochés. Fin : e2e (fd1138e).
+### C. Gestes et saisie
+- [x] **C1 Glisser une ligne** (Liste, Courses) : Consommé ou Jeté, annulation 5 s. Fin : e2e (241816a).
+- [x] **C2 Dates limites rapides** et affichage relatif. Fin : test de composant (0c29381).
+- [x] **C3 Chiffres tabulaires**, titres équilibrés. Fin : revue (0c29381).
+- [x] **C4 Partager la liste** (Web Share, repli presse-papiers). Fin : test de composant (0c29381).
 
-### C. Ajout et fiche article
-- [x] **C1 Fiche article unique** avec montant et unité. Fin : e2e (2570359).
-- [x] **C2 Scanner, point d'entrée unique**. Fin : e2e (2570359).
-- [x] **C3 Scan en rafale**. Fin : e2e avec Annuler (636e9b8).
-- [x] **C4 Rattacher un code-barres** à un produit existant. Fin : tests API et e2e (56af27a).
-- [x] **C5 Édition en lot** en vue Liste. Fin : e2e (4c2531f).
-- [x] **C6 Fusion de doublons**. Fin : tests d'intégration, journal intact (56af27a).
+### D. Fluidité visuelle
+- [x] **D1 Squelettes** de chargement sans décalage. Fin : test de composant (0c29381).
+- [x] **D2 Images** en fondu sur espace réservé. Fin : test de composant (0c29381).
+- [x] **D3 View Transitions** : abandonnée (P4.8).
+- [x] **D4 États vides illustrés** (SVG aux jetons). Fin : axe (0c29381).
+- [x] **D5 Messages d'erreur** humains avec « Réessayer ». Fin : test de composant (0c29381).
 
-### D. Inventaire
-- [x] **D1 Vue Liste triée par date limite** par défaut, compteurs à la place de « Ma maison ». Fin : e2e (b1fbb34).
+### E. Application installée
+- [x] **E1 Pastille d'icône** (Badging). Fin : test avec API simulée (77f01af).
+- [x] **E2 Raccourcis** Scanner et Courses. Fin : test du manifeste (77f01af).
+- [x] **E3 Écrans de lancement et icônes** (iPhone, adaptable). Fin : script et test (77f01af).
+
+### F. Thème sombre
+- [x] **F1 Réglage « Apparence »** sans flash. Fin : e2e (a4a3202).
+- [x] **F2 Palette sombre** Indigo Ambre, contraste AA. Fin : axe dans les deux thèmes (5f8080d).
+- [x] **F3 Tous les écrans** en sombre, Vue Maison comprise. Fin : e2e et `check-colors` (5f8080d).
 
 ### Clôture
-- [x] **Z1 Suite complète et e2e** (deux navigateurs, deux tailles). Fin : 191 e2e, API et web verts en CI (5395ad5).
-- [x] **Z2 Revue `reviewer`** (isolation, accessibilité, identité). Fin : 9 points corrigés (194a040).
-- [x] **Z3 Finition unslop** des nouveaux écrans. Fin : `docs/audit-finition.md`, section Phase 3.
-- [x] **Z4 README, PR, CI verte, fusion**. Fin : squash de la PR #27.
+- [x] **Z1 Suite complète et e2e**. Fin : vert en CI (a9ed09e).
+- [x] **Z2 Revue `reviewer`** (isolation, accessibilité, identité, replis). Fin : 7 points corrigés.
+- [x] **Z3 Finition unslop**. Fin : `docs/audit-finition.md`, section Phase 4.
+- [x] **Z4 README, PR, CI verte, fusion**. Fin : squash de la PR #28.
 
 ## Décisions prises
 
@@ -89,6 +97,27 @@
 - P3.10 : un appareil abonné garde l'identifiant du compte abonné (`localStorage`) ; à la connexion d'un autre compte, l'abonnement du navigateur est supprimé (l'ancien foyer ne lui parle plus).
 - P3.11 : job CI `e2e` limité à 20 min (191 tests sur deux navigateurs, 5 min de tests plus la construction) au lieu de 10.
 - U2 : barre du bas dans le flux (dernière ligne de la colonne du `body`), pas `fixed`.
+
+- P4.1 : appui long sur une ligne non retenu (la fiche ouverte au toucher couvre les actions).
+- P4.2 : pas de miniatures floues côté serveur ; espace réservé neutre aux jetons qui s'estompe.
+- P4.3 : vibration, lampe, zoom, pastille, View Transitions : détection de capacité, repli silencieux, rien de promis sur iPhone.
+- P4.4 : `AuthUser.dataScope` = HMAC(`SESSION_SECRET`, compte et foyer), 32 caractères : la donnée de l'appareil est purgée quand il change, sans envoyer l'identifiant du foyer (D2).
+- P4.5 : `idempotency_keys` sans clé primaire propre : unicité (foyer, clé) ; droits sans `UPDATE`.
+- P4.6 : `/` redirige vers `/scanner` ; l'onglet « Scanner » ouvre l'écran plein écran.
+- P4.7 : B6 (mises à jour optimistes) confié à l'agent UI, propriétaire des listes et de Courses, pour éviter les conflits.
+- P4.8 : View Transitions abandonnée : le meuble ouvert charge ses données après la navigation, la transition capturerait un écran vide.
+- P4.9 : seules les opérations appliquées sont gardées dans `idempotency_keys` ; un conflit ou un rejet peut être renvoyé après correction avec la même clé.
+- P4.10 : le glissement retire une unité, comme « − » (même chemin au clavier : « − » puis « Jeté »).
+- P4.11 : la fiche rapide du scanner n'a ni date limite ni catégorie ; « Plus d'options » ouvre la fiche complète.
+- P4.12 : puces de date limite dans la fiche d'ajout seulement (aucun autre formulaire n'a de date limite).
+- P4.13 : sans `fake-indexeddb`, les tests de la file utilisent un stockage en mémoire derrière la même interface.
+- P4.14 : le scanner plein écran garde la caméra allumée après un ajout (c'est l'écran pour scanner) ; elle s'éteint à la fermeture, en arrière-plan et à la déconnexion.
+- P4.15 : « Fermer le scanner » ramène au dernier écran de l'application (mémorisé par la barre du bas), jamais à la page de connexion ; sinon à l'inventaire.
+- P4.16 : la pastille d'icône compte aujourd'hui + bientôt + périmés (l'API compte « aujourd'hui » à part).
+- P4.17 : thème sombre : jetons `--on-amber` et `--scanner-on-frame` ajoutés pour le texte posé sur l'ambre et sur le cadre du scanner.
+- P4.18 : `offline-sync.spec` travaille dans son propre foyer (base e2e partagée entre les specs).
+- P4.19 : données de l'appareil écrites sans compte (après une déconnexion, autre onglet, réponse tardive) purgées à la connexion suivante ; catalogue jamais écrit sans compte lié.
+- P4.20 : jeton `--scanner-backdrop`, sombre dans les deux thèmes (le scanner ne repose plus sur `--ink`, clair en sombre).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

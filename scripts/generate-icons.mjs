@@ -40,3 +40,20 @@ for (const { file, size, svg } of icons) {
   await sharp(svg).resize(size, size).png().toFile(path.join(outDir, file));
   console.log(`icons : ${file} (${size} x ${size})`);
 }
+
+// iPhone startup images (portrait): the white of the light theme with the icon in the middle.
+// The list is shared with the page (apps/web/lib/startup-images.json) that links them.
+const sizes = JSON.parse(readFileSync(path.join(root, 'apps/web/lib/startup-images.json'), 'utf8'));
+const splashDir = path.join(root, 'apps/web/public/splash');
+mkdirSync(splashDir, { recursive: true });
+for (const { width, height } of sizes) {
+  const side = Math.round(width * 0.28);
+  const logo = await sharp(rounded).resize(side, side).png().toBuffer();
+  await sharp({
+    create: { width, height, channels: 3, background: '#ffffff' },
+  })
+    .composite([{ input: logo, gravity: 'center' }])
+    .png()
+    .toFile(path.join(splashDir, `splash-${width}x${height}.png`));
+  console.log(`icons : splash-${width}x${height}.png`);
+}

@@ -1,6 +1,8 @@
 import type { AuthUser } from '@inventaire/shared';
 import { ApiError, apiFetch } from './api';
+import { applyBadge } from './badge';
 import { clearAppCaches } from './clear-caches';
+import { bindDataScope, purgeOfflineData } from './offline/runtime';
 import { dropForeignSubscription, unsubscribeThisDevice } from './push';
 
 /**
@@ -14,7 +16,9 @@ export async function login(username: string, password: string): Promise<AuthUse
     skipLoginRedirect: true,
   });
   await clearAppCaches().catch(() => undefined);
-  await dropForeignSubscription(user.id).catch(() => undefined);
+  // Another data scope than the last one on this device: its queue and catalogue are deleted.
+  await bindDataScope(user.dataScope).catch(() => undefined);
+  await dropForeignSubscription(user.dataScope).catch(() => undefined);
   return user;
 }
 
@@ -24,8 +28,12 @@ export async function logout(): Promise<void> {
   try {
     await apiFetch('/auth/logout', { method: 'POST' });
   } finally {
-    // Private data must not stay on the device, even when the call fails (offline, expired session).
-    await clearAppCaches();
+    // Private data must not stay on the device, even when the call fails (offline, expired session):
+    // each step runs even if another one fails.
+    await clearAppCaches().catch(() => undefined);
+    await purgeOfflineData().catch(() => undefined);
+    // The icon must not keep the count of the household that just signed out.
+    await applyBadge(0).catch(() => undefined);
   }
 }
 

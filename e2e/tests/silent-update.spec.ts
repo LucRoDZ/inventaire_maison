@@ -40,7 +40,8 @@ test('mise à jour silencieuse : rien ne s’affiche, la navigation suivante ouv
   await expectNothingShown(page);
   expect(await marked(page)).toBe(true);
 
-  await nav(page).getByRole('link', { name: 'Inventaire' }).click();
+  // Sign-in lands on the full-screen scanner: closing it is the next navigation.
+  await page.getByRole('button', { name: 'Fermer le scanner' }).click();
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Inventaire' })).toBeVisible();
   await expect.poll(() => marked(page)).toBe(false);
