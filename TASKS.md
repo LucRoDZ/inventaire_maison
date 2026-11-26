@@ -54,9 +54,9 @@
 - [x] **E3 Écrans de lancement et icônes** (iPhone, adaptable). Fin : script et test (77f01af).
 
 ### F. Thème sombre
-- [ ] **F1 Réglage « Apparence »** sans flash. Fin : e2e.
-- [ ] **F2 Palette sombre** Indigo Ambre, contraste AA. Fin : axe dans les deux thèmes.
-- [ ] **F3 Tous les écrans** en sombre, Vue Maison comprise. Fin : e2e et `check-colors`.
+- [x] **F1 Réglage « Apparence »** sans flash. Fin : e2e (a4a3202).
+- [x] **F2 Palette sombre** Indigo Ambre, contraste AA. Fin : axe dans les deux thèmes (5f8080d).
+- [x] **F3 Tous les écrans** en sombre, Vue Maison comprise. Fin : e2e et `check-colors` (5f8080d).
 
 ### Clôture
 - [ ] **Z1 Suite complète et e2e**. Fin : vert.
@@ -111,6 +111,11 @@
 - P4.11 : la fiche rapide du scanner n'a ni date limite ni catégorie ; « Plus d'options » ouvre la fiche complète.
 - P4.12 : puces de date limite dans la fiche d'ajout seulement (aucun autre formulaire n'a de date limite).
 - P4.13 : sans `fake-indexeddb`, les tests de la file utilisent un stockage en mémoire derrière la même interface.
+- P4.14 : le scanner plein écran garde la caméra allumée après un ajout (c'est l'écran pour scanner) ; elle s'éteint à la fermeture, en arrière-plan et à la déconnexion.
+- P4.15 : « Fermer le scanner » ramène au dernier écran de l'application (mémorisé par la barre du bas), jamais à la page de connexion ; sinon à l'inventaire.
+- P4.16 : la pastille d'icône compte aujourd'hui + bientôt + périmés (l'API compte « aujourd'hui » à part).
+- P4.17 : thème sombre : jetons `--on-amber` et `--scanner-on-frame` ajoutés pour le texte posé sur l'ambre et sur le cadre du scanner.
+- P4.18 : `offline-sync.spec` travaille dans son propre foyer (base e2e partagée entre les specs).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

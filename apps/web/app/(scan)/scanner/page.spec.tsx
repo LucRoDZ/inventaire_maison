@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ScannerPage from './page';
 
@@ -44,16 +44,17 @@ describe('Scanner page', () => {
     expect(origin()).toBeNull();
   });
 
-  it('closes by going back in the history, else to the inventory', () => {
+  it('closes to the last screen of the app (never the sign-in page), else to the inventory', async () => {
+    sessionStorage.clear();
     render(<ScannerPage />);
     const onClose = flow.mock.lastCall![0].onClose;
-    vi.spyOn(window.history, 'length', 'get').mockReturnValue(3);
     onClose();
-    expect(back).toHaveBeenCalledTimes(1);
-    vi.spyOn(window.history, 'length', 'get').mockReturnValue(1);
+    expect(replace).toHaveBeenLastCalledWith('/inventaire');
+    const { rememberScreen } = await import('../../../lib/last-screen');
+    rememberScreen('/courses');
     onClose();
-    expect(replace).toHaveBeenCalledWith('/inventaire');
+    expect(replace).toHaveBeenLastCalledWith('/courses');
+    expect(back).not.toHaveBeenCalled();
     expect(screen.queryByRole('navigation')).toBeNull();
-    fireEvent.click(document.body);
   });
 });

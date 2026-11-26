@@ -8,7 +8,7 @@ const target = () => ({
 
 describe('app badge', () => {
   it('counts expired and soon products', () => {
-    expect(badgeCount({ soon: 2, expired: 3 })).toBe(5);
+    expect(badgeCount({ today: 1, soon: 2, expired: 3 })).toBe(6);
   });
 
   it('sets the number, and clears at 0', async () => {
@@ -28,9 +28,9 @@ describe('app badge', () => {
 
   it('reads the summary through a mocked API', async () => {
     const badge = target();
-    await refreshBadge(async () => ({ soon: 1, expired: 1 }), badge);
+    await refreshBadge(async () => ({ today: 0, soon: 1, expired: 1 }), badge);
     expect(badge.setAppBadge).toHaveBeenCalledWith(2);
-    await refreshBadge(async () => ({ soon: 0, expired: 0 }), badge);
+    await refreshBadge(async () => ({ today: 0, soon: 0, expired: 0 }), badge);
     expect(badge.clearAppBadge).toHaveBeenCalled();
     badge.setAppBadge.mockClear();
     await refreshBadge(() => Promise.reject(new Error('offline')), badge);

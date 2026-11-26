@@ -4,6 +4,7 @@ import { PendingSyncBadge } from '../../../lib/offline';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ScanFlow } from '../../../components/scanner/ScanFlow';
+import { lastScreen } from '../../../lib/last-screen';
 
 const positive = (value: string | null): number | null => {
   const n = Number(value);
@@ -16,10 +17,8 @@ function ScannerWithOrigin() {
   const router = useRouter();
   const locationId = positive(params.get('lieu'));
   const shelfId = positive(params.get('etagere'));
-  const close = () => {
-    if (window.history.length > 1) router.back();
-    else router.replace('/inventaire');
-  };
+  // Back to the screen the scanner was opened from (never the sign-in page), else the inventory.
+  const close = () => router.replace(lastScreen());
   return (
     <ScanFlow
       origin={locationId ? { locationId, shelfId } : null}

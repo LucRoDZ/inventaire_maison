@@ -1,8 +1,11 @@
 import type { StockSummaryDto } from '@inventaire/shared';
 
-/** What the app icon counts: products expired or about to be (« soon » includes today). */
-export function badgeCount(summary: Pick<StockSummaryDto, 'soon' | 'expired'>): number {
-  return Math.max(0, summary.soon + summary.expired);
+/**
+ * What the app icon counts: products expired or under the alert threshold. The API counts
+ * « today » apart from « soon » (1 to threshold days): both are under the threshold.
+ */
+export function badgeCount(summary: Pick<StockSummaryDto, 'today' | 'soon' | 'expired'>): number {
+  return Math.max(0, summary.today + summary.soon + summary.expired);
 }
 
 interface BadgeTarget {
@@ -29,7 +32,7 @@ export async function applyBadge(
 
 /** Reads the summary and updates the badge; a failure leaves the badge as it was. */
 export async function refreshBadge(
-  fetchSummary: () => Promise<Pick<StockSummaryDto, 'soon' | 'expired'>>,
+  fetchSummary: () => Promise<Pick<StockSummaryDto, 'today' | 'soon' | 'expired'>>,
   target?: BadgeTarget,
 ): Promise<void> {
   let summary;

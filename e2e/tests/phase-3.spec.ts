@@ -254,6 +254,8 @@ for (const viewport of VIEWPORTS) {
 
     test('navigation à quatre onglets, sans défilement de page', async ({ page }, testInfo) => {
       await setup(page, testInfo, viewport.width);
+      // Sign-in lands on the full-screen scanner, without the bottom bar.
+      await page.goto('/inventaire');
       const nav = page.getByRole('navigation', { name: 'Navigation principale' });
       await expect(nav.getByRole('link')).toHaveText(['Scanner', 'Inventaire', 'Courses', 'Plus']);
 

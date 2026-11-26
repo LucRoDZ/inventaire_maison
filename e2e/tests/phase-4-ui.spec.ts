@@ -199,7 +199,7 @@ test.describe('phase 4, interface', () => {
     await signIn(page);
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __badge: string[] }).__badge))
-      .toContain('set:3');
+      .toContain('set:4');
 
     summary = { inStock: 4, today: 0, soon: 0, expired: 0, expiryAlertDays: 3 };
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));

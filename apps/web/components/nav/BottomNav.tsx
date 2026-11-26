@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { rememberScreen } from '../../lib/last-screen';
 
 interface Tab {
   href: string;
@@ -33,6 +35,10 @@ export function isActive(pathname: string, href: string): boolean {
  */
 export function BottomNav() {
   const pathname = usePathname();
+  // Read in the effect (not `useSearchParams`, which would need a Suspense boundary in the layout).
+  useEffect(() => {
+    rememberScreen(`${pathname}${window.location.search}`);
+  }, [pathname]);
   return (
     <nav
       aria-label="Navigation principale"

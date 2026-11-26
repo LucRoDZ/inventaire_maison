@@ -71,7 +71,7 @@ async function updateBadge(): Promise<void> {
   try {
     const response = await fetch('/api/stock/summary', { credentials: 'same-origin' });
     if (!response.ok) return;
-    const summary = (await response.json()) as { soon: number; expired: number };
+    const summary = (await response.json()) as { today: number; soon: number; expired: number };
     await applyBadge(badgeCount(summary), self.navigator as never);
   } catch {
     // Offline or signed out: the badge stays as it was.

@@ -355,7 +355,9 @@ test('console : l’admin crée « Foyer Dupont » et un compte dedans ; ce comp
     await expect(member.locator('body')).not.toContainText(/foyer/i);
   }
   const me = await (await member.request.get('/api/auth/me')).json();
-  expect(Object.keys(me).sort()).toEqual(['id', 'role', 'username']);
+  // `dataScope` is an opaque hash of account and household (decision P4.4), never the household.
+  expect(Object.keys(me).sort()).toEqual(['dataScope', 'id', 'role', 'username']);
+  expect(me.dataScope).toMatch(/^[0-9a-f]{32}$/);
   expect(JSON.stringify(me)).not.toMatch(/household|foyer/i);
   await other.close();
 });

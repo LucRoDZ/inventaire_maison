@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AuthProvider } from '../../components/auth/AuthProvider';
+import { AppBadge } from '../../components/pwa/AppBadge';
 import { InstallSheet } from '../../components/pwa/InstallSheet';
 
 /**
@@ -11,6 +12,7 @@ export default function ScanLayout({ children }: { children: ReactNode }) {
     <AuthProvider>
       <div className="bg-ink fixed inset-0 z-20 flex flex-col">{children}</div>
       <InstallSheet />
+      <AppBadge />
     </AuthProvider>
   );
 }

@@ -275,11 +275,11 @@ export function ScanFlow({
     setNotice(null);
   };
 
-  const added = (info: AddedInfo, scanNext: boolean) => {
+  // The full-screen scanner stays on after an add: it is the screen for scanning (decision P4.14).
+  const added = (info: AddedInfo) => {
     pushSession(info.undo);
     setToast({ ...info, undo: () => undoLast() });
     setStep({ name: 'scanning' });
-    if (!scanNext) controls.current?.stopCamera();
   };
 
   const attach = async (picked: ProductDto, barcode: string) => {
@@ -403,7 +403,7 @@ export function ScanFlow({
           categories={refs.categories}
           locations={refs.locations}
           origin={origin}
-          onAdded={(info) => added(info, true)}
+          onAdded={(info) => added(info)}
           onMore={() => setStep({ ...step, full: true })}
           onClose={() => setStep({ name: 'scanning' })}
         />

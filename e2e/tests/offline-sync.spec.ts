@@ -1,12 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signIn } from './helpers';
+import { ensureAccountInOwnHousehold, signIn } from './helpers';
 
 // The queue lives in IndexedDB and the shell comes from the service worker: Chromium only.
 test.skip(({ browserName }) => browserName !== 'chromium', 'Chromium uniquement');
 
 const baseURL = process.env['E2E_BASE_URL'] ?? 'http://localhost:3000';
 const headers = { Origin: baseURL };
-const BARCODE = '4006381333931';
+// Its own household and product: nothing it creates may show up in the other specs (shared database).
+const BARCODE = '3760009898981';
+const USER = 'offsync';
+const PASSWORD = 'offline-sync-e2e-password';
+
+async function signInOwnHousehold(page: Page) {
+  await ensureAccountInOwnHousehold(baseURL, USER, PASSWORD, 'Foyer hors ligne');
+  await signIn(page, USER, PASSWORD);
+}
 
 /** Reads the offline database of the page: queue length and whether a catalogue is stored. */
 async function offlineState(page: Page) {
@@ -63,7 +71,7 @@ async function createKnownProduct(page: Page): Promise<number> {
   const created = await page.request.post('/api/products', {
     headers,
     data: {
-      name: 'Pâtes hors ligne',
+      name: 'Lentilles corail hors ligne',
       barcode: BARCODE,
       categoryId: categories.find((c) => !c.isFallback)!.id,
       defaultLocationId: places.find((p) => p.name === 'Frigo')!.id,
@@ -86,7 +94,7 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
   page,
   context,
 }) => {
-  await signIn(page);
+  await signInOwnHousehold(page);
   const productId = await createKnownProduct(page);
 
   // The catalogue is downloaded when the app opens; the shell is cached by the service worker.
@@ -104,7 +112,7 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
   await expect(page.getByText('Hors ligne : le scan est gardé sur cet appareil')).toBeVisible();
   expect((await offlineState(page))?.ops).toBe(1);
 
-  await page.getByRole('link', { name: 'Inventaire' }).click();
+  // The badge is on the scanner itself (no bottom bar on the full-screen scanner).
   await expect(page.getByRole('link', { name: 'À synchroniser (1)' })).toBeVisible();
 
   await context.setOffline(false);
@@ -114,7 +122,7 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
 });
 
 test('la déconnexion vide la file et le cache de l’appareil', async ({ page, context }) => {
-  await signIn(page);
+  await signInOwnHousehold(page);
   await createKnownProduct(page).catch(() => undefined);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
@@ -130,7 +138,7 @@ test('la déconnexion vide la file et le cache de l’appareil', async ({ page, 
     .poll(() => offlineState(page))
     .toMatchObject({ unknown: 1, catalog: true, scope: true });
 
-  await page.getByRole('link', { name: 'Plus' }).click();
+  await page.goto('/plus');
   await page.getByRole('button', { name: 'Se déconnecter' }).click();
   await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
   expect(await offlineState(page)).toMatchObject({

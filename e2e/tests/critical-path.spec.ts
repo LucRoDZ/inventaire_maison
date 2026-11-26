@@ -68,7 +68,9 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
 
   // 4. Quantity change from the list view.
   const nav = page.getByRole('navigation', { name: 'Navigation principale' });
-  await nav.getByRole('link', { name: 'Inventaire' }).click();
+  // Closing the full-screen scanner (no bottom bar there) leads to the inventory.
+  await page.getByRole('button', { name: 'Fermer le scanner' }).click();
+  await expect(page).toHaveURL(/\/inventaire$/);
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
   await filterListByFurniture(page, /^Frigo/);
   const card = page.locator('article').filter({ hasText: scanned.name });
