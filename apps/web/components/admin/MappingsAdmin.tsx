@@ -106,7 +106,7 @@ function MappingRow({
       className="border-line flex flex-col gap-2 rounded-xl border bg-white p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-bold break-all">{mapping.offTag}</span>
+        <span className="text-ink font-semibold break-all">{mapping.offTag}</span>
         <span className="text-small">{categoryName}</span>
       </div>
       {editing ? (
@@ -144,12 +144,13 @@ function MappingRow({
           </div>
         </form>
       ) : (
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setEditing(true)}>
+        <div className="flex gap-6">
+          <Button variant="secondary" className="px-0!" onClick={() => setEditing(true)}>
             Modifier
           </Button>
           <Button
             variant="secondary"
+            className="px-0!"
             disabled={busy}
             onClick={() =>
               void run(() => api.deleteMapping(mapping.id), 'Correspondance supprimée.')
@@ -222,7 +223,7 @@ function AddMappingForm({
         onChange={setCategoryId}
         label="Catégorie du nouveau tag"
       />
-      <Button type="submit" variant="add" disabled={busy || categories.length === 0}>
+      <Button type="submit" variant="primary" disabled={busy || categories.length === 0}>
         Ajouter la correspondance
       </Button>
     </form>
@@ -271,7 +272,7 @@ export function MappingsAdmin({ api }: { api: Api }) {
         </p>
       ) : null}
       <section aria-labelledby="ajout" className="flex flex-col gap-2">
-        <h2 id="ajout" className="text-label">
+        <h2 id="ajout" className="text-card-title">
           Ajouter une correspondance
         </h2>
         {categories.length > 0 ? (
@@ -279,7 +280,7 @@ export function MappingsAdmin({ api }: { api: Api }) {
         ) : null}
       </section>
       <section aria-labelledby="liste" className="flex flex-col gap-2">
-        <h2 id="liste" className="text-label">
+        <h2 id="liste" className="text-card-title">
           Correspondances ({visible.length})
         </h2>
         <label className="flex flex-col gap-1">

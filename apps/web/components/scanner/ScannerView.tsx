@@ -196,14 +196,14 @@ export function ScannerView({
             type="button"
             aria-pressed={mode === value}
             onClick={() => onModeChange(value)}
-            className={`tap-target flex-1 rounded-lg font-bold ${mode === value ? 'bg-indigo text-white' : 'text-indigo-mid'}`}
+            className={`tap-target flex-1 rounded-lg font-semibold ${mode === value ? 'bg-white text-indigo shadow-card' : 'text-indigo-mid hover:text-indigo'}`}
           >
             {label}
           </button>
         ))}
       </div>
 
-      <div className="rounded-card bg-indigo relative aspect-[4/3] overflow-hidden">
+      <div className="rounded-card bg-ink relative aspect-[4/3] overflow-hidden">
         <video
           ref={videoRef}
           playsInline
@@ -218,7 +218,11 @@ export function ScannerView({
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Button variant="add" disabled={phase.name === 'starting'} onClick={() => void start()}>
+            <Button
+              variant="outline"
+              disabled={phase.name === 'starting'}
+              onClick={() => void start()}
+            >
               <ScanBarcode size={20} aria-hidden="true" />
               {phase.name === 'starting' ? 'Démarrage…' : 'Scanner'}
             </Button>

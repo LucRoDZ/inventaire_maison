@@ -72,9 +72,10 @@ function CategoryRow({
     >
       <div className="flex items-center gap-2">
         <Icon size={20} aria-hidden="true" className="text-indigo-mid" />
-        <span className="flex-1 font-bold">{category.name}</span>
+        <span className="text-ink min-w-0 flex-1 leading-5 font-semibold">{category.name}</span>
         <Button
           variant="secondary"
+          className="px-0!"
           aria-label={`Monter ${category.name}`}
           disabled={index === 0}
           onClick={() => onMove(-1)}
@@ -83,6 +84,7 @@ function CategoryRow({
         </Button>
         <Button
           variant="secondary"
+          className="px-0!"
           aria-label={`Descendre ${category.name}`}
           disabled={index === count - 1}
           onClick={() => onMove(1)}
@@ -90,7 +92,7 @@ function CategoryRow({
           <ArrowDown size={18} aria-hidden="true" />
         </Button>
         {mode === 'idle' ? (
-          <Button variant="secondary" onClick={() => setMode('edit')}>
+          <Button variant="secondary" className="px-2!" onClick={() => setMode('edit')}>
             Modifier
           </Button>
         ) : null}
@@ -217,7 +219,7 @@ function AddCategoryForm({
         />
       </label>
       <IconPicker value={icon} onChange={setIcon} label="Icône de la nouvelle catégorie" />
-      <Button type="submit" variant="add" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         Ajouter la catégorie
       </Button>
     </form>

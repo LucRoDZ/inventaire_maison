@@ -64,7 +64,7 @@ export function InstallSheet() {
           {mode === 'firefox-android' ? <BrowserInstallHelp /> : null}
           <div className="mt-3 flex flex-wrap gap-2">
             {mode === 'prompt' ? (
-              <Button variant="add" onClick={() => void promptInstall()}>
+              <Button variant="primary" onClick={() => void promptInstall()}>
                 Installer
               </Button>
             ) : null}

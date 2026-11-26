@@ -50,7 +50,7 @@ function MenuItem({
         // aria-disabled, not disabled: the item stays reachable and says why it does nothing.
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : onClick}
-        className="tap-target text-indigo hover:bg-lavender flex w-full items-center gap-3 rounded-xl px-3 text-left font-bold transition-colors duration-150 ease-out aria-disabled:opacity-50"
+        className="tap-target text-indigo hover:bg-lavender flex w-full items-center gap-3 rounded-xl px-3 text-left font-semibold transition-colors duration-150 ease-out aria-disabled:opacity-50"
       >
         <span aria-hidden="true" className="text-indigo-mid inline-flex shrink-0">
           {icon}

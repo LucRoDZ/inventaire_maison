@@ -565,7 +565,7 @@ export function LocationsAdmin({ api = placesApi }: { api?: Api }) {
           {count} {count > 1 ? 'meubles' : 'meuble'} sur {MAX_LOCATIONS_PER_HOUSEHOLD} possibles
         </p>
         {locations !== null && count < MAX_LOCATIONS_PER_HOUSEHOLD ? (
-          <Button variant="add" aria-haspopup="dialog" onClick={() => setCreating(true)}>
+          <Button variant="primary" aria-haspopup="dialog" onClick={() => setCreating(true)}>
             <Plus size={20} aria-hidden="true" />
             Ajouter un meuble
           </Button>

@@ -131,7 +131,7 @@ export function ProductSheet({
             aria-label="Ajouter une unité"
             disabled={busy}
             onClick={() => void change(1)}
-            className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full"
+            className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line"
           >
             <Plus size={20} aria-hidden="true" />
           </button>
@@ -149,12 +149,12 @@ export function ProductSheet({
         ) : null}
 
         <div className="flex flex-col gap-2">
-          <Button variant="add" onClick={() => setMoving(true)}>
+          <Button variant="primary" onClick={() => setMoving(true)}>
             Déplacer vers…
           </Button>
           <Link
             href={`/produits/${tile.productId}`}
-            className="tap-target text-indigo-mid inline-flex items-center justify-center font-bold"
+            className="tap-target text-indigo-mid inline-flex items-center justify-center font-semibold"
           >
             Voir la fiche produit
           </Link>

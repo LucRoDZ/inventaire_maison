@@ -128,7 +128,7 @@ export function CatalogSearch({
             <p role="status" className="text-body">
               Aucun produit trouvé pour « {state.query} ».
             </p>
-            <Button variant="add" onClick={() => onCreate(state.query)}>
+            <Button variant="primary" onClick={() => onCreate(state.query)}>
               Créer ce produit
             </Button>
           </div>

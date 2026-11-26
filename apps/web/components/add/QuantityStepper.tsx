@@ -27,7 +27,7 @@ export function QuantityStepper({ value, onChange, min = 1, max = 999 }: Quantit
         aria-label="Augmenter la quantité"
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
-        className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full disabled:opacity-50"
+        className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line disabled:opacity-50"
       >
         <Plus size={20} aria-hidden="true" />
       </button>

@@ -823,6 +823,8 @@
 - 26/11/2026 : I11. Carte de meuble vide : « Vide » (comme les étagères), au lieu de « 0 article ». Pastille « bientôt périmé » au pied du dessin, hors du flux.
 - 26/11/2026 : I12. Captures avant et après publiées sur la branche orpheline `captures/interface-propre` (jamais fusionnée), pour ne pas alourdir `main`. E2E sur une « grande maison » par navigateur (8 meubles, 60 produits, `e2e/tests/big-house.ts`).
 
+- 26/11/2026 : U1. Passe de finition (demande de Lucas, « unslop »). Étiquettes en casse normale sans interlettrage (`--text-label` : 600 14 px, ink) ; graisses 400 à 600 (titres 600, plus de 700) ; titre des sous-écrans à 22 px (`--text-subtitle`). Les champs ne reprennent plus la graisse ni l'interlettrage de leur étiquette (règle de base dans `globals.css`). Bouton principal indigo partout (variante `add` ambre retirée, variante `outline` pour une seconde action) ; état désactivé en lavande, sans opacité. L'ambre ne marque plus que l'état actif (barre du bas, choix d'icône), les pastilles de quantité, le décompte des filtres et les dates proches. Boutons « + » ronds en lavande. Bascules Maison/Liste et Ajouter/Retirer : le choix actif est une surface blanche. Viseur du scanner en ink (une caméra), bouton blanc. Titres de section des écrans d'administration et de la fiche produit en titre de carte. Réversible : `tokens.css` et `Button.tsx`.
+
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
 

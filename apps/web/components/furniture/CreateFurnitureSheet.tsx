@@ -132,7 +132,7 @@ export function CreateFurnitureSheet({
               return (
                 <label
                   key={value}
-                  className="tap-target border-line text-indigo has-checked:border-indigo has-checked:bg-lavender has-focus-visible:outline-indigo-mid relative flex cursor-pointer items-center gap-2 rounded-xl border bg-white px-3 py-2 font-bold has-focus-visible:outline-2 has-focus-visible:outline-offset-2"
+                  className="tap-target border-line text-indigo has-checked:border-indigo has-checked:bg-lavender has-focus-visible:outline-indigo-mid relative flex cursor-pointer items-center gap-2 rounded-xl border bg-white px-3 py-2 font-semibold has-focus-visible:outline-2 has-focus-visible:outline-offset-2"
                 >
                   <input
                     // The checked card receives the focus when the sheet opens.
@@ -214,7 +214,7 @@ export function CreateFurnitureSheet({
                 setShelfCount((n) => Math.min(MAX_SHELVES_PER_LOCATION, n + 1));
                 setCountEdited(true);
               }}
-              className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full aria-disabled:opacity-50"
+              className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line aria-disabled:opacity-50"
             >
               <Plus size={20} aria-hidden="true" />
             </button>
@@ -229,7 +229,7 @@ export function CreateFurnitureSheet({
         ) : null}
 
         <div className="flex flex-col gap-2">
-          <Button type="submit" variant="add" aria-disabled={busy}>
+          <Button type="submit" variant="primary" aria-disabled={busy}>
             {busy ? 'Ajout…' : 'Ajouter le meuble'}
           </Button>
           <Button variant="secondary" onClick={onClose}>

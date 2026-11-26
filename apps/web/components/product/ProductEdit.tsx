@@ -160,7 +160,7 @@ export function ProductEdit({
           {message.text}
         </Callout>
       ) : null}
-      <Button type="submit" variant="add" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         {busy ? 'Enregistrement…' : 'Enregistrer'}
       </Button>
     </form>

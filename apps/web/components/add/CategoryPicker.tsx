@@ -55,7 +55,7 @@ export function CategoryPicker({
                 <span className="min-w-0 text-left leading-tight [font:var(--text-small)]">
                   {category.name}
                   {category.id === proposedId ? (
-                    <span className="block font-bold uppercase tracking-wide">Proposée</span>
+                    <span className="block font-semibold uppercase tracking-wide">Proposée</span>
                   ) : null}
                 </span>
               </span>

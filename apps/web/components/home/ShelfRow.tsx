@@ -81,7 +81,7 @@ export function ShelfRow({
                 aria-label={`Ajouter un produit sur ${shelf.name}`}
                 className="fx-plus tap-target text-indigo inline-flex items-center justify-center"
               >
-                <span className="bg-amber inline-flex h-7 w-7 items-center justify-center rounded-full">
+                <span className="border-line inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white">
                   <Plus size={18} aria-hidden="true" />
                 </span>
               </Link>
@@ -97,7 +97,9 @@ export function ShelfRow({
           )}
         </div>
         <div className="fx-line flex items-center gap-2">
-          <h3 className="text-label fx-shelf-name min-w-0 truncate">{shelf.name}</h3>
+          <h3 className="text-help text-indigo-mid fx-shelf-name font-semibold min-w-0 truncate">
+            {shelf.name}
+          </h3>
           {drawer ? (
             articles > 0 ? (
               <span className="fx-count text-help ml-auto shrink-0">

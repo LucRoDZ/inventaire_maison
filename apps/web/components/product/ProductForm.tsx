@@ -213,7 +213,7 @@ export function ProductForm({
         ) : null}
 
         <div className="flex flex-col gap-2">
-          <Button type="submit" variant="add" disabled={busy || !online}>
+          <Button type="submit" variant="primary" disabled={busy || !online}>
             {busy ? 'Enregistrement…' : 'Enregistrer et ajouter'}
           </Button>
           <Button variant="secondary" onClick={onCancel}>

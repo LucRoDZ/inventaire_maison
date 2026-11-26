@@ -22,7 +22,7 @@ export function StockCard({ item, onChange }: StockCardProps) {
         <IconBadge icon={categoryIcon(item.category.icon)} />
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="text-card-title truncate">{product.name}</h3>
+        <h3 className="text-ink truncate font-semibold">{product.name}</h3>
         <p className="text-small truncate">{[product.brand, place].filter(Boolean).join(' · ')}</p>
         <ExpiryBadge expiry={item.expiry} />
       </div>
@@ -35,18 +35,21 @@ export function StockCard({ item, onChange }: StockCardProps) {
           type="button"
           aria-label={`Retirer une unité de ${product.name}`}
           onClick={() => onChange(item, -1)}
-          className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full"
+          className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line"
         >
           <Minus size={18} aria-hidden="true" />
         </button>
-        <output aria-label="Quantité" className="text-card-title min-w-[2ch] text-center">
+        <output
+          aria-label="Quantité"
+          className="text-ink min-w-[2ch] text-center font-semibold tabular-nums"
+        >
           {item.quantity}
         </output>
         <button
           type="button"
           aria-label={`Ajouter une unité de ${product.name}`}
           onClick={() => onChange(item, 1)}
-          className="tap-target bg-amber text-indigo inline-flex items-center justify-center rounded-full"
+          className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line"
         >
           <Plus size={18} aria-hidden="true" />
         </button>

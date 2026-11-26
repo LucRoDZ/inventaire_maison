@@ -211,14 +211,14 @@ export function AddSheet({
 
         <div className="flex flex-col gap-2">
           <Button
-            variant="add"
+            variant="primary"
             disabled={busy || !online || !place}
             onClick={() => void submit(false)}
           >
             Ajouter
           </Button>
           <Button
-            variant="primary"
+            variant="outline"
             disabled={busy || !online || !place}
             onClick={() => void submit(true)}
           >

@@ -27,12 +27,14 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
       aria-label="Ajouter un produit non rangé"
       className="fx-plus tap-target text-indigo inline-flex shrink-0 items-center justify-center"
     >
-      <span className="bg-amber inline-flex h-7 w-7 items-center justify-center rounded-full">
+      <span className="border-line inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white">
         <Plus size={18} aria-hidden="true" />
       </span>
     </Link>
   );
-  const name = <h3 className="text-label fx-shelf-name shrink-0">Non rangé</h3>;
+  const name = (
+    <h3 className="text-help text-indigo-mid fx-shelf-name font-semibold shrink-0">Non rangé</h3>
+  );
   return (
     <DroppableShelf
       id={trayDropId(locationId)}

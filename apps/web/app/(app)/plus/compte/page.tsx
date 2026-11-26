@@ -9,18 +9,14 @@ export default function ComptePage() {
   return (
     <Screen title="Compte" back={{ href: '/plus', label: 'Plus' }}>
       {user ? (
-        <dl className="flex flex-col gap-1">
-          <div className="flex gap-2">
-            <dt className="text-label">Pseudo</dt>
-            <dd>{user.username}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-label">Rôle</dt>
-            <dd>{user.role === 'admin' ? 'Administrateur' : 'Membre'}</dd>
-          </div>
+        <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1">
+          <dt className="text-grey">Pseudo</dt>
+          <dd className="text-ink">{user.username}</dd>
+          <dt className="text-grey">Rôle</dt>
+          <dd className="text-ink">{user.role === 'admin' ? 'Administrateur' : 'Membre'}</dd>
         </dl>
       ) : null}
-      <h2 className="text-label">Changer le mot de passe</h2>
+      <h2 className="text-card-title mt-2">Changer le mot de passe</h2>
       <PasswordForm />
     </Screen>
   );

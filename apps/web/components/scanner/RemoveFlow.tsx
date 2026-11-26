@@ -161,7 +161,7 @@ export function RemoveFlow({ request, onSwitchToAdd, api = {} }: RemoveFlowProps
             Ce code n’est pas au catalogue. Rien n’a été créé.
           </Callout>
           <Button
-            variant="add"
+            variant="primary"
             className="self-start"
             onClick={() => onSwitchToAdd(feedback.result)}
           >

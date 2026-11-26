@@ -82,13 +82,13 @@ export default function ProduitPage() {
             <p className="text-small">Code-barres : {state.product.barcode}</p>
           ) : null}
           <section aria-labelledby="stock" className="flex flex-col gap-2">
-            <h2 id="stock" className="text-label">
+            <h2 id="stock" className="text-card-title">
               En stock
             </h2>
             <StockByLocation stock={state.product.stock} />
           </section>
           <section aria-labelledby="modifier" className="flex flex-col gap-2">
-            <h2 id="modifier" className="text-label">
+            <h2 id="modifier" className="text-card-title">
               Modifier
             </h2>
             {categories.length > 0 && locations.length > 0 ? (
@@ -109,7 +109,7 @@ export default function ProduitPage() {
             )}
           </section>
           <section aria-labelledby="historique" className="flex flex-col gap-2">
-            <h2 id="historique" className="text-label">
+            <h2 id="historique" className="text-card-title">
               Historique
             </h2>
             <MovementList key={version} productId={state.product.id} />

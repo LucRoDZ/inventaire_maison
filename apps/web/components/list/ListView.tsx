@@ -213,7 +213,7 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
               {!filtering ? (
                 <Link
                   href="/"
-                  className="tap-target bg-amber text-indigo inline-flex items-center rounded-xl px-4 font-bold"
+                  className="tap-target bg-indigo text-white inline-flex items-center rounded-xl px-4 font-semibold transition-colors duration-150 hover:bg-indigo-mid"
                 >
                   Scanner un produit
                 </Link>

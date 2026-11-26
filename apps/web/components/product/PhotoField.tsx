@@ -56,7 +56,7 @@ export function PhotoField({ file, onChange }: PhotoFieldProps) {
         ) : null}
         <label
           htmlFor={inputId}
-          className="tap-target text-indigo-mid inline-flex cursor-pointer items-center gap-2 font-bold"
+          className="tap-target text-indigo-mid inline-flex cursor-pointer items-center gap-2 font-semibold"
         >
           <Camera size={18} aria-hidden="true" />
           {file ? 'Changer la photo' : 'Ajouter une photo'}
@@ -64,7 +64,7 @@ export function PhotoField({ file, onChange }: PhotoFieldProps) {
         {file ? (
           <button
             type="button"
-            className="tap-target text-indigo-mid font-bold"
+            className="tap-target text-indigo-mid font-semibold"
             onClick={() => onChange(null)}
           >
             Retirer la photo
