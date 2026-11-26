@@ -118,7 +118,8 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
   await context.setOffline(false);
   await expect(page.getByRole('link', { name: /À synchroniser/ })).toHaveCount(0);
   await expect.poll(() => stockOf(page, productId)).toBe(1);
-  expect((await offlineState(page))?.ops).toBe(0);
+  // The server applies the operation before the device removes it from its queue.
+  await expect.poll(async () => (await offlineState(page))?.ops).toBe(0);
 });
 
 test('la déconnexion vide la file et le cache de l’appareil', async ({ page, context }) => {
