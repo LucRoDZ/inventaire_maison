@@ -17,7 +17,7 @@ async function signIn(page: Page, username = USERNAME, password = PASSWORD) {
 }
 
 test('sans session, toute page renvoie vers la connexion', async ({ page }) => {
-  for (const path of ['/', '/inventaire', '/plus']) {
+  for (const path of ['/', '/scanner', '/inventaire', '/plus']) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/connexion$/);
   }
@@ -34,16 +34,22 @@ test('un mauvais mot de passe affiche une erreur', async ({ page }) => {
 
 test('connexion, rechargement toujours connecté, onglets, déconnexion', async ({ page }) => {
   await signIn(page);
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/scanner$/);
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
 
   await page.reload();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/scanner$/);
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
 
+  // The scanner is full screen: no bottom bar. « Fermer le scanner » leaves it.
   const nav = page.getByRole('navigation', { name: 'Navigation principale' });
-  await expect(nav.getByRole('link', { name: 'Scanner' })).toHaveAttribute('aria-current', 'page');
-  await nav.getByRole('link', { name: 'Inventaire' }).click();
+  await expect(nav).toHaveCount(0);
+  await page.goto('/inventaire');
+  await expect(nav.getByRole('link', { name: 'Scanner' })).toHaveAttribute('href', '/scanner');
+  await nav.getByRole('link', { name: 'Scanner' }).click();
+  await expect(page).toHaveURL(/\/scanner$/);
+  await page.getByRole('button', { name: 'Fermer le scanner' }).click();
+  await expect(page).toHaveURL(/\/inventaire$/);
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(nav.getByRole('link', { name: 'Inventaire' })).toHaveAttribute(
     'aria-current',

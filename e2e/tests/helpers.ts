@@ -41,13 +41,22 @@ export async function signIn(
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
 }
 
-/** Starts the scanner (fake engine in end-to-end builds) and waits until it accepts codes. */
+/** The scanner opens its camera by itself (fake engine in end-to-end builds): waits until it accepts codes. */
 export async function startScanner(page: Page) {
-  await page.getByRole('button', { name: 'Scanner', exact: true }).click();
   await page.waitForFunction(() => typeof (window as E2EWindow).__e2eScan === 'function');
 }
 
+/** The scanner ignores the same code read again within 1.5 s: wait that long, as a person would. */
+const SAME_CODE_DELAY_MS = 1600;
+const lastPushed = new WeakMap<Page, { code: string; at: number }>();
+
 export async function pushCode(page: Page, code: string) {
+  const last = lastPushed.get(page);
+  if (last?.code === code) {
+    const wait = SAME_CODE_DELAY_MS - (Date.now() - last.at);
+    if (wait > 0) await page.waitForTimeout(wait);
+  }
+  lastPushed.set(page, { code, at: Date.now() });
   await page.evaluate((value) => (window as E2EWindow).__e2eScan?.(value), code);
 }
 

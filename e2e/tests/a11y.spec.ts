@@ -37,7 +37,7 @@ const locationPath =
   };
 
 const SCREENS: Screen[] = [
-  { name: 'Scanner', path: '/' },
+  { name: 'Scanner', path: '/scanner' },
   { name: 'Inventaire, vue Maison', path: '/inventaire' },
   { name: 'Inventaire, vue Liste', path: '/inventaire', list: true },
   { name: 'Meuble ouvert', path: firstLocationPath, furniture: true },
@@ -221,7 +221,10 @@ test.describe('audit à 360 px', () => {
   });
 
   test('marges de zone sûre sur la barre d’onglets', async ({ page }) => {
-    await open(page, SCREENS[0]!);
+    await open(
+      page,
+      SCREENS.find((screen) => screen.path === '/inventaire')!,
+    );
     const padding = await page.evaluate(() => {
       const nav = document.querySelector('nav[aria-label="Navigation principale"]')!;
       return getComputedStyle(nav).paddingBottom;
