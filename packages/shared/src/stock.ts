@@ -53,6 +53,10 @@ export interface StockAdjustResponse {
   /** The line after the change, or null when it reached zero and was deleted. */
   item: StockLineDto | null;
   movement: StockMovementDto;
+  /** Phase 5: units of this product left in the household, every location included. */
+  productTotal: number;
+  /** Phase 5: the product has a line on the shopping list (open or checked, any origin). */
+  onShoppingList: boolean;
 }
 
 export const STOCK_SORTS = ['name', 'added', 'expiry'] as const;
@@ -137,6 +141,10 @@ export interface StockRemoveResponse {
   product: { id: number; name: string };
   location: { id: number; name: string };
   shelf: { id: number; name: string } | null;
+  /** Phase 5: units of this product left in the household, every location included. */
+  productTotal: number;
+  /** Phase 5: the product has a line on the shopping list (open or checked, any origin). */
+  onShoppingList: boolean;
 }
 
 export interface MovementHistoryItemDto {

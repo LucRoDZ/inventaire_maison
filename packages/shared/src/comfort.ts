@@ -60,6 +60,11 @@ export interface ShoppingItemCreateInput {
   quantity?: number;
   amount?: number | null;
   unit?: QuantityUnit | null;
+  /**
+   * Phase 5 (out-of-stock prompt): only if the product has no line yet, open or checked. Already
+   * there: 409 « Déjà dans vos courses », nothing changes (without it, an open line is incremented).
+   */
+  ifAbsent?: boolean;
 }
 
 /** `PATCH /shopping/:id`. */
