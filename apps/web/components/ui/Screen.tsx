@@ -18,6 +18,8 @@ interface ScrollZoneProps {
   label: string;
   /** Key of the remembered scroll position; none: the zone starts at the top. */
   memoryKey?: string;
+  /** Extra room at the end of the zone, for a floating button that must never hide the content. */
+  floatingAction?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -28,7 +30,13 @@ interface ScrollZoneProps {
  * top. Its scroll position is remembered under `memoryKey` and given back when it comes again,
  * as soon as the content is tall enough.
  */
-export function ScrollZone({ label, memoryKey, children, className = '' }: ScrollZoneProps) {
+export function ScrollZone({
+  label,
+  memoryKey,
+  floatingAction = false,
+  children,
+  className = '',
+}: ScrollZoneProps) {
   const zone = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   /** Set by the first scroll of the person: a remembered position never overrides it. */
@@ -93,7 +101,9 @@ export function ScrollZone({ label, memoryKey, children, className = '' }: Scrol
       }}
       className={`scroll-zone min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 ${className}`}
     >
-      <div className="flex flex-col gap-4 pt-1 pb-6">{children}</div>
+      <div className={`flex flex-col gap-4 pt-1 ${floatingAction ? 'pb-24' : 'pb-6'}`}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -110,6 +120,8 @@ interface ScreenProps {
   /** Name of the scroll region; the title when it is text. */
   zoneLabel?: string;
   memoryKey?: string;
+  /** A floating button sits over the zone: it keeps room at the end. */
+  floatingAction?: boolean;
   children: ReactNode;
 }
 
@@ -124,6 +136,7 @@ export function Screen({
   header,
   zoneLabel,
   memoryKey,
+  floatingAction,
   children,
 }: ScreenProps) {
   return (
@@ -152,6 +165,7 @@ export function Screen({
         key={memoryKey}
         label={zoneLabel ?? (typeof title === 'string' ? title : 'Contenu')}
         memoryKey={memoryKey}
+        floatingAction={floatingAction}
       >
         {children}
       </ScrollZone>

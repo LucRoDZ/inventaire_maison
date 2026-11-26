@@ -5,6 +5,7 @@ import {
   furnitureSettled,
   pushCode,
   signIn,
+  openScanner,
   startScanner,
   filterListByFurniture,
 } from './helpers';
@@ -40,6 +41,7 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
 
   // 1. Sign in.
   await signIn(page);
+  await openScanner(page);
 
   // 2. Manual add, without barcode.
   await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
@@ -67,7 +69,6 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   await expect.poll(() => quantity(scanned.name)).toBe(2);
 
   // 4. Quantity change from the list view.
-  const nav = page.getByRole('navigation', { name: 'Navigation principale' });
   // Closing the full-screen scanner (no bottom bar there) leads to the inventory.
   await page.getByRole('button', { name: 'Fermer le scanner' }).click();
   await expect(page).toHaveURL(/\/inventaire$/);
@@ -128,8 +129,7 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   await other.close();
 
   // 8. Remove down to zero in Retirer mode.
-  await nav.getByRole('link', { name: 'Scanner' }).click();
-  await startScanner(page);
+  await openScanner(page);
   await page.getByRole('button', { name: 'Retirer', exact: true }).click();
   for (const left of [2, 1, 0]) {
     await pushCode(page, scanned.code);

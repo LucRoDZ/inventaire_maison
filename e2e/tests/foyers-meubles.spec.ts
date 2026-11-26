@@ -5,7 +5,7 @@ import {
   furnitureSettled,
   pushCode,
   signIn,
-  startScanner,
+  openScanner,
 } from './helpers';
 
 /**
@@ -202,7 +202,7 @@ const SCAN = {
 
 async function scanAndAdd(page: Page, code: string, name: string) {
   await page.goto('/');
-  await startScanner(page);
+  await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog');
   await expect(sheet.getByRole('heading', { name })).toBeVisible();

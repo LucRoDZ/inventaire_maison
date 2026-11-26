@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { pushCode, signIn, startScanner } from './helpers';
+import { openScanner, pushCode, signIn, startScanner } from './helpers';
 
 type CameraWindow = { __e2eCameraActive?: boolean; __e2eCameraError?: string };
 
@@ -67,7 +67,7 @@ const cameraActive = (page: Page) =>
 
 test('le scanner occupe tout l’écran, sans barre du bas', async ({ page }) => {
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   await expect(page).toHaveURL(/\/scanner$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Scanner' })).toBeAttached();
   await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
@@ -90,8 +90,11 @@ test('le scanner occupe tout l’écran, sans barre du bas', async ({ page }) =>
 test('fermer le scanner revient à l’écran précédent et coupe la caméra', async ({ page }) => {
   await signIn(page);
   await page.goto('/inventaire');
-  const nav = page.getByRole('navigation', { name: 'Navigation principale' });
-  await nav.getByRole('link', { name: 'Scanner' }).click();
+  await page.getByRole('button', { name: 'Ajouter un produit' }).click();
+  await page
+    .getByRole('dialog', { name: 'Ajouter' })
+    .getByRole('button', { name: /^Scanner/ })
+    .click();
   await startScanner(page);
   expect(await cameraActive(page)).toBe(true);
 
@@ -102,7 +105,7 @@ test('fermer le scanner revient à l’écran précédent et coupe la caméra', 
 
 test('la caméra se coupe quand l’onglet passe en arrière-plan', async ({ page }) => {
   await signIn(page);
-  await startScanner(page);
+  await openScanner(page);
   expect(await cameraActive(page)).toBe(true);
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });

@@ -10,23 +10,16 @@ beforeEach(() => {
 });
 
 describe('BottomNav', () => {
-  it('shows the four tabs in order', () => {
+  it('shows the three tabs in order', () => {
     render(<BottomNav />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.textContent)).toEqual(['Scanner', 'Inventaire', 'Courses', 'Plus']);
-    expect(links.map((l) => l.getAttribute('href'))).toEqual([
-      '/scanner',
-      '/inventaire',
-      '/courses',
-      '/plus',
-    ]);
+    expect(links.map((l) => l.textContent)).toEqual(['Inventaire', 'Courses', 'Plus']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/inventaire', '/courses', '/plus']);
   });
 
-  it('marks only the Scanner tab as current on /scanner', () => {
-    pathname = '/scanner';
+  it('has no Scanner tab: the scanner opens from the Ajouter button', () => {
     render(<BottomNav />);
-    expect(screen.getByRole('link', { name: 'Scanner' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Inventaire' })).not.toHaveAttribute('aria-current');
+    expect(screen.queryByRole('link', { name: 'Scanner' })).toBeNull();
   });
 
   it('keeps Inventaire current on a sub-page', () => {
@@ -36,7 +29,7 @@ describe('BottomNav', () => {
       'aria-current',
       'page',
     );
-    expect(screen.getByRole('link', { name: 'Scanner' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: 'Courses' })).not.toHaveAttribute('aria-current');
   });
 
   it('highlights the active tab in amber', () => {
@@ -54,8 +47,8 @@ describe('BottomNav', () => {
 
 describe('isActive', () => {
   it('matches the page itself and its sub-pages', () => {
-    expect(isActive('/scanner', '/scanner')).toBe(true);
-    expect(isActive('/plus', '/scanner')).toBe(false);
+    expect(isActive('/courses', '/courses')).toBe(true);
+    expect(isActive('/plus', '/courses')).toBe(false);
   });
 
   it('does not confuse similar prefixes', () => {
