@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 import { InstallCapture } from '../components/pwa/InstallCapture';
 import { OfflineCallout } from '../components/pwa/OfflineCallout';
 import { RegisterSW } from '../components/pwa/RegisterSW';
+import { ThemeSync } from '../components/pwa/ThemeSync';
+import { THEME_INIT_SCRIPT } from '../lib/theme';
 import startupImages from '../lib/startup-images.json';
 import { APP_NAME, APP_SHORT_NAME, THEME_COLOR_DARK, THEME_COLOR_LIGHT } from './manifest';
 
@@ -46,7 +48,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="font-sans">
         <div className="mx-auto flex w-full max-w-xl shrink-0 flex-col gap-2 px-4 pt-4 empty:hidden">
           <OfflineCallout />
@@ -54,6 +59,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Silent update: renders nothing, never asks anything. */}
         <RegisterSW />
         <InstallCapture />
+        <ThemeSync />
         {children}
       </body>
     </html>
