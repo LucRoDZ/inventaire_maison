@@ -1,6 +1,7 @@
 import type { AuthUser } from '@inventaire/shared';
 import { ApiError, apiFetch } from './api';
 import { clearAppCaches } from './clear-caches';
+import { unsubscribeThisDevice } from './push';
 
 /**
  * Signs in. The caches of the device are emptied first: another account, maybe of another
@@ -17,6 +18,8 @@ export async function login(username: string, password: string): Promise<AuthUse
 }
 
 export async function logout(): Promise<void> {
+  // This device stops receiving the household's notifications (needs the session: before the call).
+  await unsubscribeThisDevice().catch(() => undefined);
   try {
     await apiFetch('/auth/logout', { method: 'POST' });
   } finally {
