@@ -13,7 +13,7 @@ import {
   type ShoppingOrigin,
   type ShoppingStoreResponse,
 } from '@inventaire/shared';
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 import type { Transaction } from '../database/database.module';
 import { products, shoppingItems, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
@@ -305,6 +305,7 @@ export class ShoppingService {
           and(
             eq(stockMovements.householdId, householdId),
             eq(stockMovements.reason, 'consumed'),
+            lt(stockMovements.delta, 0),
             sql`${stockMovements.createdAt} >= now() - make_interval(days => ${RECENT_PRODUCTS_DAYS})`,
           ),
         )

@@ -46,8 +46,13 @@ export function describeMovement(item: MovementHistoryItemDto): MovementSentence
   const expiry = item.expiryDate
     ? ` · limite le ${item.expiryDate.split('-').reverse().join('/')}`
     : '';
+  // A positive « consumed » or « wasted » is the undo of that removal.
+  const undo = incoming && (item.reason === 'consumed' || item.reason === 'wasted');
+  const why = undo
+    ? `Annulation : ${lowerFirst(REASON_LABELS[item.reason])}`
+    : REASON_LABELS[item.reason];
   return {
     headline,
-    detail: `${REASON_LABELS[item.reason]} · ${formatMovementDate(item.createdAt)}${expiry}`,
+    detail: `${why} · ${formatMovementDate(item.createdAt)}${expiry}`,
   };
 }

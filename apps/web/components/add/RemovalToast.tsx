@@ -58,7 +58,9 @@ export function RemovalToast({
     expiryDate: plan.expiryDate,
   };
 
-  const putBack = () => adjust({ ...key, delta: plan.units, reason: 'correction' });
+  // The undo carries the reason of the removal: statistics net it out.
+  const putBack = (undone: RemovalReason = reason) =>
+    adjust({ ...key, delta: plan.units, reason: undone });
 
   const undo = async () => {
     try {
@@ -72,7 +74,7 @@ export function RemovalToast({
 
   const throwAway = async () => {
     try {
-      await putBack();
+      await putBack('consumed');
       await adjust({ ...key, delta: -plan.units, reason: 'wasted' });
       setReason('wasted');
     } catch (error) {

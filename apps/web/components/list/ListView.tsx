@@ -271,7 +271,8 @@ export function ListView({
             await (apiRef.current.adjust ?? adjustStock)({
               ...lineKey(item),
               delta: item.quantity,
-              reason: 'correction',
+              // Same reason as the removal: statistics net the undo out.
+              reason,
             });
           }
         },

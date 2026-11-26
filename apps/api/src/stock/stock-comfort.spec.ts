@@ -121,20 +121,24 @@ describe('consumed and wasted reasons', () => {
     productId = await line('2026-06-10', 5);
   });
 
-  it('adjusts with consumed or wasted for a negative delta only', async () => {
+  it('adjusts with consumed or wasted, a positive delta being the undo netted out by statistics', async () => {
     const base = { productId, locationId: fridge, expiryDate: '2026-06-10' };
     const eaten = await post('/api/stock/adjust').send({ ...base, delta: -1, reason: 'consumed' });
     expect(eaten.status).toBe(200);
     expect(eaten.body.movement.reason).toBe('consumed');
     const thrown = await post('/api/stock/adjust').send({ ...base, delta: -2, reason: 'wasted' });
     expect(thrown.body.movement).toMatchObject({ reason: 'wasted', delta: -2 });
-    for (const reason of ['consumed', 'wasted']) {
-      expect((await post('/api/stock/adjust').send({ ...base, delta: 1, reason })).status).toBe(
-        400,
-      );
-    }
+    // "Jeté" chosen after a "Consommé": the consumed unit is put back with its own reason.
+    const undone = await post('/api/stock/adjust').send({ ...base, delta: 1, reason: 'consumed' });
+    expect(undone.status).toBe(200);
+    const stats = await get('/api/stats');
+    expect(stats.body).toMatchObject({ consumed: 0, wasted: 2 });
+    expect(
+      (await post('/api/stock/adjust').send({ ...base, delta: 1, reason: 'scan_remove' })).status,
+    ).toBe(400);
     const history = await get(`/api/products/${productId}/movements`);
     expect(history.body.items.map((i: { reason: string }) => i.reason)).toEqual([
+      'consumed',
       'wasted',
       'consumed',
     ]);
