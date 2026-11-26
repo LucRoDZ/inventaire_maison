@@ -65,12 +65,12 @@ function setup(options: {
 describe('RemoveFlow', () => {
   it('removes one unit of a known product and says where from', async () => {
     const { fetchScan, removeOne } = setup({});
-    expect(await screen.findByRole('status')).toHaveTextContent('Retiré : 1 × Lait, Frigo');
+    expect(await screen.findByRole('status')).toHaveTextContent('Consommé : 1 × Lait, Frigo');
     expect(fetchScan).toHaveBeenCalledWith(result.code, { catalogOnly: true });
     expect(removeOne).toHaveBeenCalledWith(7);
   });
 
-  it('undoes with a +1 correction on the very line that was touched', async () => {
+  it('undoes with a +1 of the same reason on the very line that was touched', async () => {
     const { adjust } = setup({});
     await userEvent.click(await screen.findByRole('button', { name: 'Annuler' }));
     expect(adjust).toHaveBeenCalledWith({
@@ -79,9 +79,25 @@ describe('RemoveFlow', () => {
       shelfId: 21,
       expiryDate: '2026-12-01',
       delta: 1,
-      reason: 'correction',
+      reason: 'consumed',
     });
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+  });
+
+  it('offers « Jeté » as a visible second choice: put back, then removed as wasted', async () => {
+    const { adjust } = setup({});
+    await userEvent.click(await screen.findByRole('button', { name: 'Jeté' }));
+    await waitFor(() => expect(adjust).toHaveBeenCalledTimes(2));
+    expect(adjust).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ delta: 1, reason: 'consumed' }),
+    );
+    expect(adjust).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ productId: 7, delta: -1, reason: 'wasted' }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent('Jeté : 1 × Lait');
+    expect(screen.queryByRole('button', { name: 'Jeté' })).toBeNull();
   });
 
   it('says « Pas en stock » when the product is known but empty', async () => {

@@ -10,6 +10,8 @@ interface UndoToastProps {
   /** Called when the delay ends without a tap on Annuler. */
   onExpire: () => void;
   durationMs?: number;
+  /** A second choice shown before Annuler (44 px), e.g. « Jeté ». */
+  secondary?: { label: string; onClick: () => void };
 }
 
 /** Confirmation with an Annuler button for 5 s. */
@@ -21,6 +23,7 @@ export function UndoToast({
   onUndo,
   onExpire,
   durationMs = UNDO_DURATION_MS,
+  secondary,
 }: UndoToastProps) {
   const expire = useRef(onExpire);
   useEffect(() => {
@@ -36,7 +39,16 @@ export function UndoToast({
       role="status"
       className="rounded-card shadow-card bg-indigo fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-center justify-between gap-3 p-4 text-white"
     >
-      <span>{message}</span>
+      <span className="min-w-0 flex-1">{message}</span>
+      {secondary ? (
+        <button
+          type="button"
+          onClick={secondary.onClick}
+          className="tap-target px-2 font-semibold text-white underline underline-offset-4"
+        >
+          {secondary.label}
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={onUndo}

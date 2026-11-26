@@ -1,4 +1,10 @@
-import type { MovementHistoryResponse, ProductDetailDto, ProductDto } from '@inventaire/shared';
+import type {
+  MovementHistoryResponse,
+  ProductDetailDto,
+  ProductDto,
+  ProductMergeResponse,
+  QuantityUnit,
+} from '@inventaire/shared';
 import { apiFetch } from './api';
 
 export interface NewProductInput {
@@ -32,6 +38,11 @@ export interface ProductPatch {
   /** Sending it, even unchanged, confirms the category (`category_guessed` becomes false). */
   categoryId?: number;
   defaultLocationId?: number | null;
+  /** Below this total stock the product goes to the shopping list; null: none. */
+  minQuantity?: number | null;
+  /** Net content of one unit; both null to forget it. */
+  amount?: number | null;
+  unit?: QuantityUnit | null;
 }
 
 export const updateProduct = (id: number, patch: ProductPatch): Promise<ProductDto> =>
@@ -44,3 +55,14 @@ export const fetchMovements = (
   apiFetch<MovementHistoryResponse>(
     `/products/${id}/movements?limit=${limit}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
   );
+
+/** The product of the URL is merged into `intoProductId`, which is kept. */
+export const mergeProduct = (id: number, intoProductId: number): Promise<ProductMergeResponse> =>
+  apiFetch<ProductMergeResponse>(`/products/${id}/merge`, {
+    method: 'POST',
+    body: { intoProductId },
+  });
+
+/** Attaches a scanned barcode to a product created by hand. */
+export const attachBarcode = (id: number, barcode: string): Promise<ProductDto> =>
+  apiFetch<ProductDto>(`/products/${id}/barcode`, { method: 'POST', body: { barcode } });

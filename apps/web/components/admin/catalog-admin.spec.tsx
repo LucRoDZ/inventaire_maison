@@ -8,9 +8,16 @@ import { CategoriesAdmin } from './CategoriesAdmin';
 import { MappingsAdmin } from './MappingsAdmin';
 
 const categories: CategoryDto[] = [
-  { id: 1, name: 'Laitier', icon: 'milk', sortOrder: 0, isFallback: false },
-  { id: 2, name: 'Boissons', icon: 'cup-soda', sortOrder: 1, isFallback: false },
-  { id: 3, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true },
+  { id: 1, name: 'Laitier', icon: 'milk', sortOrder: 0, isFallback: false, shelfLifeDays: null },
+  {
+    id: 2,
+    name: 'Boissons',
+    icon: 'cup-soda',
+    sortOrder: 1,
+    isFallback: false,
+    shelfLifeDays: null,
+  },
+  { id: 3, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true, shelfLifeDays: null },
 ];
 const mappings: OffCategoryMapDto[] = [
   { id: 20, offTag: 'en:cheeses', categoryId: 1 },
@@ -20,7 +27,13 @@ const mappings: OffCategoryMapDto[] = [
 function makeApi(over: Partial<CategoriesApi> = {}): CategoriesApi {
   return {
     fetchCategories: vi.fn(async () => categories),
-    createCategory: vi.fn(async (input) => ({ id: 9, sortOrder: 3, isFallback: false, ...input })),
+    createCategory: vi.fn(async (input) => ({
+      id: 9,
+      sortOrder: 3,
+      isFallback: false,
+      shelfLifeDays: null,
+      ...input,
+    })),
     updateCategory: vi.fn(async (id) => categories.find((c) => c.id === id)!),
     deleteCategory: vi.fn(async () => undefined),
     fetchMappings: vi.fn(async () => mappings),

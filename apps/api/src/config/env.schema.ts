@@ -1,6 +1,9 @@
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, USERNAME_PATTERN } from '@inventaire/shared';
 import { z } from 'zod';
 
+/** Compose passes an unset variable as an empty string: read it as absent. */
+const optionalText = z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional());
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
@@ -24,6 +27,13 @@ export const envSchema = z.object({
   IMAGES_DIR: z.string().min(1).default('./data/images'),
   /** Global limit per IP; the tests raise it so that their many requests from 127.0.0.1 pass. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(300),
+  /**
+   * Web Push (VAPID), generated locally with `npx web-push generate-vapid-keys`. Both absent: no
+   * notifications, the option is hidden. `VAPID_SUBJECT` is a `mailto:` or `https:` contact.
+   */
+  VAPID_PUBLIC_KEY: optionalText,
+  VAPID_PRIVATE_KEY: optionalText,
+  VAPID_SUBJECT: z.string().min(1).default('mailto:admin@localhost'),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

@@ -3,8 +3,10 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ClockModule } from './common/clock';
 import { HouseholdScopeMiddleware } from './common/household-context';
+import { PushModule } from './push/push.module';
 import { ProductsModule } from './products/products.module';
 import { ScanModule } from './scan/scan.module';
+import { ShoppingModule } from './shopping/shopping.module';
 import { StockModule } from './stock/stock.module';
 import { RateLimitModule } from './common/rate-limit.module';
 import { NotFoundModule } from './common/not-found.module';
@@ -15,6 +17,8 @@ import { HomeModule } from './home/home.module';
 import { HouseholdsModule } from './households/households.module';
 import { ImagesModule } from './images/images.module';
 import { LocationsModule } from './locations/locations.module';
+import { SettingsModule } from './settings/settings.module';
+import { StatsModule } from './stats/stats.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -31,8 +35,12 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     ScanModule,
     StockModule,
+    ShoppingModule,
     HomeModule,
     ImagesModule,
+    SettingsModule,
+    StatsModule,
+    PushModule,
     NotFoundModule,
   ],
   controllers: [HealthController],

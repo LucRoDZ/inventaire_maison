@@ -64,6 +64,8 @@ Toutes sont décrites dans `.env.example`. Ne versionne jamais `.env`. En produc
 | `COMPOSE_FILE` | Fichiers Compose utilisés (voir les deux modes de proxy) |
 | `COMPOSE_PROFILES` | `proxy` active Caddy embarqué ; vide derrière le nginx partagé |
 | `SHARED_PROXY_NETWORK` | Réseau Docker externe du nginx partagé (mode production uniquement) |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Clés Web Push des notifications (gratuites, générées sur place : `npx web-push generate-vapid-keys`). Vides : pas de notifications, l'option est masquée dans Compte. Changer les clés oblige chaque appareil à se réabonner |
+| `VAPID_SUBJECT` | Contact transmis aux services de push (`mailto:` ou `https:`) |
 | `RATE_LIMIT_PER_MINUTE` | Facultative : limite globale de requêtes par minute et par IP (300 par défaut ; `/api/health` n'est jamais limité) |
 
 ## Foyers, comptes et rôles
@@ -220,6 +222,14 @@ Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
 Après un déploiement, les téléphones passent à la nouvelle version **sans rien demander** : le service worker prend la main tout seul, et une page déjà ouverte change de version à la navigation suivante (jamais pendant un scan, une saisie, un glisser-déposer ou avec un panneau ouvert), ou au prochain lancement. Aucun message « Nouvelle version disponible ».
 
+### Mise à jour vers la Phase 3 (confort, une seule fois)
+
+1. **Sauvegarde d'abord** : `./scripts/backup-db.sh` (ou laisse `./deploy.sh` la faire, sans `--no-backup`). La migration `0004_phase3_comfort` ajoute les tables `settings` (seuil d'alerte par foyer), `shopping_items` (liste de courses) et `push_subscriptions` (un abonnement par appareil), toutes sous sécurité par ligne, et des colonnes sur `categories` (`shelf_life_days`), `products` (`min_quantity`, `amount`, `unit`, `merged_into_id`). Elle ne supprime rien. Les catégories du modèle encore présentes (Viandes, Poissons, Laitiers, Fruits et légumes) reçoivent une durée de conservation suggérée.
+2. **Notifications (facultatif)** : si `.env` n'a pas encore de clés, `npx web-push generate-vapid-keys`, puis copie les deux clés dans `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY`, et ton adresse dans `VAPID_SUBJECT`.
+3. `./deploy.sh`.
+
+Le résumé quotidien est une tâche planifiée **dans l'API** (`@nestjs/schedule`), à 8 h heure de Paris : pas de cron sur le VPS. Chaque appareil abonné reçoit une notification si des produits de son foyer arrivent sous le seuil (« urgent » pour aujourd'hui ou périmé, « à prévoir » pour bientôt) ; un abonnement expiré est supprimé à l'envoi. Sur iPhone, les notifications ne sont disponibles que dans l'application installée sur l'écran d'accueil (iOS 16.4 ou plus).
+
 ### Mise à jour vers les foyers (une seule fois)
 
 Cette version ajoute la migration `0003` (foyers, sécurité par ligne) et le rôle `inventaire_app`. Elle s'applique d'elle-même au démarrage de l'API, mais **une sauvegarde est obligatoire avant** : il n'existe pas de migration descendante.
@@ -361,6 +371,13 @@ Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécuris�
 5. Mode Retirer / Ajouter : la bascule en haut garde son choix.
 6. Refuser la permission (réglages du site) : le message donne les étapes de la plateforme et « Saisir le code à la main » met le focus sur la saisie.
 7. Ouvrir l'application en `http://` sur le réseau local (hors `localhost`) : message « HTTPS requis ».
+
+### Notifications et scan en rafale (Phase 3)
+
+1. Plus › Compte › « Activer les notifications » sur Android (Chrome) puis sur un iPhone avec l'application installée ; sur un iPhone dans Safari sans installation, l'option est remplacée par un texte d'aide.
+2. Mettre un produit à date du jour, attendre 8 h (ou relancer l'API avec l'horloge du serveur avancée) : une notification « urgent » arrive, le toucher ouvre la vue Liste filtrée.
+3. Se déconnecter, se connecter avec un compte d'un autre foyer : l'appareil ne reçoit plus le résumé du premier foyer.
+4. Scanner : cocher « Scan en rafale », scanner dix produits connus à la suite : chacun est ajouté sans fiche, « Annuler » retire le dernier.
 
 ### Vue Maison (portes et lumière)
 

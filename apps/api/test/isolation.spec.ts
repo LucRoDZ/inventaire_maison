@@ -34,6 +34,7 @@ let A: number;
 let B: number;
 const NAME_A = 'Foyer Alpha Zeta';
 const NAME_B = 'Foyer Beta Omega';
+const B_ENDPOINT = 'https://push.example.test/household-b';
 /** Word carried by every visible name of B's data: it must never reach A. */
 const MARK_B = 'Oméga';
 
@@ -47,6 +48,7 @@ interface Ids {
   mapping: number;
   image: string;
   barcode: string;
+  shopping: number;
 }
 let a: Ids;
 let b: Ids;
@@ -141,7 +143,13 @@ async function fill(householdId: number, mark: string, barcode: string): Promise
       user!.id,
     ],
   );
+  const [shopping] = await q<{ id: number }>(
+    `INSERT INTO shopping_items (household_id, product_id, quantity, checked, checked_at)
+     VALUES ($1, $2, 2, $3, CASE WHEN $3 THEN now() END) RETURNING id`,
+    [householdId, product!.id, householdId === B],
+  );
   return {
+    shopping: shopping!.id,
     location: location!.id,
     otherLocation: other!.id,
     shelf: shelf!.id,
@@ -164,10 +172,14 @@ async function snapshotB(): Promise<string> {
     'products',
     'stock_items',
     'stock_movements',
+    'settings',
+    'push_subscriptions',
+    'shopping_items',
   ];
   const parts: unknown[] = [];
   for (const table of tables) {
-    parts.push(await q(`SELECT * FROM ${table} WHERE household_id = $1 ORDER BY id`, [B]));
+    // The first column is the key of every table (`id`, or `household_id` for the settings).
+    parts.push(await q(`SELECT * FROM ${table} WHERE household_id = $1 ORDER BY 1`, [B]));
   }
   parts.push(await q('SELECT id, name FROM households WHERE id = $1', [B]));
   return JSON.stringify(parts);
@@ -329,6 +341,45 @@ const checks: Record<string, Check> = {
         .status,
     ).toBe(404);
   },
+  'POST /api/products/:id/merge': async (client) => {
+    // Neither as the merged product nor as the kept one: B's products are unknown to A.
+    expect(
+      (await client.post(`/api/products/${b.product}/merge`).send({ intoProductId: a.product }))
+        .status,
+    ).toBe(404);
+    expect(
+      (await client.post(`/api/products/${a.product}/merge`).send({ intoProductId: b.product }))
+        .status,
+    ).toBe(404);
+    expect(
+      (await client.post(`/api/products/${a.product}/merge`).send({ intoProductId: a.product }))
+        .status,
+    ).toBe(400);
+    const [line] = await q<{ merged_into_id: number | null }>(
+      'SELECT merged_into_id FROM products WHERE id = ANY($1)',
+      [[a.product, b.product]],
+    );
+    expect(line!.merged_into_id).toBeNull();
+  },
+  'POST /api/products/:id/barcode': async (client, who) => {
+    expect(
+      (await client.post(`/api/products/${b.product}/barcode`).send({ barcode: '5449000000996' }))
+        .status,
+    ).toBe(404);
+    // The code of B is not taken in A: the same code can be attached to a product of A.
+    const created = await client
+      .post('/api/products')
+      .send({ name: `Sans code ${who}`, categoryId: a.category });
+    expect(created.status).toBe(201);
+    const res = await client
+      .post(`/api/products/${created.body.id}/barcode`)
+      .send({ barcode: b.barcode });
+    expect(res.status).toBe(200);
+    // Put back: A must not keep knowing the code of B for the other checks.
+    await q('UPDATE products SET barcode = NULL WHERE id = $1', [created.body.id]);
+    assertNothingOfB(res.body, `${who} barcode`);
+    assertNoHousehold(res.body, `${who} barcode`);
+  },
   'GET /api/products/:id/movements': async (client) => {
     expect((await client.get(`/api/products/${b.product}/movements`)).status).toBe(404);
     const mine = await client.get(`/api/products/${a.product}/movements`);
@@ -428,6 +479,60 @@ const checks: Record<string, Check> = {
       404,
     );
   },
+  'GET /api/shopping': async (client, who) => {
+    const res = await client.get('/api/shopping');
+    expect(res.status).toBe(200);
+    const ids = res.body.items.map((i: { id: number }) => i.id);
+    expect(ids).toContain(a.shopping);
+    expect(ids).not.toContain(b.shopping);
+    assertNothingOfB(res.body, `${who} shopping`);
+    assertNoHousehold(res.body, `${who} shopping`);
+  },
+  'POST /api/shopping': async (client) => {
+    // A product of B is unknown to A.
+    expect((await client.post('/api/shopping').send({ productId: b.product })).status).toBe(404);
+    expect(
+      (await client.post('/api/shopping').send({ label: 'Intrus', householdId: B })).status,
+    ).toBe(400);
+  },
+  'PATCH /api/shopping/:id': async (client) => {
+    expect(
+      (await client.patch(`/api/shopping/${b.shopping}`).send({ checked: false })).status,
+    ).toBe(404);
+    expect((await client.patch(`/api/shopping/${b.shopping}`).send({ quantity: 9 })).status).toBe(
+      404,
+    );
+  },
+  'DELETE /api/shopping/:id': async (client) => {
+    expect((await client.delete(`/api/shopping/${b.shopping}`)).status).toBe(404);
+  },
+  'POST /api/shopping/clear-checked': async (client) => {
+    // B's line is checked, A's is not: only B's would go if the route crossed households.
+    const res = await client.post('/api/shopping/clear-checked');
+    expect(res.status).toBe(200);
+    const [line] = await q('SELECT 1 FROM shopping_items WHERE id = $1', [b.shopping]);
+    expect(line).toBeDefined();
+  },
+  'POST /api/shopping/store-checked': async (client, who) => {
+    const res = await client.post('/api/shopping/store-checked');
+    expect(res.status).toBe(200);
+    assertNothingOfB(res.body, `${who} store-checked`);
+    assertNoHousehold(res.body, `${who} store-checked`);
+    const [stock] = await q<{ quantity: number }>(
+      'SELECT quantity FROM stock_items WHERE id = $1',
+      [b.stockItem],
+    );
+    expect(stock!.quantity).toBe(3);
+    const [line] = await q('SELECT 1 FROM shopping_items WHERE id = $1', [b.shopping]);
+    expect(line).toBeDefined();
+  },
+  'GET /api/shopping/recent': async (client, who) => {
+    const res = await client.get('/api/shopping/recent');
+    expect(res.status).toBe(200);
+    expect(res.body.map((p: { productId: number }) => p.productId)).not.toContain(b.product);
+    assertNothingOfB(res.body, `${who} recent`);
+    assertNoHousehold(res.body, `${who} recent`);
+  },
   'GET /api/home': async (client, who) => {
     const res = await client.get('/api/home');
     expect(res.status).toBe(200);
@@ -436,6 +541,46 @@ const checks: Record<string, Check> = {
     expect(ids).not.toContain(b.location);
     assertNothingOfB(res.body, `${who} home`);
     assertNoHousehold(res.body, `${who} home`);
+  },
+  'GET /api/settings': async (client) => {
+    // B changed its threshold; A keeps the default.
+    expect((await client.get('/api/settings')).body).toEqual({ expiryAlertDays: 3 });
+  },
+  'GET /api/stock/summary': async (client) => {
+    // A holds one product expiring tomorrow; B's line (also tomorrow) is not counted.
+    const res = await client.get('/api/stock/summary');
+    expect(res.body).toMatchObject({ inStock: 1, expired: 0, expiryAlertDays: 3 });
+    // Paris and the database may disagree on "today" around midnight: tomorrow is one or the other.
+    expect(res.body.today + res.body.soon).toBe(1);
+  },
+  'GET /api/stats': async (client, who) => {
+    const res = await client.get('/api/stats');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ consumed: 2, wasted: 0, topWasted: [] });
+    assertNothingOfB(res.body, `${who} stats`);
+    assertNoHousehold(res.body, `${who} stats`);
+  },
+  'GET /api/push/public-key': async (client) => {
+    expect((await client.get('/api/push/public-key')).body).toEqual({ publicKey: null });
+  },
+  'POST /api/push/subscriptions': async (client) => {
+    // B's endpoint: A gets a row of its own, B's row is left alone (checked by the snapshot).
+    const res = await client
+      .post('/api/push/subscriptions')
+      .send({ endpoint: B_ENDPOINT, keys: { p256dh: 'pa', auth: 'aa' } });
+    expect(res.status).toBe(204);
+    const rows = await q<{ household_id: number; p256dh: string }>(
+      'SELECT household_id, p256dh FROM push_subscriptions WHERE endpoint = $1 ORDER BY household_id',
+      [B_ENDPOINT],
+    );
+    expect(rows.find((r) => r.household_id === B)!.p256dh).toBe('pb');
+  },
+  'DELETE /api/push/subscriptions': async (client) => {
+    expect(
+      (await client.delete('/api/push/subscriptions').send({ endpoint: B_ENDPOINT })).status,
+    ).toBe(204);
+    const rows = await q('SELECT 1 FROM push_subscriptions WHERE household_id = $1', [B]);
+    expect(rows).toHaveLength(1);
   },
   'ALL /api/{*path}': async (client) => {
     expect((await client.get('/api/route-inconnue')).status).toBe(404);
@@ -455,6 +600,9 @@ const CONSOLE: Record<string, (client: Client) => Promise<request.Response>> = {
     c.patch(`/api/admin/households/${B}`).send({ name: 'Pirate' }),
   'DELETE /api/admin/households/:id': (c) =>
     c.delete(`/api/admin/households/${B}`).send({ confirmName: NAME_B }),
+  'GET /api/admin/households/:id/settings': (c) => c.get(`/api/admin/households/${B}/settings`),
+  'PATCH /api/admin/households/:id/settings': (c) =>
+    c.patch(`/api/admin/households/${B}/settings`).send({ expiryAlertDays: 1 }),
   'GET /api/admin/households/:id/categories': (c) => c.get(`/api/admin/households/${B}/categories`),
   'POST /api/admin/households/:id/categories': (c) =>
     c.post(`/api/admin/households/${B}/categories`).send({ name: 'Pirate', icon: 'wine' }),
@@ -491,6 +639,29 @@ beforeAll(async () => {
   await createUser(app, { username: 'bob', password: 'motdepasse1', householdId: B });
   a = await fill(A, 'Alpha', '5449000000996');
   b = await fill(B, MARK_B, '3017620422003');
+  // Comfort data of phase 3: B has its own threshold, consumption, waste and device.
+  const [userB] = await q<{ id: number }>('SELECT id FROM users WHERE household_id = $1', [B]);
+  const [userA] = await q<{ id: number }>('SELECT id FROM users WHERE household_id = $1 LIMIT 1', [
+    A,
+  ]);
+  await q('INSERT INTO settings (household_id, expiry_alert_days) VALUES ($1, 9)', [B]);
+  await q(
+    `INSERT INTO push_subscriptions (household_id, user_id, endpoint, p256dh, auth)
+     VALUES ($1, $2, $3, 'pb', 'ab')`,
+    [B, userB!.id, B_ENDPOINT],
+  );
+  for (const [household, product, user, delta, reason] of [
+    [B, b.product, userB!.id, -7, 'consumed'],
+    [B, b.product, userB!.id, -5, 'wasted'],
+    [A, a.product, userA!.id, -2, 'consumed'],
+  ] as const) {
+    await q(
+      `INSERT INTO stock_movements (household_id, product_id, location_id, location_name, delta,
+         reason, user_id)
+       VALUES ($1, $2, $3, 'Frigo', $4, $5, $6)`,
+      [household, product, household === B ? b.location : a.location, delta, reason, user],
+    );
+  }
   alice = await login('alice');
   root = await login('root');
   bob = await login('bob');

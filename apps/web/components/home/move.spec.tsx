@@ -190,6 +190,19 @@ describe('ProductSheet', () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
+  it('removes a unit as consumed with « − » and as wasted with « Jeté »', async () => {
+    const adjust = vi.fn(async () => ({}) as never);
+    sheet({ api: { adjust } });
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer une unité' }));
+    expect(adjust).toHaveBeenLastCalledWith(
+      expect.objectContaining({ delta: -1, reason: 'consumed' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Jeté/ }));
+    expect(adjust).toHaveBeenLastCalledWith(
+      expect.objectContaining({ delta: -1, reason: 'wasted' }),
+    );
+  });
+
   it('closes itself when the last unit is removed', async () => {
     const { onClose } = sheet({ tile: { ...tile, quantity: 1 } });
     await userEvent.click(screen.getByRole('button', { name: 'Retirer une unité' }));

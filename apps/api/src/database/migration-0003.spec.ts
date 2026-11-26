@@ -123,7 +123,10 @@ describe('migration 0003 on a populated database', () => {
       'locations',
       'off_category_map',
       'products',
+      'push_subscriptions',
+      'settings',
       'shelves',
+      'shopping_items',
       'stock_items',
       'stock_movements',
     ]);

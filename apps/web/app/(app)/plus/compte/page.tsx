@@ -1,5 +1,6 @@
 'use client';
 
+import { PushSetting } from '../../../../components/account/PushSetting';
 import { PasswordForm } from '../../../../components/account/PasswordForm';
 import { useCurrentUser } from '../../../../components/auth/AuthProvider';
 import { Screen } from '../../../../components/ui/Screen';
@@ -16,6 +17,7 @@ export default function ComptePage() {
           <dd className="text-ink">{user.role === 'admin' ? 'Administrateur' : 'Membre'}</dd>
         </dl>
       ) : null}
+      {user ? <PushSetting userId={user.id} /> : null}
       <h2 className="text-card-title mt-2">Changer le mot de passe</h2>
       <PasswordForm />
     </Screen>

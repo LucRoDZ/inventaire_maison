@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  AdjustReason,
   HomeTileDto,
   LocationDto,
   StockAdjustInput,
@@ -8,7 +9,7 @@ import type {
   StockMoveInput,
   StockMoveResponse,
 } from '@inventaire/shared';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import { ApiError } from '../../lib/api';
@@ -62,7 +63,7 @@ export function ProductSheet({
   const [busy, setBusy] = useState(false);
   const Glyph = categoryIcon(tile.category.icon);
 
-  const change = async (delta: 1 | -1) => {
+  const change = async (delta: 1 | -1, reason: AdjustReason = 'manual') => {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -73,7 +74,7 @@ export function ProductSheet({
         shelfId: place.shelfId,
         expiryDate: tile.expiryDate,
         delta,
-        reason: 'manual',
+        reason,
       });
     } catch (caught) {
       setBusy(false);
@@ -115,7 +116,7 @@ export function ProductSheet({
             type="button"
             aria-label="Retirer une unité"
             disabled={busy}
-            onClick={() => void change(-1)}
+            onClick={() => void change(-1, 'consumed')}
             className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full"
           >
             <Minus size={20} aria-hidden="true" />
@@ -135,7 +136,14 @@ export function ProductSheet({
           >
             <Plus size={20} aria-hidden="true" />
           </button>
+          <Button variant="outline" disabled={busy} onClick={() => void change(-1, 'wasted')}>
+            <Trash2 size={18} aria-hidden="true" />
+            Jeté<span className="sr-only"> : retirer une unité jetée</span>
+          </Button>
         </div>
+        <p className="text-help -mt-2">
+          « − » note une unité consommée, « Jeté » une unité à la poubelle.
+        </p>
 
         <p className="text-body flex flex-wrap items-center gap-2">
           Date limite : {tile.expiryDate ? formatDate(tile.expiryDate) : 'aucune'}

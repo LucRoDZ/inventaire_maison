@@ -80,3 +80,11 @@ Branche `fix/interface-propre`, après les points 1 à 4 (en-tête allégé, fil
 
 - Étiquettes de section en majuscules interlettrées, titres en 700, deux fonds blanc et indigo : imposés par le cahier (comme lors de la première passe).
 - Porte du meuble ouvert en 600 ms et lumière en 260 ms après 200 ms : fixées par la Phase 1.5 ; elles ne retardent aucune action et sont coupées en mouvement réduit.
+
+## Phase 3 : nouveaux écrans (26/11/2026)
+
+Audit `unslop` (mode polissage, identité Indigo Ambre prioritaire) sur Courses, Statistiques, compteurs de l'inventaire et fiche article.
+
+- Aucun dégradé, aucune lueur, aucun emoji, aucune couleur en dur (`check-colors`), une seule famille d'icônes (Lucide), chiffres en `tabular-nums`, mouvements nommés (`transition-colors`), aucune boucle d'animation.
+- Corrigé : l'étiquette « Proposée » du choix de catégorie était en capitales espacées (contraire à U1), elle passe en casse normale ; la légende du taux de gaspillage perd son point final.
+- Rien d'autre à changer : l'ambre reste réservé à l'état actif, aux pastilles et aux dates proches.

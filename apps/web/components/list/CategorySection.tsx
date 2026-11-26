@@ -9,10 +9,12 @@ interface CategorySectionProps {
   name: string;
   items: StockListItemDto[];
   onChange: (item: StockListItemDto, delta: 1 | -1) => void;
+  /** Batch mode: the ids of the lines ticked, and how to tick one. */
+  selection?: { ids: ReadonlySet<number>; onToggle: (item: StockListItemDto) => void };
 }
 
 /** Collapsible group of the lines of one category. */
-export function CategorySection({ name, items, onChange }: CategorySectionProps) {
+export function CategorySection({ name, items, onChange, selection }: CategorySectionProps) {
   const [open, setOpen] = useState(true);
   return (
     <section className="flex flex-col gap-2">
@@ -35,7 +37,18 @@ export function CategorySection({ name, items, onChange }: CategorySectionProps)
         <ul className="flex flex-col gap-2">
           {items.map((item) => (
             <li key={item.id}>
-              <StockCard item={item} onChange={onChange} />
+              <StockCard
+                item={item}
+                onChange={onChange}
+                selection={
+                  selection
+                    ? {
+                        selected: selection.ids.has(item.id),
+                        onToggle: () => selection.onToggle(item),
+                      }
+                    : undefined
+                }
+              />
             </li>
           ))}
         </ul>

@@ -11,8 +11,8 @@ import { ApiError } from '../../lib/api';
 import { useOnline } from '../../lib/online';
 import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import type { ScanResult } from '../../lib/scanner/types';
-import { adjustStock, removeOne } from '../../lib/stock-api';
-import { UndoToast } from '../add/UndoToast';
+import { removeOne } from '../../lib/stock-api';
+import { RemovalToast, type RemovalPlan, removalKey } from '../add/RemovalToast';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 
@@ -35,7 +35,7 @@ interface RemoveFlowProps {
 }
 
 type Feedback =
-  | { kind: 'removed'; message: string; undo: () => Promise<unknown> }
+  | { kind: 'removed'; plan: RemovalPlan }
   | { kind: 'not_in_stock'; name: string }
   | { kind: 'unknown'; result: ScanResult }
   | { kind: 'problem'; title: string; text: string };
@@ -62,7 +62,6 @@ export function RemoveFlow({ request, onSwitchToAdd, api = {} }: RemoveFlowProps
     const { result } = request;
     const seams = apiRef.current;
     const remove = seams.removeOne ?? removeOne;
-    const adjust = seams.adjust ?? adjustStock;
 
     void (async () => {
       const outcome = await resolveScan(result.code, result.format, {
@@ -95,16 +94,15 @@ export function RemoveFlow({ request, onSwitchToAdd, api = {} }: RemoveFlowProps
         const { movement } = done;
         setFeedback({
           kind: 'removed',
-          message: `Retiré : 1 × ${done.product.name}, ${done.location.name}`,
-          undo: () =>
-            adjust({
-              productId: movement.productId,
-              locationId: movement.locationId,
-              shelfId: movement.shelfId,
-              expiryDate: movement.expiryDate,
-              delta: 1,
-              reason: 'correction',
-            }),
+          plan: {
+            productId: movement.productId,
+            locationId: movement.locationId,
+            shelfId: movement.shelfId,
+            expiryDate: movement.expiryDate,
+            name: done.product.name,
+            units: 1,
+            place: done.location.name,
+          },
         });
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
@@ -123,29 +121,18 @@ export function RemoveFlow({ request, onSwitchToAdd, api = {} }: RemoveFlowProps
     })();
   }, [request]);
 
-  const undo = async () => {
-    const current = feedback;
-    setFeedback(null);
-    if (current?.kind !== 'removed') return;
-    try {
-      await current.undo();
-    } catch (error) {
-      setFeedback({
-        kind: 'problem',
-        title: 'Annulation impossible',
-        text: error instanceof ApiError && error.status !== 0 ? error.message : 'Réessayez.',
-      });
-    }
-  };
-
   if (!feedback) return null;
   switch (feedback.kind) {
     case 'removed':
       return (
-        <UndoToast
-          message={feedback.message}
-          onUndo={() => void undo()}
-          onExpire={() => setFeedback(null)}
+        <RemovalToast
+          key={removalKey(feedback.plan)}
+          plan={feedback.plan}
+          adjust={api.adjust}
+          onClose={() => setFeedback(null)}
+          onError={(text) =>
+            setFeedback({ kind: 'problem', title: 'Modification impossible', text })
+          }
         />
       );
     case 'not_in_stock':

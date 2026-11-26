@@ -150,8 +150,11 @@ for (const size of PHONES) {
       // Back from an open piece of furniture: the house is where it was.
       await expect.poll(() => back.evaluate((el) => el.scrollTop)).toBe(housePosition);
       await back.evaluate((el) => el.scrollBy(0, 200));
+      const furniture = page.getByRole('link', { name: /^Mini-frigo du bureau/ });
+      // The click would scroll the card into view: do it first, then measure.
+      await furniture.scrollIntoViewIfNeeded();
       const before = await back.evaluate((el) => el.scrollTop);
-      await page.getByRole('link', { name: /^Mini-frigo du bureau/ }).click();
+      await furniture.click();
       await expect(
         page.getByRole('heading', { level: 1, name: 'Mini-frigo du bureau' }),
       ).toBeVisible();

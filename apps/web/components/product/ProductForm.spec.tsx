@@ -8,8 +8,15 @@ import { PHOTO_FAILED_NOTICE, ProductForm } from './ProductForm';
 import { PHOTO_MAX_BYTES } from './PhotoField';
 
 const categories: CategoryDto[] = [
-  { id: 5, name: 'Épicerie sucrée', icon: 'candy', sortOrder: 1, isFallback: false },
-  { id: 9, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true },
+  {
+    id: 5,
+    name: 'Épicerie sucrée',
+    icon: 'candy',
+    sortOrder: 1,
+    isFallback: false,
+    shelfLifeDays: null,
+  },
+  { id: 9, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true, shelfLifeDays: null },
 ];
 const locations: LocationDto[] = [
   {

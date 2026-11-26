@@ -204,7 +204,7 @@ test('mode Retirer : stock 2, deux retraits, l’article disparaît du stock', a
   await page.getByRole('button', { name: 'Retirer', exact: true }).click();
   await pushCode(page, code);
   await expect(
-    page.getByRole('status').filter({ hasText: `Retiré : 1 × ${name}, Frigo` }),
+    page.getByRole('status').filter({ hasText: `Consommé : 1 × ${name}, Frigo` }),
   ).toBeVisible();
   await expect.poll(quantity).toBe(1);
 
@@ -695,7 +695,7 @@ test('la catégorie proposée est confirmée par l’ajout, sans écran de relec
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(
     page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link'),
-  ).toHaveCount(3);
+  ).toHaveCount(4);
 });
 
 const PASSWORD_CHANGE = { 'chromium-mobile': 'sophie', 'webkit-mobile': 'julien' } as const;

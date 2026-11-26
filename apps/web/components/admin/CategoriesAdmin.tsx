@@ -3,6 +3,7 @@
 import {
   CATEGORY_ICONS,
   CATEGORY_NAME_MAX_LENGTH,
+  SHELF_LIFE_DAYS_MAX,
   type CategoryDto,
   type CategoryIcon,
 } from '@inventaire/shared';
@@ -48,8 +49,24 @@ function CategoryRow({
   const [mode, setMode] = useState<'idle' | 'edit' | 'confirm'>('idle');
   const [name, setName] = useState(category.name);
   const [icon, setIcon] = useState<CategoryIcon>(asIcon(category.icon));
+  const [shelfLife, setShelfLife] = useState(category.shelfLifeDays?.toString() ?? '');
+  const [shelfLifeError, setShelfLifeError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const Icon = categoryIcon(category.icon);
+
+  /** Reads the field: empty means none; otherwise a whole number of days. */
+  function readShelfLife(): { ok: true; value: number | null } | { ok: false } {
+    const text = shelfLife.trim();
+    if (text === '') return { ok: true, value: null };
+    const days = Number(text);
+    if (!Number.isInteger(days) || days < 1 || days > SHELF_LIFE_DAYS_MAX) {
+      setShelfLifeError(
+        `Entrez un nombre de jours entre 1 et ${SHELF_LIFE_DAYS_MAX}, ou laissez vide.`,
+      );
+      return { ok: false };
+    }
+    return { ok: true, value: days };
+  }
 
   async function run(action: () => Promise<unknown>, success: string) {
     if (busy) return;
@@ -72,7 +89,15 @@ function CategoryRow({
     >
       <div className="flex items-center gap-2">
         <Icon size={20} aria-hidden="true" className="text-indigo-mid" />
-        <span className="text-ink min-w-0 flex-1 leading-5 font-semibold">{category.name}</span>
+        <span className="min-w-0 flex-1">
+          <span className="text-ink block leading-5 font-semibold">{category.name}</span>
+          {category.shelfLifeDays !== null ? (
+            <span className="text-help block">
+              Durée suggérée : {category.shelfLifeDays}{' '}
+              {category.shelfLifeDays > 1 ? 'jours' : 'jour'}
+            </span>
+          ) : null}
+        </span>
         <Button
           variant="secondary"
           className="px-0!"
@@ -109,15 +134,50 @@ function CategoryRow({
             />
           </label>
           <IconPicker value={icon} onChange={setIcon} label="Icône de la catégorie" />
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`shelf-life-${category.id}`} className="text-label">
+              Durée de conservation suggérée (jours)
+            </label>
+            <input
+              id={`shelf-life-${category.id}`}
+              className={field}
+              inputMode="numeric"
+              value={shelfLife}
+              aria-invalid={shelfLifeError !== null}
+              aria-describedby={`shelf-life-help-${category.id}`}
+              onChange={(e) => {
+                setShelfLife(e.target.value);
+                setShelfLifeError(null);
+              }}
+            />
+            <span id={`shelf-life-help-${category.id}`} className="text-help">
+              Proposée comme date limite quand on ajoute un produit sans date. Vide : aucune
+              suggestion.
+            </span>
+            {shelfLifeError ? (
+              <span role="alert" className="text-small text-alert">
+                {shelfLifeError}
+              </span>
+            ) : null}
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               disabled={busy || name.trim() === ''}
-              onClick={() =>
+              onClick={() => {
+                const read = readShelfLife();
+                if (!read.ok) return;
                 void run(
-                  () => api.updateCategory(category.id, { name: name.trim(), icon }),
+                  () =>
+                    api.updateCategory(category.id, {
+                      name: name.trim(),
+                      icon,
+                      ...(read.value !== category.shelfLifeDays
+                        ? { shelfLifeDays: read.value }
+                        : {}),
+                    }),
                   'Catégorie enregistrée.',
-                )
-              }
+                );
+              }}
             >
               Enregistrer la catégorie
             </Button>
@@ -131,6 +191,8 @@ function CategoryRow({
               onClick={() => {
                 setName(category.name);
                 setIcon(asIcon(category.icon));
+                setShelfLife(category.shelfLifeDays?.toString() ?? '');
+                setShelfLifeError(null);
                 setMode('idle');
               }}
             >

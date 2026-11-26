@@ -16,6 +16,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Transaction } from '../database/database.module';
 import { locations, products, shelves, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
+import { syncAutoShopping } from '../shopping/auto-shopping';
 
 export const toStockLine = (row: typeof stockItems.$inferSelect): StockLineDto => ({
   id: row.id,
@@ -123,7 +124,8 @@ export class StockService {
     const shelfId = input.shelfId ?? null;
     const expiryDate = input.expiryDate ?? null;
     if (input.delta === 0) throw new BadRequestException('La quantité ne peut pas être nulle');
-    // The reason must agree with the direction of the movement, or the journal would lie.
+    // The reason must agree with the direction of the movement, or the journal would lie. A
+    // positive `consumed` or `wasted` is the undo of that removal: statistics net it out.
     if (
       (input.reason === 'scan_add' && input.delta < 0) ||
       (input.reason === 'scan_remove' && input.delta > 0)
@@ -199,6 +201,7 @@ export class StockService {
           userId,
         })
         .returning();
+      await syncAutoShopping(tx, householdId, input.productId);
       return { item: item ? toStockLine(item) : null, movement: toMovement(movement!) };
     });
   }

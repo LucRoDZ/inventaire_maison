@@ -33,8 +33,15 @@ const locations: LocationDto[] = [
   },
 ];
 const categories: CategoryDto[] = [
-  { id: 5, name: 'Épicerie sucrée', icon: 'candy', sortOrder: 1, isFallback: false },
-  { id: 9, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true },
+  {
+    id: 5,
+    name: 'Épicerie sucrée',
+    icon: 'candy',
+    sortOrder: 1,
+    isFallback: false,
+    shelfLifeDays: null,
+  },
+  { id: 9, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true, shelfLifeDays: null },
 ];
 const product: ProductDto = {
   id: 7,
@@ -49,6 +56,10 @@ const product: ProductDto = {
   source: 'off',
   createdBy: 1,
   createdAt: '2026-06-01T10:00:00.000Z',
+  minQuantity: null,
+  amount: null,
+  unit: null,
+  mergedIntoId: null,
 };
 const known: ProductDetailDto = { ...product, categoryGuessed: false, stock: [] };
 

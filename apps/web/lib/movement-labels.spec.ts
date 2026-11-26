@@ -72,3 +72,19 @@ describe('describeMovement', () => {
     ).toBe(true);
   });
 });
+
+describe('undo of a removal', () => {
+  it('says it is the undo of the consumed removal', () => {
+    const sentence = describeMovement({
+      id: 9,
+      delta: 1,
+      reason: 'consumed',
+      expiryDate: null,
+      createdAt: '2026-11-15T09:02:00Z',
+      user: { id: 1, username: 'admin' },
+      location: { id: 1, name: 'Frigo' },
+      shelf: null,
+    });
+    expect(sentence.detail).toMatch(/^Annulation : consommé · /);
+  });
+});

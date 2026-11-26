@@ -85,7 +85,7 @@ export const stockMovements = pgTable(
     check('stock_movements_delta_check', sql`${t.delta} <> 0`),
     check(
       'stock_movements_reason_check',
-      sql`${t.reason} in ('scan_add', 'scan_remove', 'manual', 'move', 'correction')`,
+      sql`${t.reason} in ('scan_add', 'scan_remove', 'manual', 'move', 'correction', 'consumed', 'wasted')`,
     ),
     foreignKey({
       name: 'stock_movements_product_household_fk',
@@ -94,5 +94,7 @@ export const stockMovements = pgTable(
     }),
     index('stock_movements_household_idx').on(t.householdId),
     index('stock_movements_product_idx').on(t.productId, t.createdAt),
+    // Statistics and "recently consumed": movements of a household by reason over a period.
+    index('stock_movements_household_reason_idx').on(t.householdId, t.reason, t.createdAt),
   ],
 );

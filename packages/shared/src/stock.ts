@@ -1,5 +1,17 @@
+/** Why units leave the stock: eaten or thrown away (statistics, waste rate). */
+export const REMOVAL_REASONS = ['consumed', 'wasted'] as const;
+export type RemovalReason = (typeof REMOVAL_REASONS)[number];
+/** The removal reason chosen in one gesture; `wasted` is the visible second choice. */
+export const DEFAULT_REMOVAL_REASON: RemovalReason = 'consumed';
+
 /** Reasons a client may give to `POST /stock/adjust` (`move` is written by the move routes). */
-export const ADJUST_REASONS = ['scan_add', 'scan_remove', 'manual', 'correction'] as const;
+export const ADJUST_REASONS = [
+  'scan_add',
+  'scan_remove',
+  'manual',
+  'correction',
+  ...REMOVAL_REASONS,
+] as const;
 export type AdjustReason = (typeof ADJUST_REASONS)[number];
 
 export type MovementReason = AdjustReason | 'move';
@@ -46,10 +58,20 @@ export interface StockAdjustResponse {
 export const STOCK_SORTS = ['name', 'added', 'expiry'] as const;
 export type StockSort = (typeof STOCK_SORTS)[number];
 
-/** Days (inclusive) before the expiry date from which a line is flagged as "soon". */
+/**
+ * Default of the per-household alert threshold (`settings.expiry_alert_days`): days (inclusive)
+ * before the expiry date from which a line is flagged as "soon". The API uses the household value.
+ */
 export const EXPIRY_SOON_DAYS = 3;
 
-/** Absent when the line has no date or it is still far away. */
+/**
+ * Expiry filters of `GET /stock?expiry=` (and of the home counters): `today` = expires today
+ * (`soon` with `days: 0`), `soon` = within 1 to threshold days, `expired` = date passed.
+ */
+export const EXPIRY_FILTERS = ['today', 'soon', 'expired'] as const;
+export type ExpiryFilter = (typeof EXPIRY_FILTERS)[number];
+
+/** Absent when the line has no date or it is still far away. `soon` with `days: 0` = today. */
 export type ExpiryStatus = { status: 'expired' } | { status: 'soon'; days: number };
 
 export interface StockListItemDto {
@@ -104,6 +126,8 @@ export interface StockMoveResponse {
 
 export interface StockRemoveInput {
   productId: number;
+  /** Omitted: `consumed`. */
+  reason?: RemovalReason;
 }
 
 export interface StockRemoveResponse {
@@ -131,4 +155,16 @@ export interface MovementHistoryResponse {
   items: MovementHistoryItemDto[];
   /** Pass it as `cursor` to get the next (older) page; null on the last page. */
   nextCursor: string | null;
+}
+
+/** `GET /stock/summary`: the four counters at the top of the inventory. */
+export interface StockSummaryDto {
+  /** Distinct products in stock. */
+  inStock: number;
+  /** Stock lines per expiry filter, with the threshold of the household. */
+  today: number;
+  soon: number;
+  expired: number;
+  /** The threshold used (`settings.expiry_alert_days`). */
+  expiryAlertDays: number;
 }
