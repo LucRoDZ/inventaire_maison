@@ -332,6 +332,31 @@ describe('PATCH /api/products/:id', () => {
     expect(after!.searchText).toBe('creme fraiche');
   });
 
+  it('edits the minimum quantity and the net content', async () => {
+    const id = await addProduct('Farine', 'Autre');
+    const res = await api
+      .patch(`/api/products/${id}`)
+      .send({ minQuantity: 2, amount: 1.5, unit: 'kg' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ minQuantity: 2, amount: 1.5, unit: 'kg' });
+    const cleared = await api
+      .patch(`/api/products/${id}`)
+      .send({ minQuantity: null, amount: null, unit: null });
+    expect(cleared.body).toMatchObject({ minQuantity: null, amount: null, unit: null });
+    for (const body of [
+      { minQuantity: 0 },
+      { minQuantity: 1000 },
+      { minQuantity: 1.5 },
+      { amount: 0 },
+      { amount: -3 },
+      { unit: 'tonne' },
+    ]) {
+      expect((await api.patch(`/api/products/${id}`).send(body)).status, JSON.stringify(body)).toBe(
+        400,
+      );
+    }
+  });
+
   it('confirms the category: guessed goes back to false', async () => {
     const id = await addProduct('Yaourt', 'Autre');
     await db().update(products).set({ categoryGuessed: true }).where(eq(products.id, id));

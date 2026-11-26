@@ -114,6 +114,8 @@ describe('GET /api/scan/:barcode', () => {
         categoryId: mappedTag.categoryId,
         categoryGuessed: true,
         source: 'off',
+        amount: 400,
+        unit: 'g',
       },
     });
     const [row] = await db().select().from(products).where(eq(products.barcode, NUTELLA));

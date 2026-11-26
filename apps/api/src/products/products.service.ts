@@ -37,6 +37,9 @@ export interface ProductPatchInput {
   brand?: string | null;
   categoryId?: number;
   defaultLocationId?: number | null;
+  minQuantity?: number | null;
+  amount?: number | null;
+  unit?: QuantityUnit | null;
 }
 
 export interface ProductSearch {
@@ -248,6 +251,11 @@ export class ProductsService {
           ...(patch.defaultLocationId !== undefined && {
             defaultLocationId: patch.defaultLocationId,
           }),
+          ...(patch.minQuantity !== undefined && { minQuantity: patch.minQuantity }),
+          ...(patch.amount !== undefined && {
+            amount: patch.amount === null ? null : String(patch.amount),
+          }),
+          ...(patch.unit !== undefined && { unit: patch.unit }),
           // Choosing a category, even the same one, is a confirmation by a person.
           ...(patch.categoryId !== undefined && {
             categoryId: patch.categoryId,

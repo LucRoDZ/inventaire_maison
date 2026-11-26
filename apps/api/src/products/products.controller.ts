@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import {
   PRODUCT_NAME_MAX_LENGTH,
+  QUANTITY_UNITS,
+  SHOPPING_QUANTITY_MAX,
   PRODUCT_TEXT_MAX_LENGTH,
   type ProductDetailDto,
   type ProductDto,
@@ -44,7 +46,15 @@ const createSchema = z
   .strict();
 
 const patchSchema = z
-  .object({ name, brand: text, categoryId: id, defaultLocationId: id.nullable() })
+  .object({
+    name,
+    brand: text,
+    categoryId: id,
+    defaultLocationId: id.nullable(),
+    minQuantity: z.number().int().min(1).max(SHOPPING_QUANTITY_MAX).nullable(),
+    amount: z.number().positive().max(9_999_999).nullable(),
+    unit: z.enum(QUANTITY_UNITS).nullable(),
+  })
   .partial()
   .strict()
   .refine((v) => Object.keys(v).length > 0);
@@ -88,7 +98,11 @@ export class ProductsController {
     const productId = parseId(rawId);
     return this.products.update(
       productId,
-      parseBody(patchSchema, body, 'Produit invalide : nom, marque, catégorie ou lieu habituel'),
+      parseBody(
+        patchSchema,
+        body,
+        'Produit invalide : nom, marque, catégorie, lieu habituel, seuil (1 à 999) ou contenance',
+      ),
     );
   }
 }

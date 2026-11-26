@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { ProductDto, ScanResponse } from '@inventaire/shared';
+import { parseNetQuantity, type ProductDto, type ScanResponse } from '@inventaire/shared';
 import { and, eq } from 'drizzle-orm';
 import { isUniqueViolation } from '../common/pg-errors';
 import { products } from '../database/schema';
@@ -104,6 +104,7 @@ export class ScanService {
     categoryId: number,
     userId: number,
   ): Promise<{ product: ProductDto; householdId: number }> {
+    const net = parseNetQuantity(card.quantity);
     return this.tenant.run(async (tx, householdId) => {
       const [row] = await tx
         .insert(products)
@@ -113,6 +114,8 @@ export class ScanService {
           name,
           brand: card.brand,
           sizeLabel: card.quantity,
+          amount: net ? String(net.amount) : null,
+          unit: net?.unit ?? null,
           categoryId,
           source: 'off',
           categoryGuessed: true,
