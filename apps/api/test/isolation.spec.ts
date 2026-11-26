@@ -47,6 +47,7 @@ interface Ids {
   mapping: number;
   image: string;
   barcode: string;
+  shopping: number;
 }
 let a: Ids;
 let b: Ids;
@@ -141,7 +142,13 @@ async function fill(householdId: number, mark: string, barcode: string): Promise
       user!.id,
     ],
   );
+  const [shopping] = await q<{ id: number }>(
+    `INSERT INTO shopping_items (household_id, product_id, quantity, checked, checked_at)
+     VALUES ($1, $2, 2, $3, CASE WHEN $3 THEN now() END) RETURNING id`,
+    [householdId, product!.id, householdId === B],
+  );
   return {
+    shopping: shopping!.id,
     location: location!.id,
     otherLocation: other!.id,
     shelf: shelf!.id,
@@ -164,6 +171,7 @@ async function snapshotB(): Promise<string> {
     'products',
     'stock_items',
     'stock_movements',
+    'shopping_items',
   ];
   const parts: unknown[] = [];
   for (const table of tables) {
@@ -427,6 +435,60 @@ const checks: Record<string, Check> = {
     expect((await client.post('/api/stock/remove').send({ productId: b.product })).status).toBe(
       404,
     );
+  },
+  'GET /api/shopping': async (client, who) => {
+    const res = await client.get('/api/shopping');
+    expect(res.status).toBe(200);
+    const ids = res.body.items.map((i: { id: number }) => i.id);
+    expect(ids).toContain(a.shopping);
+    expect(ids).not.toContain(b.shopping);
+    assertNothingOfB(res.body, `${who} shopping`);
+    assertNoHousehold(res.body, `${who} shopping`);
+  },
+  'POST /api/shopping': async (client) => {
+    // A product of B is unknown to A.
+    expect((await client.post('/api/shopping').send({ productId: b.product })).status).toBe(404);
+    expect(
+      (await client.post('/api/shopping').send({ label: 'Intrus', householdId: B })).status,
+    ).toBe(400);
+  },
+  'PATCH /api/shopping/:id': async (client) => {
+    expect(
+      (await client.patch(`/api/shopping/${b.shopping}`).send({ checked: false })).status,
+    ).toBe(404);
+    expect((await client.patch(`/api/shopping/${b.shopping}`).send({ quantity: 9 })).status).toBe(
+      404,
+    );
+  },
+  'DELETE /api/shopping/:id': async (client) => {
+    expect((await client.delete(`/api/shopping/${b.shopping}`)).status).toBe(404);
+  },
+  'POST /api/shopping/clear-checked': async (client) => {
+    // B's line is checked, A's is not: only B's would go if the route crossed households.
+    const res = await client.post('/api/shopping/clear-checked');
+    expect(res.status).toBe(200);
+    const [line] = await q('SELECT 1 FROM shopping_items WHERE id = $1', [b.shopping]);
+    expect(line).toBeDefined();
+  },
+  'POST /api/shopping/store-checked': async (client, who) => {
+    const res = await client.post('/api/shopping/store-checked');
+    expect(res.status).toBe(200);
+    assertNothingOfB(res.body, `${who} store-checked`);
+    assertNoHousehold(res.body, `${who} store-checked`);
+    const [stock] = await q<{ quantity: number }>(
+      'SELECT quantity FROM stock_items WHERE id = $1',
+      [b.stockItem],
+    );
+    expect(stock!.quantity).toBe(3);
+    const [line] = await q('SELECT 1 FROM shopping_items WHERE id = $1', [b.shopping]);
+    expect(line).toBeDefined();
+  },
+  'GET /api/shopping/recent': async (client, who) => {
+    const res = await client.get('/api/shopping/recent');
+    expect(res.status).toBe(200);
+    expect(res.body.map((p: { productId: number }) => p.productId)).not.toContain(b.product);
+    assertNothingOfB(res.body, `${who} recent`);
+    assertNoHousehold(res.body, `${who} recent`);
   },
   'GET /api/home': async (client, who) => {
     const res = await client.get('/api/home');

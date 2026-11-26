@@ -5,6 +5,7 @@ import { ClockModule } from './common/clock';
 import { HouseholdScopeMiddleware } from './common/household-context';
 import { ProductsModule } from './products/products.module';
 import { ScanModule } from './scan/scan.module';
+import { ShoppingModule } from './shopping/shopping.module';
 import { StockModule } from './stock/stock.module';
 import { RateLimitModule } from './common/rate-limit.module';
 import { NotFoundModule } from './common/not-found.module';
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     ScanModule,
     StockModule,
+    ShoppingModule,
     HomeModule,
     ImagesModule,
     NotFoundModule,
