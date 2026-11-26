@@ -337,6 +337,45 @@ const checks: Record<string, Check> = {
         .status,
     ).toBe(404);
   },
+  'POST /api/products/:id/merge': async (client) => {
+    // Neither as the merged product nor as the kept one: B's products are unknown to A.
+    expect(
+      (await client.post(`/api/products/${b.product}/merge`).send({ intoProductId: a.product }))
+        .status,
+    ).toBe(404);
+    expect(
+      (await client.post(`/api/products/${a.product}/merge`).send({ intoProductId: b.product }))
+        .status,
+    ).toBe(404);
+    expect(
+      (await client.post(`/api/products/${a.product}/merge`).send({ intoProductId: a.product }))
+        .status,
+    ).toBe(400);
+    const [line] = await q<{ merged_into_id: number | null }>(
+      'SELECT merged_into_id FROM products WHERE id = ANY($1)',
+      [[a.product, b.product]],
+    );
+    expect(line!.merged_into_id).toBeNull();
+  },
+  'POST /api/products/:id/barcode': async (client, who) => {
+    expect(
+      (await client.post(`/api/products/${b.product}/barcode`).send({ barcode: '5449000000996' }))
+        .status,
+    ).toBe(404);
+    // The code of B is not taken in A: the same code can be attached to a product of A.
+    const created = await client
+      .post('/api/products')
+      .send({ name: `Sans code ${who}`, categoryId: a.category });
+    expect(created.status).toBe(201);
+    const res = await client
+      .post(`/api/products/${created.body.id}/barcode`)
+      .send({ barcode: b.barcode });
+    expect(res.status).toBe(200);
+    // Put back: A must not keep knowing the code of B for the other checks.
+    await q('UPDATE products SET barcode = NULL WHERE id = $1', [created.body.id]);
+    assertNothingOfB(res.body, `${who} barcode`);
+    assertNoHousehold(res.body, `${who} barcode`);
+  },
   'GET /api/products/:id/movements': async (client) => {
     expect((await client.get(`/api/products/${b.product}/movements`)).status).toBe(404);
     const mine = await client.get(`/api/products/${a.product}/movements`);
