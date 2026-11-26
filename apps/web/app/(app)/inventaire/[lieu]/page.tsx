@@ -15,6 +15,7 @@ import { FurnitureOptions } from '../../../../components/furniture/FurnitureOpti
 import { DndProvider } from '../../../../components/home/dnd/DndProvider';
 import { OpenFurniture } from '../../../../components/home/OpenFurniture';
 import { ProductSheet } from '../../../../components/home/ProductSheet';
+import { ErrorMessage } from '../../../../components/ui/ErrorMessage';
 import { Callout } from '../../../../components/ui/Callout';
 import { applyMove, findTile, type Destination } from '../../../../lib/drop';
 import { ApiError } from '../../../../lib/api';
@@ -188,9 +189,10 @@ function Meuble() {
         className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto focus-visible:outline-offset-[-2px]"
       >
         {failed ? (
-          <Callout role="alert" title="Un instant">
-            Impossible de charger le meuble : vérifiez la connexion.
-          </Callout>
+          <ErrorMessage
+            message="Impossible de charger le meuble : vérifiez la connexion."
+            onRetry={load}
+          />
         ) : null}
         {home && !location ? (
           <Callout role="alert" title="Meuble introuvable">

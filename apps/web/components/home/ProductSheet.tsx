@@ -68,6 +68,9 @@ export function ProductSheet({
     if (busy) return;
     setBusy(true);
     setError(null);
+    const before = quantity;
+    // Optimistic: the number changes at once and goes back, with a message, if the server refuses.
+    setQuantity(before + delta);
     try {
       await (api.adjust ?? adjustStock)({
         productId: tile.productId,
@@ -79,6 +82,7 @@ export function ProductSheet({
       });
     } catch (caught) {
       setBusy(false);
+      setQuantity(before);
       setError(
         caught instanceof ApiError && caught.status !== 0
           ? caught.message
@@ -87,8 +91,7 @@ export function ProductSheet({
       return;
     }
     setBusy(false);
-    const next = quantity + delta;
-    setQuantity(next);
+    const next = before + delta;
     onChanged();
     if (next <= 0) onClose();
   };

@@ -178,12 +178,6 @@ body {
   animation: image-in 240ms ease-out both;
 }
 
-/* A card opens its furniture with a shared transition where the browser has one. */
-::view-transition-group(furniture-open) {
-  animation-duration: 240ms;
-  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;

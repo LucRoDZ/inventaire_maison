@@ -31,7 +31,7 @@ export function ExpiryChips({ value, onPick, today = todayIso() }: ExpiryChipsPr
           <button
             key={chip.label}
             type="button"
-            aria-label={`Date limite ${chip.name}`}
+            aria-label={`${chip.label}, date limite ${chip.name}`}
             aria-pressed={value === iso}
             onClick={() => onPick(iso)}
             className="tap-target border-line text-indigo hover:bg-lavender aria-pressed:bg-lavender inline-flex items-center rounded-full border bg-white px-4 font-semibold tabular-nums transition-colors duration-150"

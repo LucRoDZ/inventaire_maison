@@ -161,12 +161,16 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
   /** Runs a change of the list; an error is said once, the list is loaded again either way. */
   const act = async (run: () => Promise<unknown>, fallback: string) => {
     setError(null);
+    let failure: string | null = null;
     try {
       await run();
     } catch (caught) {
-      setError(messageOf(caught, fallback));
+      failure = messageOf(caught, fallback);
     }
+    // The list comes back as the server has it (the optimistic change, if refused, is undone);
+    // the message is said after, so that the reload does not wipe it.
     await load();
+    if (failure) setError(failure);
   };
 
   const toggle = (item: ShoppingItemDto) => {
@@ -198,8 +202,8 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
     try {
       await apiRef.current.remove(item.id);
     } catch (caught) {
-      setError(messageOf(caught, 'Suppression impossible'));
       await load();
+      setError(messageOf(caught, 'Suppression impossible'));
       return;
     }
     setToast({
