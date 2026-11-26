@@ -60,10 +60,9 @@ for (const size of SIZES) {
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
       await shot(page, name, size.width);
       if (name === '11-meubles') {
-        await page
-          .getByRole('region', { name: /^Meuble Cave/ })
-          .getByRole('button', { name: 'Supprimer ce meuble' })
-          .click();
+        const cave = page.getByRole('listitem', { name: /^Meuble Cave/ });
+        await cave.getByRole('button', { name: /^Cave/ }).click();
+        await cave.getByRole('button', { name: 'Supprimer ce meuble' }).click();
         await shot(page, '12-boite-suppression', size.width);
         await page.keyboard.press('Escape');
       }

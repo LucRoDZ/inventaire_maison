@@ -74,8 +74,12 @@ for (const size of SIZES) {
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
       await shot(page, name, size.width);
     }
-    await scrollDown(page);
     await page.goto('/plus/meubles');
+    await page
+      .getByRole('listitem', { name: 'Meuble Frigo' })
+      .getByRole('button', { name: /^Frigo/ })
+      .click();
+    await shot(page, '13-meubles-ouvert', size.width);
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
     await scrollDown(page);
     await shot(page, '12-meubles-defile', size.width);

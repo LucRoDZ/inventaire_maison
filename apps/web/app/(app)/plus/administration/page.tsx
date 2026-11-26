@@ -27,7 +27,6 @@ export default function AdministrationPage() {
         <ul className="flex flex-col gap-2">
           <Entry href="/plus/administration/foyers" label="Foyers" icon={House} />
           <Entry href="/plus/administration/membres" label="Comptes" icon={Users} />
-          <Entry href="/plus/meubles" label="Meubles et étagères" icon={Refrigerator} />
           <Entry href="/plus/administration/categories" label="Catégories" icon={Tag} />
           <Entry
             href="/plus/administration/correspondances"
@@ -35,6 +34,19 @@ export default function AdministrationPage() {
             icon={Tag}
           />
         </ul>
+        {/* One way in, under Plus: this screen points to it instead of repeating it. */}
+        <div className="flex flex-col items-start gap-1">
+          <p className="text-help">
+            Les meubles et leurs étagères se règlent sous Plus, pour tous les comptes de la maison.
+          </p>
+          <Link
+            href="/plus/meubles"
+            className="tap-target text-indigo-mid inline-flex items-center gap-1 font-bold"
+          >
+            Aller à Meubles et étagères
+            <ChevronRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
       </AdminGate>
     </Screen>
   );

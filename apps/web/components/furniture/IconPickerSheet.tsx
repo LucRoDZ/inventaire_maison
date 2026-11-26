@@ -13,7 +13,8 @@ interface IconPickerSheetProps {
   /** Name of the piece of furniture, for the title. */
   name: string;
   icon: string;
-  save: (icon: string) => Promise<unknown>;
+  /** Writes the icon at once; absent: the choice is only given back (a form saves it later). */
+  save?: (icon: string) => Promise<unknown>;
   onSaved: (icon: string) => void;
   onClose: () => void;
 }
@@ -37,6 +38,10 @@ export function IconPickerSheet({ name, icon, save, onSaved, onClose }: IconPick
     if (busy) return;
     if (choice === icon) {
       onClose();
+      return;
+    }
+    if (!save) {
+      onSaved(choice);
       return;
     }
     setBusy(true);
@@ -95,7 +100,7 @@ export function IconPickerSheet({ name, icon, save, onSaved, onClose }: IconPick
       ) : null}
       <div className="flex flex-col gap-2">
         <Button aria-disabled={busy} onClick={() => void confirm()}>
-          {busy ? 'Enregistrement…' : 'Enregistrer l’icône'}
+          {busy ? 'Enregistrement…' : save ? 'Enregistrer l’icône' : 'Choisir cette icône'}
         </Button>
         <Button variant="secondary" onClick={onClose}>
           Annuler

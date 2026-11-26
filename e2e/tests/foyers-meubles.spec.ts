@@ -121,7 +121,8 @@ for (const size of SIZES) {
 
     // Delete it from the furniture screen: the dialog names it, the stock goes to « Frigo ».
     await page.goto('/plus/meubles');
-    const region = page.getByRole('region', { name: 'Meuble Frigo 2' });
+    const region = page.getByRole('listitem', { name: 'Meuble Frigo 2' });
+    await region.getByRole('button', { name: /^Frigo 2/ }).click();
     await region.getByRole('button', { name: 'Supprimer ce meuble' }).click();
     const dialog = page.getByRole('alertdialog', { name: 'Supprimer Frigo 2 ?' });
     await expect(dialog.getByRole('button', { name: 'Annuler' })).toBeFocused();

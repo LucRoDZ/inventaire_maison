@@ -166,7 +166,40 @@ test('défilement : même principe sur Plus, Meubles et étagères et la fiche p
     expect(overflow).toBe('hidden');
   }
   await page.goto('/plus/meubles');
+  // Closed lines are short: one opened line makes the zone scroll.
+  await page
+    .getByRole('listitem', { name: 'Meuble Frigo' })
+    .getByRole('button', { name: /^Frigo/ })
+    .click();
   await scrollZoneAndCheck(page, 'Meubles et étagères');
+});
+
+test('Meubles et étagères : une ligne par meuble, une seule dépliée, icônes en grille, axe', async ({
+  page,
+}) => {
+  await page.setViewportSize(PHONES[0]);
+  await page.goto('/plus/meubles');
+  await expect(page.getByRole('listitem', { name: /^Meuble / })).toHaveCount(8);
+  await expect(page.locator('select:has(option:nth-child(20))')).toHaveCount(0);
+  const toggle = (name: string) =>
+    page
+      .getByRole('listitem', { name: `Meuble ${name}` })
+      .getByRole('button', { name: new RegExp(`^${name}`) });
+  await toggle('Frigo').click();
+  await expect(toggle('Frigo')).toHaveAttribute('aria-expanded', 'true');
+  await toggle('Cave').click();
+  await expect(toggle('Cave')).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle('Frigo')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('[aria-expanded="true"]')).toHaveCount(1);
+  const cave = page.getByRole('listitem', { name: 'Meuble Cave' });
+  await expect(cave.getByRole('button', { name: 'Enregistrer', exact: true })).toBeVisible();
+  await expect(cave.getByRole('button', { name: 'Ajouter une étagère' })).toBeVisible();
+  await axe(page);
+  await cave.getByRole('button', { name: /Changer l’icône/ }).click();
+  const icons = page.getByRole('dialog', { name: 'Icône de Cave' });
+  await expect(icons.getByRole('radiogroup')).toBeVisible();
+  await axe(page);
+  await page.keyboard.press('Escape');
 });
 
 test('grand écran 1440 × 800 : en-tête fixe, zone qui défile, pas de défilement de la fenêtre', async ({
