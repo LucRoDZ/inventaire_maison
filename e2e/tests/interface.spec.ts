@@ -137,6 +137,76 @@ for (const size of PHONES) {
   });
 }
 
+test('filtres : meuble et catégorie, pastille, rappel, recherche combinée, état gardé, Effacer et Réinitialiser', async ({
+  page,
+}) => {
+  await page.setViewportSize(PHONES[1]);
+  await page.goto('/inventaire');
+  await page.getByRole('button', { name: 'Liste', exact: true }).click();
+  const zone = page.getByRole('region', { name: 'Liste des produits' });
+  await expect(zone.getByText('60 articles · 120 unités')).toBeVisible();
+  const reminder = page.getByTestId('filter-reminder');
+  const filters = page.getByRole('button', { name: 'Filtres', exact: true });
+  const badge = filters.getByTestId('filters-badge');
+  await expect(reminder).toHaveCount(0);
+  await expect(badge).toHaveCount(0);
+
+  // Furniture and category, applied together (« Rutabaga 02 » is a wine in the fridge).
+  await filters.click();
+  const sheet = page.getByRole('dialog', { name: 'Filtres' });
+  await expect(sheet.getByRole('group', { name: 'Meuble' }).getByRole('radio')).toHaveCount(9);
+  await sheet.getByRole('radio', { name: /^Frigo/ }).check();
+  await sheet.getByRole('checkbox', { name: 'Alcools et vins' }).check();
+  await sheet.getByRole('button', { name: 'Appliquer' }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(filters).toBeFocused();
+  await expect(badge).toHaveText('2');
+  await expect(reminder).toContainText('Frigo · Alcools et vins');
+  expect(Math.round((await reminder.boundingBox())!.height)).toBe(32);
+  const cards = zone.locator('article');
+  await expect(cards.first()).toBeVisible();
+  for (const text of await cards.allTextContents()) expect(text).toContain('Frigo');
+  await expect(zone.getByRole('button', { name: /^Alcools et vins/ })).toBeVisible();
+  await expect(zone.getByRole('button', { name: /^Viandes/ })).toHaveCount(0);
+  const filtered = await cards.count();
+
+  // The search narrows what the filters keep.
+  const search = page.getByRole('searchbox', { name: 'Nom ou marque' });
+  await search.fill('Rutabaga 02');
+  await expect.poll(() => cards.count()).toBeLessThanOrEqual(filtered);
+  for (const text of await cards.allTextContents()) expect(text).toContain('Rutabaga 02');
+
+  // Kept across the views: the house keeps the search and the category (not the furniture).
+  await page.getByRole('button', { name: 'Maison', exact: true }).click();
+  await expect(search).toHaveValue('Rutabaga 02');
+  await expect(badge).toHaveText('1');
+  await expect(reminder).toContainText('Alcools et vins');
+  await expect(reminder).not.toContainText('Frigo');
+  await expect(page.locator('a.fx-card[data-match="true"]').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Liste', exact: true }).click();
+  await expect(badge).toHaveText('2');
+  await expect(reminder).toContainText('Frigo · Alcools et vins');
+
+  // « Effacer » clears the filters, the search stays.
+  await reminder.getByRole('button', { name: 'Effacer les filtres' }).click();
+  await expect(reminder).toHaveCount(0);
+  await expect(badge).toHaveCount(0);
+  await expect(search).toHaveValue('Rutabaga 02');
+
+  // « Réinitialiser » from the panel.
+  await search.fill('');
+  await filters.click();
+  await sheet.getByRole('checkbox', { name: 'Viandes' }).check();
+  await sheet.getByRole('button', { name: 'Appliquer' }).click();
+  await expect(reminder).toContainText('Viandes');
+  await filters.click();
+  await expect(sheet.getByRole('checkbox', { name: 'Viandes' })).toBeChecked();
+  await sheet.getByRole('button', { name: 'Réinitialiser' }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(reminder).toHaveCount(0);
+  await expect(zone.getByText('60 articles · 120 unités')).toBeVisible();
+});
+
 test('paysage 740 × 360 : la zone se réduit, rien ne déborde', async ({ page }) => {
   await page.setViewportSize({ width: 740, height: 360 });
   await page.goto('/inventaire');

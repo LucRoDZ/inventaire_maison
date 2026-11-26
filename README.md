@@ -368,11 +368,19 @@ Les tests automatiques mesurent la géométrie et la cadence des images dans des
 
 1. Onglet Inventaire, vue Maison : les quatre meubles sont fermés. Un appui sur une carte fait pencher la porte et allume un halo ambre, puis le meuble s'ouvre sans attente.
 2. Dans chaque meuble : la ou les portes pivotent en un peu plus d'une demi-seconde, sans saccade, puis restent en fine lamelle sur le côté sans recouvrir les étagères ; une fine barre de lumière ambre s'allume en haut (pas au congélateur). Le cadre du meuble s'arrête sous sa dernière étagère, toutes les étagères ont la même hauteur. Au congélateur, les tiroirs glissent l'un après l'autre, leur poignée ne touche aucun texte et leur contenu reste visible.
-3. Téléphone en portrait : le meuble entier (barre du haut, étagères, « Non rangé ») tient entre le haut de l'écran et la barre du bas, la page ne défile pas, y compris dans Safari quand la barre d'adresse se replie. Faire défiler une étagère pleine de gauche à droite : pas de saccade, les piles de vignettes ne sont pas rognées. Tourner le téléphone en paysage : la page défile de nouveau.
+3. Téléphone en portrait : le meuble entier (barre du haut, étagères, « Non rangé ») tient entre le haut de l'écran et la barre du bas, la page ne défile pas, y compris dans Safari quand la barre d'adresse se replie. Faire défiler une étagère pleine de gauche à droite : pas de saccade, les piles de vignettes ne sont pas rognées. Tourner le téléphone en paysage : le meuble défile à l'intérieur de l'écran, la page jamais.
 4. Appui long sur une vignette puis glisser : l'étagère survolée s'entoure d'ambre ; déposer déplace le produit.
 5. Taper un nom dans la recherche de la vue Maison : seuls les meubles qui contiennent un résultat s'entourent d'ambre, porte entrouverte.
-   Dans un meuble ouvert, le bouton Filtres (en haut à droite) ouvre le panneau de recherche par le bas ; un filtre actif met un point ambre sur le bouton et une ligne « Filtré : … » sous la barre, les étagères se resserrent sans faire défiler la page.
+   Dans un meuble ouvert, le bouton Filtres (en haut à droite) ouvre le panneau de recherche par le bas ; « Appliquer » met une pastille ambre (nombre de filtres) sur le bouton et une ligne de rappel sous la barre, les étagères se resserrent sans faire défiler la page.
 6. Réglages du téléphone, « Réduire les animations » activé : le meuble apparaît directement ouvert et allumé.
+
+### En-tête fixe, filtres et défilement
+
+1. Accueil, vues Maison puis Liste : l'en-tête (titre « Inventaire », bouton Filtres, bascule Maison / Liste, recherche) reste en place quand on fait défiler la liste du doigt ; la barre du bas aussi. Un filet fin apparaît sous l'en-tête dès que la liste n'est plus tout en haut. La page elle-même ne rebondit pas (Safari compris).
+2. Toucher la recherche : le clavier s'ouvre, l'en-tête et le champ restent visibles, seule la liste rétrécit (Android) ou la vue se cale sur le champ (iPhone).
+3. Filtres : en vue Maison, les catégories ; en vue Liste, le meuble, les catégories et le tri. « Appliquer » ferme le panneau, une pastille donne le nombre de filtres et une ligne « Frigo · Boissons » apparaît en tête de liste avec « Effacer ». Basculer de vue et revenir d'un meuble ouvert garde la recherche, les filtres et la position de la liste.
+4. Bouton « ⋯ » d'une carte de meuble (et de l'en-tête du meuble ouvert) : Renommer, Changer l'icône, Monter, Descendre, Supprimer. Toucher la carte elle-même ouvre toujours le meuble.
+5. Tourner le téléphone en paysage : la liste se réduit, rien ne déborde.
 
 ## Exécution autonome avec Claude Code
 
