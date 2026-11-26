@@ -10,8 +10,8 @@
 | Vague 1 : SYNC (B1 à B5) | fait | 0fd04d2, 875eb3f, 46c57ea |
 | Vague 1 : UI (C, D, E, B6) | fait | 241816a, 0c29381, 77f01af |
 | Vague 2 : fusion puis thème sombre (F) | fait | a4a3202, 5f8080d ; intégration corrigée | ordre SCAN, SYNC, UI ; un seul `worker` pour F |
-| Vague 3 : suite complète, revue | en cours | |
-| Finition, clôture | à faire | |
+| Vague 3 : suite complète, revue | fait | CI verte (a9ed09e), revue corrigée (9b5abea) |
+| Finition, clôture | fait | unslop, README, PR #28 |
 
 ## Contrat (ne change pas sans le pilote)
 
