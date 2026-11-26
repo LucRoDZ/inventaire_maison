@@ -392,7 +392,7 @@ export function ScanFlow({
       />
 
       {step.name === 'resolving' ? (
-        <p role="status" className="text-small">
+        <p role="status" className="text-small text-scanner-ink!">
           Recherche du produit…
         </p>
       ) : null}

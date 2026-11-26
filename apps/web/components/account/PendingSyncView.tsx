@@ -39,10 +39,12 @@ export function PendingSyncView() {
     setUnknown(await queue.listUnknown());
   }, []);
 
-  // `count` changes with every change of the queue.
+  // Reloaded on every change of the queue, not only of its size: an operation that turns into a
+  // conflict keeps the same count but must show its message and its actions at once.
   useEffect(() => {
     void load();
-  }, [load, count]);
+    return getQueue().subscribe(() => void load());
+  }, [load]);
 
   const identify = async (code: string) => {
     try {

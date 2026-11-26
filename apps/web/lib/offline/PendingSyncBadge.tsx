@@ -12,9 +12,12 @@ export function PendingSyncBadge({ className = '' }: { className?: string }) {
   return (
     <Link
       href={PENDING_SYNC_HREF}
-      className={`bg-amber text-on-amber text-small inline-flex min-h-8 items-center rounded-full px-3 font-semibold ${className}`}
+      className={`tap-target inline-flex items-center justify-center ${className}`}
     >
-      À synchroniser ({count})
+      {/* The pill stays compact; the link around it is the 44 px touch target. */}
+      <span className="bg-amber text-on-amber text-small inline-flex min-h-8 items-center rounded-full px-3 font-semibold">
+        À synchroniser ({count})
+      </span>
     </Link>
   );
 }

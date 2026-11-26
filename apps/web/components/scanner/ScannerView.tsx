@@ -163,6 +163,8 @@ export function ScannerView({
     scannerRef.current?.stop();
     sessionRef.current?.stop();
     sessionRef.current = null;
+    // A new camera starts with its torch off: the button must say so.
+    setTorchOn(false);
     const id = ++startId.current;
     setPhase({ name: 'starting' });
     let session: CameraSession | null = null;
@@ -265,7 +267,7 @@ export function ScannerView({
   };
 
   return (
-    <div className="bg-ink text-scanner-ink flex min-h-0 flex-1 flex-col">
+    <div className="bg-scanner-backdrop text-scanner-ink flex min-h-0 flex-1 flex-col">
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <h1 className="sr-only">Scanner</h1>
         <video

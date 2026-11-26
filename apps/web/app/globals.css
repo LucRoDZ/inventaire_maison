@@ -23,6 +23,7 @@
   --color-scanner-veil: var(--scanner-veil);
   --color-scanner-frame: var(--scanner-frame);
   --color-scanner-ink: var(--scanner-ink);
+  --color-scanner-backdrop: var(--scanner-backdrop);
   --color-scanner-on-frame: var(--scanner-on-frame);
   --color-swipe-consumed-bg: var(--swipe-consumed-bg);
   --color-swipe-consumed-ink: var(--swipe-consumed-ink);

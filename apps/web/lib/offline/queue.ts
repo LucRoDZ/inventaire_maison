@@ -154,7 +154,11 @@ export class OfflineQueue {
   /** Downloads the catalogue of the household; a failure keeps the previous copy. */
   async refreshCatalog(): Promise<boolean> {
     try {
+      const scope = await this.store.getMeta('scope');
+      if (scope === null) return false;
       const entries = await this.api.catalog();
+      // Signed out or another account meanwhile: this catalogue belongs to nobody on the device.
+      if ((await this.store.getMeta('scope')) !== scope) return false;
       await this.store.setCatalog({ entries, fetchedAt: this.now().toISOString() });
       return true;
     } catch {
@@ -168,12 +172,12 @@ export class OfflineQueue {
   }
 
   /**
-   * Binds the device data to an account scope. Another scope than the stored one: everything of the
-   * previous owner is deleted first.
+   * Binds the device data to an account scope. Another scope than the stored one, or none (data
+   * written after a sign-out, in another tab or by a late response): everything is deleted first.
    */
   async ensureScope(scope: string): Promise<void> {
     const current = await this.store.getMeta('scope');
-    if (current !== null && current !== scope) await this.store.clearData();
+    if (current !== scope) await this.store.clearData();
     await this.store.setMeta('scope', scope);
     await this.changed();
   }

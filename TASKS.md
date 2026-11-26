@@ -60,7 +60,7 @@
 
 ### Clôture
 - [ ] **Z1 Suite complète et e2e**. Fin : vert.
-- [ ] **Z2 Revue `reviewer`** (isolation, accessibilité, identité, replis). Fin : corrections faites.
+- [x] **Z2 Revue `reviewer`** (isolation, accessibilité, identité, replis). Fin : 7 points corrigés.
 - [x] **Z3 Finition unslop**. Fin : `docs/audit-finition.md`, section Phase 4.
 - [ ] **Z4 README, PR, CI verte, fusion**. Fin : squash.
 
@@ -116,6 +116,8 @@
 - P4.16 : la pastille d'icône compte aujourd'hui + bientôt + périmés (l'API compte « aujourd'hui » à part).
 - P4.17 : thème sombre : jetons `--on-amber` et `--scanner-on-frame` ajoutés pour le texte posé sur l'ambre et sur le cadre du scanner.
 - P4.18 : `offline-sync.spec` travaille dans son propre foyer (base e2e partagée entre les specs).
+- P4.19 : données de l'appareil écrites sans compte (après une déconnexion, autre onglet, réponse tardive) purgées à la connexion suivante ; catalogue jamais écrit sans compte lié.
+- P4.20 : jeton `--scanner-backdrop`, sombre dans les deux thèmes (le scanner ne repose plus sur `--ink`, clair en sombre).
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->

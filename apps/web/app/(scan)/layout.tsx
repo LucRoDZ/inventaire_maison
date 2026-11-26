@@ -10,7 +10,9 @@ import { InstallSheet } from '../../components/pwa/InstallSheet';
 export default function ScanLayout({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
-      <div className="bg-ink fixed inset-0 z-20 flex flex-col">{children}</div>
+      <div className="bg-scanner-backdrop text-scanner-ink fixed inset-0 z-20 flex flex-col">
+        {children}
+      </div>
       <InstallSheet />
       <AppBadge />
     </AuthProvider>

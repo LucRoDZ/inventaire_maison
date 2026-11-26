@@ -120,6 +120,7 @@ describe('flush', () => {
 
 describe('catalogue cache', () => {
   it('finds a product by barcode, and keeps the old copy when the refresh fails', async () => {
+    await queue.ensureScope('scope-a');
     expect(await queue.findCachedProduct('3017620422003')).toBeNull();
     expect(await queue.refreshCatalog()).toBe(true);
     expect(await queue.findCachedProduct('3017620422003')).toMatchObject({ id: 7 });
@@ -155,5 +156,43 @@ describe('device isolation', () => {
     await queue.ensureScope('scope-b');
     expect(queue.getCount()).toBe(0);
     expect(await queue.findCachedProduct('3017620422003')).toBeNull();
+  });
+
+  it('purges at the next sign-in what was written after a sign-out (no scope)', async () => {
+    await queue.ensureScope('scope-a');
+    await queue.purge();
+    // Another tab still open on the scanner, signed out: an unknown code is kept without a scope.
+    await queue.keepUnknownBarcode('222');
+    await queue.ensureScope('scope-b');
+    expect(queue.getCount()).toBe(0);
+    expect(await queue.listUnknown()).toEqual([]);
+  });
+
+  it('writes no catalogue without a signed-in account', async () => {
+    expect(await queue.refreshCatalog()).toBe(false);
+    expect(await queue.findCachedProduct('3017620422003')).toBeNull();
+  });
+
+  it('never writes a catalogue that arrives after the sign-out', async () => {
+    await queue.ensureScope('scope-a');
+    let release!: () => void;
+    const late = new OfflineQueue(
+      store,
+      {
+        ...api,
+        catalog: () =>
+          new Promise((resolve) => {
+            release = () =>
+              resolve([{ id: 7, name: 'Lait', barcode: '3017620422003', defaultLocationId: 2 }]);
+          }),
+      },
+      () => 'uuid-late-xxxxxxxx',
+    );
+    const pending = late.refreshCatalog();
+    await new Promise((r) => setTimeout(r, 0));
+    await late.purge();
+    release();
+    expect(await pending).toBe(false);
+    expect(await late.findCachedProduct('3017620422003')).toBeNull();
   });
 });
