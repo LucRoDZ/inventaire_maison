@@ -10,6 +10,7 @@ import type {
 } from '@inventaire/shared';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../lib/api';
+import { handleOfflineScan, OFFLINE_SCAN_MESSAGE } from '../../lib/offline';
 import { useOnline } from '../../lib/online';
 import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import { attachBarcode } from '../../lib/products-api';
@@ -185,7 +186,18 @@ export function ScanFlow({ origin = null, renderUnknown, api = {}, makeScanner }
             setStep({ name: 'scanning' });
             break;
           case 'offline':
-            showNotice('Réessayez quand la connexion sera revenue.', OFFLINE_MESSAGE);
+            try {
+              // Kept on the device (known product queued, unknown code to identify later).
+              const kept = await handleOfflineScan(result.code);
+              showNotice(
+                kept.kind === 'queued'
+                  ? `${kept.productName} : ${OFFLINE_SCAN_MESSAGE}`
+                  : `Code ${kept.barcode} inconnu : ${OFFLINE_SCAN_MESSAGE}`,
+                OFFLINE_MESSAGE,
+              );
+            } catch {
+              showNotice('Réessayez quand la connexion sera revenue.', OFFLINE_MESSAGE);
+            }
             setStep({ name: 'scanning' });
             break;
           case 'error':
