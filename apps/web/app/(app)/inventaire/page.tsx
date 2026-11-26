@@ -54,7 +54,10 @@ function Inventaire() {
       header={
         <>
           <ViewToggle value={view} onChange={setView} />
-          <SearchField value={filters.q} onChange={(q) => setFilters({ ...filters, q })} />
+          <SearchField
+            value={filters.q} // From the URL itself: typing never erases a filter only hidden for now.
+            onChange={(q) => setFilters({ ...urlFilters, q })}
+          />
         </>
       }
       zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}

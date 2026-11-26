@@ -61,7 +61,8 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
     summaryRef.current = onSummary;
   });
 
-  const [locations, setLocations] = useState<LocationDto[]>([]);
+  /** Null until loaded: no summary is given before, so no filter is taken for a stale one. */
+  const [locations, setLocations] = useState<LocationDto[] | null>(null);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [items, setItems] = useState<StockListItemDto[] | null>(null);
   const [debounced, setDebounced] = useState(filters.q.trim());
@@ -123,6 +124,7 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
   );
 
   useEffect(() => {
+    if (locations === null) return;
     summaryRef.current?.({
       total: distinctProducts(inCategories),
       locations: locations.map((location) => ({

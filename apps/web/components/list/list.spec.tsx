@@ -178,6 +178,14 @@ describe('ListView', () => {
     );
   });
 
+  it('gives no summary before the furniture is loaded (a filter is never taken for stale)', async () => {
+    const { onSummary } = renderList([line(1, 'Lait', 2, 3)], {
+      fetchLocations: () => new Promise<LocationDto[]>(() => undefined),
+    });
+    expect(await screen.findByText('1 article · 3 unités')).toBeInTheDocument();
+    expect(onSummary).not.toHaveBeenCalled();
+  });
+
   it('sends the search and the order to the server, filters furniture and categories here', async () => {
     const items = [
       line(1, 'Lait', 2, 3),
