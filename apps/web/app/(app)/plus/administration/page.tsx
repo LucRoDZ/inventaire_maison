@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, House, Tag, Users, type LucideIcon } from 'lucide-react';
+import { Bell, ChevronRight, House, Tag, Users, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AdminGate } from '../../../../components/admin/AdminGate';
 import { Screen } from '../../../../components/ui/Screen';
@@ -28,6 +28,7 @@ export default function AdministrationPage() {
           <Entry href="/plus/administration/foyers" label="Foyers" icon={House} />
           <Entry href="/plus/administration/membres" label="Comptes" icon={Users} />
           <Entry href="/plus/administration/categories" label="Catégories" icon={Tag} />
+          <Entry href="/plus/administration/alertes" label="Alertes de péremption" icon={Bell} />
           <Entry
             href="/plus/administration/correspondances"
             label="Correspondances Open Food Facts"

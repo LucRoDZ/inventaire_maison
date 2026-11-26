@@ -7,6 +7,7 @@ import {
   type SerwistGlobalConfig,
 } from 'serwist';
 import { PAGES_CACHE, RETIRED_CACHES } from '../lib/cache-names';
+import { notificationFor, parsePushPayload, safePushUrl } from '../lib/push-payload';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -62,6 +63,41 @@ serwist.setCatchHandler(async ({ request }) => {
 // Caches of the versions that kept API reads and pictures: removed for good.
 self.addEventListener('activate', (event) => {
   event.waitUntil(Promise.all(RETIRED_CACHES.map((name) => caches.delete(name))));
+});
+
+// Daily summary: shown as a notification; a message that is not a summary shows nothing.
+self.addEventListener('push', (event) => {
+  let raw: unknown = null;
+  try {
+    raw = event.data?.json();
+  } catch {
+    raw = null;
+  }
+  const payload = parsePushPayload(raw);
+  if (!payload) return;
+  const { title, options } = notificationFor(payload);
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// A tap opens the list filtered on the expiry: an open window of the app is reused.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(
+    safePushUrl((event.notification.data as { url?: unknown } | null)?.url),
+    self.location.origin,
+  ).href;
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      if (open) {
+        await open.focus();
+        if ('navigate' in open) await open.navigate(url).catch(() => undefined);
+      } else {
+        await self.clients.openWindow(url);
+      }
+    })(),
+  );
 });
 
 serwist.addEventListeners();

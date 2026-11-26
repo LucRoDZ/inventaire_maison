@@ -1,8 +1,9 @@
 'use client';
 
 import type { CategoryDto, LocationDto, ProductDetailDto } from '@inventaire/shared';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { MergeProduct } from '../../../../components/product/MergeProduct';
 import { MovementList } from '../../../../components/product/MovementList';
 import { ProductEdit } from '../../../../components/product/ProductEdit';
 import { StockByLocation } from '../../../../components/product/StockByLocation';
@@ -20,6 +21,7 @@ type State =
 
 export default function ProduitPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [state, setState] = useState<State>({ name: 'loading' });
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [locations, setLocations] = useState<LocationDto[]>([]);
@@ -107,6 +109,18 @@ export default function ProduitPage() {
                 Chargement…
               </p>
             )}
+          </section>
+          <section aria-labelledby="doublon" className="flex flex-col items-start gap-2">
+            <h2 id="doublon" className="text-card-title">
+              Doublon
+            </h2>
+            <p className="text-small">
+              Ce produit existe deux fois dans le catalogue ? Fusionnez-le avec l’autre.
+            </p>
+            <MergeProduct
+              product={state.product}
+              onMerged={(result) => router.replace(`/produits/${result.kept.id}`)}
+            />
           </section>
           <section aria-labelledby="historique" className="flex flex-col gap-2">
             <h2 id="historique" className="text-card-title">

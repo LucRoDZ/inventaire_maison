@@ -3,6 +3,7 @@
 import type { CategoryDto } from '@inventaire/shared';
 import { Suspense, useEffect, useState } from 'react';
 import { FilterReminder, FiltersControl } from '../../../components/home/FiltersControl';
+import { SummaryCounters } from '../../../components/home/SummaryCounters';
 import { HomeView } from '../../../components/home/HomeView';
 import { SearchField } from '../../../components/home/SearchField';
 import { ListView, type ListSummary } from '../../../components/list/ListView';
@@ -27,6 +28,7 @@ function Inventaire() {
   const [urlFilters, setFilters] = useHomeFilters();
   const [categories, setCategories] = useState<CategoryDto[] | null>(null);
   const [summary, setSummary] = useState<ListSummary | null>(null);
+  const [stockVersion, setStockVersion] = useState(0);
   // Ids that no longer exist are ignored, so the badge and the reminder always agree.
   const filters = withKnownFilters(urlFilters, categories, summary?.locations ?? null);
 
@@ -63,12 +65,25 @@ function Inventaire() {
       zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}
       memoryKey={`inventaire-${view}`}
     >
+      <SummaryCounters
+        active={filters.expiry}
+        onSelect={(expiry) => setFilters({ ...urlFilters, expiry })}
+        version={stockVersion}
+      />
       {/* In the zone that scrolls: its coming and going never moves the zone itself. */}
       <FilterReminder
         summary={reminder}
         onClear={() => setFilters(clearPanelFilters(filters, view))}
       />
-      {view === 'list' ? <ListView filters={filters} onSummary={setSummary} /> : <HomeView />}
+      {view === 'list' ? (
+        <ListView
+          filters={filters}
+          onSummary={setSummary}
+          onStockChanged={() => setStockVersion((v) => v + 1)}
+        />
+      ) : (
+        <HomeView />
+      )}
     </Screen>
   );
 }

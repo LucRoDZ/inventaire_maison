@@ -1,8 +1,11 @@
 'use client';
 
 import {
+  EXPIRY_FILTERS,
   STOCK_SORTS,
   type CategoryDto,
+  type ExpiryFilter,
+  type ExpiryStatus,
   type HomeLocationDto,
   type HomeTileDto,
   type StockSort,
@@ -22,15 +25,33 @@ export interface HomeFilters {
   locationId: number | null;
   /** List view only. */
   sort: StockSort;
+  /** The counters of the top of the inventory; both views. Null: no expiry filter. */
+  expiry: ExpiryFilter | null;
 }
 
-export const DEFAULT_SORT: StockSort = 'name';
+/** The list is sorted by expiry date by default (what is urgent comes first). */
+export const DEFAULT_SORT: StockSort = 'expiry';
+
+/** Value of the URL parameter `echeance` for each expiry filter (French, readable links). */
+export const EXPIRY_PARAMS: Record<ExpiryFilter, string> = {
+  today: 'aujourdhui',
+  soon: 'bientot',
+  expired: 'perime',
+};
+
+/** Name of each expiry filter, as the counters and the reminder line say it. */
+export const EXPIRY_FILTER_LABELS: Record<ExpiryFilter, string> = {
+  today: 'À consommer aujourd’hui',
+  soon: 'Bientôt',
+  expired: 'Périmés',
+};
 
 export const NO_FILTER: HomeFilters = {
   q: '',
   categoryIds: [],
   locationId: null,
   sort: DEFAULT_SORT,
+  expiry: null,
 };
 
 /** The two views of the inventory; each one has its own filters (the search is shared). */
@@ -42,7 +63,7 @@ export const normalize = (text: string): string =>
 
 /** A search or a category: what does not match fades (house, open furniture). */
 export const isFiltering = (filters: HomeFilters): boolean =>
-  normalize(filters.q) !== '' || filters.categoryIds.length > 0;
+  normalize(filters.q) !== '' || filters.categoryIds.length > 0 || filters.expiry !== null;
 
 /** Filters of the panel that are on for this view (the badge of the button). The search is not one. */
 export const activeFilterCount = (filters: HomeFilters, view: InventoryView): number =>
@@ -52,6 +73,7 @@ export const activeFilterCount = (filters: HomeFilters, view: InventoryView): nu
 export const clearPanelFilters = (filters: HomeFilters, view: InventoryView): HomeFilters => ({
   ...filters,
   categoryIds: [],
+  expiry: null,
   ...(view === 'list' ? { locationId: null, sort: DEFAULT_SORT } : {}),
 });
 
@@ -90,7 +112,8 @@ export function filterSummary(
       ? locations.find((l) => l.id === filters.locationId)?.name
       : undefined;
   const names = filters.categoryIds.map((id) => categories.find((c) => c.id === id)?.name);
-  return [location, ...names].filter(Boolean).join(' · ');
+  const expiry = filters.expiry ? EXPIRY_FILTER_LABELS[filters.expiry] : undefined;
+  return [expiry, location, ...names].filter(Boolean).join(' · ');
 }
 
 const positive = (text: string | null): number | null => {
@@ -108,7 +131,9 @@ export function parseFilters(params: URLSearchParams): HomeFilters {
     ),
   ];
   const sort = params.get('tri');
+  const expiryParam = params.get('echeance');
   return {
+    expiry: EXPIRY_FILTERS.find((key) => EXPIRY_PARAMS[key] === expiryParam) ?? null,
     q: params.get('q') ?? '',
     categoryIds,
     locationId: positive(params.get('meuble')),
@@ -118,7 +143,7 @@ export function parseFilters(params: URLSearchParams): HomeFilters {
   };
 }
 
-const FILTER_KEYS = ['q', 'cat', 'meuble', 'tri'] as const;
+const FILTER_KEYS = ['q', 'cat', 'meuble', 'tri', 'echeance'] as const;
 
 /** Writes the filters into the parameters given, leaving the others (view…) alone. */
 function writeFilters(params: URLSearchParams, filters: HomeFilters): URLSearchParams {
@@ -127,6 +152,7 @@ function writeFilters(params: URLSearchParams, filters: HomeFilters): URLSearchP
   if (filters.categoryIds.length > 0) params.set('cat', filters.categoryIds.join(','));
   if (filters.locationId !== null) params.set('meuble', String(filters.locationId));
   if (filters.sort !== DEFAULT_SORT) params.set('tri', filters.sort);
+  if (filters.expiry !== null) params.set('echeance', EXPIRY_PARAMS[filters.expiry]);
   return params;
 }
 
@@ -139,7 +165,16 @@ export function filtersToQuery(filters: HomeFilters): string {
 export function tileMatches(tile: HomeTileDto, filters: HomeFilters): boolean {
   const term = normalize(filters.q);
   if (term !== '' && !normalize(`${tile.name} ${tile.brand ?? ''}`).includes(term)) return false;
+  if (filters.expiry !== null && !expiryMatches(tile.expiry, filters.expiry)) return false;
   return filters.categoryIds.length === 0 || filters.categoryIds.includes(tile.category.id);
+}
+
+/** Same buckets as the server: today, 1 to threshold days, passed. */
+export function expiryMatches(expiry: ExpiryStatus | null, filter: ExpiryFilter): boolean {
+  if (expiry === null) return false;
+  if (filter === 'expired') return expiry.status === 'expired';
+  if (expiry.status !== 'soon') return false;
+  return filter === 'today' ? expiry.days === 0 : expiry.days > 0;
 }
 
 export const locationTiles = (location: HomeLocationDto): HomeTileDto[] => [

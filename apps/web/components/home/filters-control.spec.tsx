@@ -94,7 +94,9 @@ describe('FiltersControl', () => {
     expect(within(furniture).getByRole('radio', { name: /Tout/ })).toBeChecked();
     expect(within(sheet).getByRole('group', { name: 'Catégories' })).toBeInTheDocument();
     expect(
-      within(within(sheet).getByRole('group', { name: 'Tri' })).getByRole('radio', { name: 'Nom' }),
+      within(within(sheet).getByRole('group', { name: 'Tri' })).getByRole('radio', {
+        name: 'Date limite',
+      }),
     ).toBeChecked();
   });
 
@@ -115,7 +117,13 @@ describe('FiltersControl', () => {
     await userEvent.click(within(sheet).getByRole('radio', { name: 'Date limite' }));
     await userEvent.click(within(sheet).getByRole('button', { name: 'Appliquer' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(state()).toEqual({ q: '', categoryIds: [4], locationId: 10, sort: 'expiry' });
+    expect(state()).toEqual({
+      q: '',
+      categoryIds: [4],
+      locationId: 10,
+      sort: 'expiry',
+      expiry: null,
+    });
     const button = screen.getByRole('button', { name: 'Filtres' });
     expect(button).toHaveFocus();
     expect(button).toHaveAccessibleDescription('2 filtres actifs');
@@ -127,7 +135,7 @@ describe('FiltersControl', () => {
     render(
       <Harness
         mode="list"
-        initial={{ q: 'lait', categoryIds: [3], locationId: 11, sort: 'added' }}
+        initial={{ q: 'lait', categoryIds: [3], locationId: 11, sort: 'added', expiry: null }}
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Filtres' }));
