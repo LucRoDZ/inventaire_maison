@@ -304,3 +304,106 @@ describe('ListView', () => {
     expect(screen.queryByRole('link', { name: 'Scanner un produit' })).toBeNull();
   });
 });
+
+describe('ListView batch edit', () => {
+  const twoLines = () => [
+    line(1, 'Lait', 2, 3, { expiryDate: '2026-12-01' }),
+    line(2, 'Eau', 1, 2),
+    line(3, 'Thé', 1, 1),
+  ];
+
+  async function select(...names: string[]) {
+    await userEvent.click(await screen.findByRole('button', { name: 'Sélectionner' }));
+    for (const name of names) {
+      await userEvent.click(screen.getByRole('checkbox', { name: `Sélectionner ${name}` }));
+    }
+  }
+
+  it('swaps the quantity buttons for checkboxes and counts what is ticked', async () => {
+    renderList(twoLines());
+    await select('Lait', 'Eau');
+    expect(screen.queryByRole('button', { name: 'Retirer une unité de Lait' })).toBeNull();
+    const bar = screen.getByRole('region', { name: 'Actions sur la sélection' });
+    expect(within(bar).getByRole('status')).toHaveTextContent('2 produits sélectionnés');
+    await userEvent.click(within(bar).getByRole('button', { name: 'Terminer' }));
+    expect(screen.queryByRole('region', { name: 'Actions sur la sélection' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Retirer une unité de Lait' })).toBeInTheDocument();
+  });
+
+  it('removes the ticked lines as consumed and undoes with corrections', async () => {
+    const { adjust } = renderList(twoLines());
+    await select('Lait', 'Eau');
+    await userEvent.click(screen.getByRole('button', { name: 'Consommé' }));
+    await waitFor(() => expect(adjust).toHaveBeenCalledTimes(2));
+    expect(adjust).toHaveBeenCalledWith(
+      expect.objectContaining({ productId: 10, delta: -3, reason: 'consumed' }),
+    );
+    expect(adjust).toHaveBeenCalledWith(
+      expect.objectContaining({ productId: 20, delta: -2, reason: 'consumed' }),
+    );
+    const toast = (await screen.findByText('Consommé : 2 produits')).closest(
+      '[role="status"]',
+    ) as HTMLElement;
+    await userEvent.click(within(toast).getByRole('button', { name: 'Annuler' }));
+    await waitFor(() => expect(adjust).toHaveBeenCalledTimes(4));
+    expect(adjust).toHaveBeenLastCalledWith(
+      expect.objectContaining({ delta: 2, reason: 'correction' }),
+    );
+  });
+
+  it('removes the ticked lines as wasted', async () => {
+    const { adjust } = renderList(twoLines());
+    await select('Thé');
+    await userEvent.click(screen.getByRole('button', { name: 'Jeté' }));
+    await waitFor(() =>
+      expect(adjust).toHaveBeenCalledWith(
+        expect.objectContaining({ productId: 30, delta: -1, reason: 'wasted' }),
+      ),
+    );
+  });
+
+  it('keeps the actions off until something is ticked', async () => {
+    renderList(twoLines());
+    await userEvent.click(await screen.findByRole('button', { name: 'Sélectionner' }));
+    expect(screen.getByRole('button', { name: 'Déplacer vers…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Consommé' })).toBeDisabled();
+  });
+
+  it('moves the ticked lines whole to one destination', async () => {
+    const move = vi.fn(async () => ({}) as never);
+    renderList(twoLines(), { move });
+    await select('Lait', 'Eau');
+    await userEvent.click(screen.getByRole('button', { name: 'Déplacer vers…' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Déplacer 2 produits vers…' });
+    await userEvent.selectOptions(within(dialog).getByLabelText('Meuble'), '11');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Déplacer' }));
+    await waitFor(() => expect(move).toHaveBeenCalledTimes(2));
+    expect(move).toHaveBeenCalledWith({
+      stockItemId: 1,
+      toLocationId: 11,
+      toShelfId: null,
+      quantity: 3,
+    });
+    expect(move).toHaveBeenCalledWith({
+      stockItemId: 2,
+      toLocationId: 11,
+      toShelfId: null,
+      quantity: 2,
+    });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('says how many were moved when one move fails', async () => {
+    const move = vi
+      .fn()
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new ApiError(409, 'Étagère pleine'));
+    renderList(twoLines(), { move });
+    await select('Lait', 'Eau');
+    await userEvent.click(screen.getByRole('button', { name: 'Déplacer vers…' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Meuble'), '11');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Déplacer' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('1 sur 2 déplacés');
+  });
+});

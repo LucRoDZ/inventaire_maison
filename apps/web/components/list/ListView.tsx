@@ -7,6 +7,8 @@ import type {
   StockAdjustResponse,
   StockListItemDto,
   StockListResponse,
+  StockMoveInput,
+  StockMoveResponse,
 } from '@inventaire/shared';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,7 +23,10 @@ import {
 } from '../../lib/stock-api';
 import type { LocationChoice } from '../home/FiltersControl';
 import { RemovalToast, type RemovalPlan } from '../add/RemovalToast';
+import { UndoToast } from '../add/UndoToast';
 import { Callout } from '../ui/Callout';
+import { MoveDialog } from '../home/MoveDialog';
+import { BatchBar } from './BatchBar';
 import { CategorySection } from './CategorySection';
 
 const SEARCH_DELAY_MS = 300;
@@ -45,8 +50,17 @@ interface ListViewProps {
     fetchLocations?: () => Promise<LocationDto[]>;
     fetchCategories?: () => Promise<CategoryDto[]>;
     adjust?: (input: StockAdjustInput) => Promise<StockAdjustResponse>;
+    move?: (input: StockMoveInput) => Promise<StockMoveResponse>;
   };
 }
+
+const moveSource = (item: StockListItemDto) => ({
+  stockItemId: item.id,
+  productName: item.product.name,
+  locationId: item.location.id,
+  shelfId: item.shelf?.id ?? null,
+  quantity: item.quantity,
+});
 
 const distinctProducts = (items: StockListItemDto[]) =>
   new Set(items.map((item) => item.product.id)).size;
@@ -78,6 +92,15 @@ export function ListView({
   const [debounced, setDebounced] = useState(filters.q.trim());
   const [error, setError] = useState<string | null>(null);
   const [removal, setRemoval] = useState<RemovalPlan | null>(null);
+  /** Batch mode: the ids of the lines ticked (null: not selecting). */
+  const [selected, setSelected] = useState<Set<number> | null>(null);
+  const [moving, setMoving] = useState(false);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchToast, setBatchToast] = useState<{
+    message: string;
+    undo: () => Promise<void>;
+  } | null>(null);
+  const [announcement, setAnnouncement] = useState('');
   const { sort, locationId, categoryIds, expiry } = filters;
 
   useEffect(() => {
@@ -192,6 +215,89 @@ export function ListView({
     }
   };
 
+  const chosen = useMemo(
+    () => (items ?? []).filter((item) => selected?.has(item.id)),
+    [items, selected],
+  );
+
+  const toggleSelected = (item: StockListItemDto) =>
+    setSelected((current) => {
+      const next = new Set(current ?? []);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
+      return next;
+    });
+
+  const lineKey = (item: StockListItemDto) => ({
+    productId: item.product.id,
+    locationId: item.location.id,
+    shelfId: item.shelf?.id ?? null,
+    expiryDate: item.expiryDate,
+  });
+
+  /** Takes every unit of the ticked lines out of the stock, then offers Annuler for 5 s. */
+  const batchRemove = async (reason: 'consumed' | 'wasted') => {
+    const lines = chosen;
+    if (lines.length === 0 || batchBusy) return;
+    setBatchBusy(true);
+    setError(null);
+    const done: StockListItemDto[] = [];
+    try {
+      for (const item of lines) {
+        await (apiRef.current.adjust ?? adjustStock)({
+          ...lineKey(item),
+          delta: -item.quantity,
+          reason,
+        });
+        done.push(item);
+      }
+    } catch (caught) {
+      setError(
+        `${done.length} sur ${lines.length} retirés. ${
+          caught instanceof ApiError && caught.status !== 0
+            ? caught.message
+            : 'Modification impossible : vérifiez la connexion.'
+        }`,
+      );
+    }
+    setBatchBusy(false);
+    if (done.length > 0) {
+      setBatchToast({
+        message: `${reason === 'consumed' ? 'Consommé' : 'Jeté'} : ${done.length} ${
+          done.length > 1 ? 'produits' : 'produit'
+        }`,
+        undo: async () => {
+          for (const item of done) {
+            await (apiRef.current.adjust ?? adjustStock)({
+              ...lineKey(item),
+              delta: item.quantity,
+              reason: 'correction',
+            });
+          }
+        },
+      });
+    }
+    setSelected(new Set());
+    await load();
+    changedRef.current?.();
+  };
+
+  const undoBatch = async () => {
+    const current = batchToast;
+    setBatchToast(null);
+    try {
+      await current?.undo();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError && caught.status !== 0
+          ? caught.message
+          : 'Annulation impossible : vérifiez la connexion.',
+      );
+    }
+    await load();
+    changedRef.current?.();
+  };
+
   const sections = useMemo(() => {
     const byCategory = new Map<number, StockListItemDto[]>();
     for (const item of shown) {
@@ -223,9 +329,24 @@ export function ListView({
         )
       ) : (
         <>
-          <p role="status" className="text-help">
-            {products} {products > 1 ? 'articles' : 'article'} · {units}{' '}
-            {units > 1 ? 'unités' : 'unité'}
+          <div className="flex items-center justify-between gap-2">
+            <p role="status" className="text-help">
+              {products} {products > 1 ? 'articles' : 'article'} · {units}{' '}
+              {units > 1 ? 'unités' : 'unité'}
+            </p>
+            {shown.length > 0 ? (
+              <button
+                type="button"
+                aria-pressed={selected !== null}
+                onClick={() => setSelected(selected === null ? new Set() : null)}
+                className="tap-target text-indigo-mid -mr-2 px-2 font-semibold"
+              >
+                {selected === null ? 'Sélectionner' : 'Terminer la sélection'}
+              </button>
+            ) : null}
+          </div>
+          <p aria-live="polite" className="sr-only">
+            {announcement}
           </p>
           {shown.length === 0 ? (
             <div className="flex flex-col items-start gap-3">
@@ -250,11 +371,48 @@ export function ListView({
                 name={section.name}
                 items={lines}
                 onChange={(i, d) => void change(i, d)}
+                selection={selected ? { ids: selected, onToggle: toggleSelected } : undefined}
               />
             ))
           )}
         </>
       )}
+      {selected ? (
+        <BatchBar
+          count={selected.size}
+          busy={batchBusy}
+          onMove={() => setMoving(true)}
+          onConsumed={() => void batchRemove('consumed')}
+          onWasted={() => void batchRemove('wasted')}
+          onDone={() => setSelected(null)}
+        />
+      ) : null}
+
+      {moving && chosen.length > 0 ? (
+        <MoveDialog
+          source={moveSource(chosen[0]!)}
+          batch={chosen.map(moveSource)}
+          locations={locations ?? []}
+          move={apiRef.current.move}
+          onClose={() => setMoving(false)}
+          onMoved={(message) => {
+            setMoving(false);
+            setSelected(null);
+            setAnnouncement(message);
+            void load();
+            changedRef.current?.();
+          }}
+        />
+      ) : null}
+
+      {batchToast ? (
+        <UndoToast
+          message={batchToast.message}
+          onUndo={() => void undoBatch()}
+          onExpire={() => setBatchToast(null)}
+        />
+      ) : null}
+
       {removal ? (
         <RemovalToast
           plan={removal}

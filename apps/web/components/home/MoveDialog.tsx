@@ -21,6 +21,8 @@ export interface MoveSource {
 
 interface MoveDialogProps {
   source: MoveSource;
+  /** Batch from the list: every one of these lines is moved whole (the `source` is the first). */
+  batch?: MoveSource[];
   locations: LocationDto[];
   /** `message` is the confirmation to show once the sheet is closed. */
   onMoved: (message: string) => void;
@@ -35,6 +37,7 @@ const select = 'tap-target border-line text-ink w-full rounded-xl border bg-whit
 /** « Déplacer vers… »: furniture, shelf (or « Non rangé »), and how many units (all by default). */
 export function MoveDialog({
   source,
+  batch,
   locations,
   onMoved,
   onClose,
@@ -48,40 +51,53 @@ export function MoveDialog({
   const [busy, setBusy] = useState(false);
 
   const target = locations.find((l) => l.id === locationId);
-  const same = locationId === source.locationId && shelfId === source.shelfId;
+  const sources = batch ?? [source];
+  const many = sources.length > 1;
+  // A batch is never « already there »: the lines already in place are simply left alone.
+  const same = !many && locationId === source.locationId && shelfId === source.shelfId;
 
   const submit = async () => {
     if (same || busy) return;
     setBusy(true);
     setError(null);
+    let done = 0;
     try {
-      await move({
-        stockItemId: source.stockItemId,
-        toLocationId: locationId,
-        toShelfId: shelfId,
-        quantity,
-      });
+      for (const line of sources) {
+        const inPlace = line.locationId === locationId && line.shelfId === shelfId;
+        if (!(many && inPlace)) {
+          await move({
+            stockItemId: line.stockItemId,
+            toLocationId: locationId,
+            toShelfId: shelfId,
+            quantity: many ? line.quantity : quantity,
+          });
+        }
+        done += 1;
+      }
     } catch (caught) {
       setBusy(false);
-      setError(
+      const reason =
         caught instanceof ApiError && caught.status !== 0
           ? caught.message
-          : 'Déplacement impossible : vérifiez la connexion et réessayez.',
-      );
+          : 'Déplacement impossible : vérifiez la connexion et réessayez.';
+      setError(many ? `${done} sur ${sources.length} déplacés. ${reason}` : reason);
       return;
     }
     const shelfName = target?.shelves.find((s) => s.id === shelfId)?.name;
+    const where = `${target?.name ?? ''}${shelfName ? `, ${lowerFirst(shelfName)}` : ''}`;
     onMoved(
-      `Déplacé : ${quantity} × ${source.productName} vers ${target?.name ?? ''}${
-        shelfName ? `, ${lowerFirst(shelfName)}` : ''
-      }`,
+      many
+        ? `Déplacé : ${sources.length} produits vers ${where}`
+        : `Déplacé : ${quantity} × ${source.productName} vers ${where}`,
     );
   };
 
   return (
     <BottomSheet labelledBy={titleId} onClose={onClose} layer="top">
       <h2 id={titleId} className="text-card-title">
-        Déplacer {source.productName} vers…
+        {many
+          ? `Déplacer ${sources.length} produits vers…`
+          : `Déplacer ${source.productName} vers…`}
       </h2>
       <div className="grid grid-cols-2 gap-3">
         <label className="text-label flex flex-col gap-1">
@@ -116,7 +132,7 @@ export function MoveDialog({
         </label>
       </div>
 
-      {source.quantity > 1 ? (
+      {!many && source.quantity > 1 ? (
         <div className="flex flex-col gap-1">
           <span className="text-label">Quantité à déplacer</span>
           <QuantityStepper value={quantity} onChange={setQuantity} max={source.quantity} />
