@@ -163,7 +163,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   return (
     <div className="flex flex-col gap-4">
       {live}
-      <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {home.locations.map((location) => (
           <li key={location.id} className="relative flex">
             <FurnitureCard
@@ -176,7 +176,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
               locationId={location.id}
               name={location.name}
               onChanged={(change) => onChanged(location.id, change)}
-              className="absolute top-1 right-1"
+              className="absolute right-1 bottom-1"
             />
           </li>
         ))}
@@ -185,7 +185,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
             <p
               id={ADD_TILE_ID}
               tabIndex={-1}
-              className="border-lavender-line rounded-card text-small flex w-full items-center justify-center border-2 border-dashed p-3 text-center"
+              className="border-lavender-line rounded-card text-small flex min-h-52 w-full items-center justify-center border-2 border-dashed p-3 text-center"
             >
               {MAX_LOCATIONS_PER_HOUSEHOLD} meubles au plus : la maison est complète.
             </p>
@@ -194,7 +194,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
               id={ADD_TILE_ID}
               type="button"
               onClick={() => setCreating(true)}
-              className="tap-target border-lavender-line rounded-card text-indigo flex w-full flex-col items-center justify-center gap-2 border-2 border-dashed bg-white p-3 font-bold"
+              className="tap-target border-lavender-line rounded-card text-indigo flex min-h-52 w-full flex-col items-center justify-center gap-2 border-2 border-dashed bg-white p-3 font-bold transition-colors duration-150 ease-out hover:bg-lavender"
             >
               <span
                 aria-hidden="true"

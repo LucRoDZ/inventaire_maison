@@ -108,11 +108,13 @@ for (const size of SIZES) {
 
     // Both fridges side by side, each named under its card; each opens without vertical scroll.
     await page.goto('/inventaire');
-    await expect(page.getByRole('link', { name: /^Frigo\s*\d+ articles?/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Frigo\s*(\d+ articles?|Vide)/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /^Frigo 2/ })).toContainText('1 article');
     for (const name of ['Frigo', 'Frigo 2']) {
       await page.goto('/inventaire');
-      await page.getByRole('link', { name: new RegExp(`^${name}\\s*\\d+ articles?`) }).click();
+      await page
+        .getByRole('link', { name: new RegExp(`^${name}\\s*(\\d+ articles?|Vide)`) })
+        .click();
       await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
       await furnitureSettled(page);
       await expectNoVerticalScroll(page);
@@ -259,8 +261,8 @@ test('deux foyers : ce que l’un scanne et range, l’autre ne le voit nulle pa
     await expect(pageTwo.locator('body')).not.toContainText(name);
   }
   await pageTwo.goto('/inventaire');
-  await expect(pageTwo.getByRole('link', { name: /^Frigo\s*\d+ articles?/ })).toContainText(
-    '0 article',
+  await expect(pageTwo.getByRole('link', { name: /^Frigo\s*(\d+ articles?|Vide)/ })).toContainText(
+    'Vide',
   );
   await pageTwo.getByRole('button', { name: 'Liste', exact: true }).click();
   await pageTwo.waitForLoadState('networkidle');
@@ -333,8 +335,8 @@ test('console : l’admin crée « Foyer Dupont » et un compte dedans ; ce comp
   await member.goto('/inventaire');
   for (const name of ['Garde-manger', 'Frigo', 'Congélateur', 'Cave']) {
     await expect(
-      member.getByRole('link', { name: new RegExp(`^${name}\\s*\\d+ articles?`) }),
-    ).toContainText('0 article');
+      member.getByRole('link', { name: new RegExp(`^${name}\\s*(\\d+ articles?|Vide)`) }),
+    ).toContainText('Vide');
   }
   // The totals now live at the top of the list view (no banner over the furniture).
   await member.getByRole('button', { name: 'Liste', exact: true }).click();

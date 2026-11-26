@@ -37,7 +37,7 @@ for (const size of SIZES) {
     await page.getByRole('button', { name: 'Liste', exact: true }).click();
     await shot(page, '06-accueil-liste', size.width);
     await page.goto('/inventaire');
-    await page.getByRole('link', { name: /^Frigo\s*\d+ articles?/ }).click();
+    await page.getByRole('link', { name: /^Frigo\s*(\d+ articles?|Vide)/ }).click();
     await shot(page, '07-meuble-ouvert', size.width);
     const products = (await (await page.request.get('/api/products?q=yaourt')).json()) as {
       id: number;

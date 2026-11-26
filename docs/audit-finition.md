@@ -53,3 +53,30 @@
 ## Captures
 
 `docs/audit-finition/avant/` et `docs/audit-finition/apres/`, fichiers `360-…` et `390-…` : connexion, scanner, fiche d'ajout, accueil (Maison, feuille de création, Liste), meuble ouvert, fiche produit, Plus, Compte, Meubles et étagères, boîte de suppression, Administration, Foyers, Comptes, Catégories, Correspondances.
+
+---
+
+# Deuxième passe : interface propre (26 novembre 2026)
+
+Branche `fix/interface-propre`, après les points 1 à 4 (en-tête allégé, filtres dans un seul panneau, défilement dans une zone interne, menus des meubles, écran « Meubles et étagères » plus léger). Même skill [`unslop`](https://github.com/heydamir/unslop) (Damir Sokolovsky, CC BY 4.0), même cadre : l'identité Indigo Ambre prime, aucune image générée, aucun service payant.
+
+**Méthode.** Captures de chaque écran de la « grande maison » des e2e (8 meubles, 60 produits) à 360 × 740, 390 × 844 et 1440 × 800, haut d'écran et après défilement (`e2e/captures/interface.spec.ts`), avant et après. Elles sont publiées sur la branche `captures/interface-propre` pour ne pas alourdir `main`. Balayage du code : valeurs arbitraires, `transition-all`, animations en boucle, `hover:scale`, points d'exclamation, emoji, couleurs en dur (`scripts/check-colors.mjs`).
+
+**Verdict.** Finition légère : aucun dégradé, aucune lueur, aucun emoji, une seule famille d'icônes (Lucide), aucune couleur en dur. Les corrections portent sur la mise en page des cartes, les durées de mouvement et la cohérence des libellés.
+
+## Passes
+
+1. **Espacements** : en-tête fixe sur la grille de 4 px (12 en haut, rangées de 44 px séparées de 8, 8 en bas), soit 176 px à 360 × 740. Zone qui défile avec une marge de 16 px sur les côtés (les ombres des cartes ne sont plus rognées). Cartes de l'accueil : même hauteur par rangée (la grille étire, hauteur minimale de 208 px pour la tuile d'ajout), nombre d'articles poussé en bas (`mt-auto`), nom limité à deux lignes. Une seule valeur arbitraire restante : la pastille « bientôt périmé » à 100 px du haut, posée au pied du dessin.
+2. **Couleurs** : rien à corriger. Un seul accent ambre : bouton d'ajout, pastille « bientôt périmé », pastille du nombre de filtres, onglet actif. Filet de 1 px (`--line`) sous l'en-tête seulement quand la zone a quitté le haut, sans ombre ni dégradé.
+3. **Icônes** : « ⋯ » (`Ellipsis`) pour le menu des meubles, à la même taille (22 px) que le bouton Filtres ; icônes du menu en `indigo-mid`, 20 px ; grille d'icônes des meubles en 24 px. Plus de liste déroulante de 40 icônes.
+4. **Textes** : libellé « Vide » sur une carte de meuble vide, comme sur les étagères du meuble ouvert et dans « Meubles et étagères » (au lieu de « 0 article ») ; rappel des filtres sans préfixe (« Frigo · Boissons ») et bouton « Effacer » ; compteur « 60 articles · 120 unités » en texte d'aide en tête de la Liste ; messages de confirmation qui nomment l'objet (« Frigo est maintenant en position 1 sur 8. », « Étagère 2 supprimée : ses produits sont sur le plateau « Non rangé ». »). Aucun point d'exclamation, aucun texte provisoire trouvé.
+5. **Typographie** : Carlito partout, rien à corriger. Titres d'écran sur deux lignes au plus (`line-clamp-2`) au lieu d'être coupés.
+6. **Mise en page** : grille de l'accueil sur 2 colonnes au téléphone, 3 en tablette, 4 sur grand écran (cadre élargi à 768 px à partir de 1024 px de large, barre du bas comprise). Tuile « Ajouter un meuble » toujours en dernier, de la taille d'une carte. Nom de meuble aligné à gauche, nombre d'articles en bas à gauche et bouton « ⋯ » dans le coin bas droit : le bouton ne chevauche plus le dessin des meubles larges (cave, buffet).
+7. **Détails** : états vides, chargement (« Chargement… », `role="status"`), erreur (encadré « Un instant », `role="alert"`) et hors ligne (encadré « Pas de connexion ») identiques sur tous les écrans. Rayons inchangés (cartes 16 px, champs et boutons 12 px). Focus visible sur la zone qui défile (anneau intérieur, pour ne pas être rogné).
+8. **Visuels** : aucun ajout. Les dessins de meubles restent le seul moment illustré.
+9. **Mouvement** : appui sur une carte (porte entrouverte, lumière) passé de 120 à 150 ms ; tiroirs du congélateur de 320 à 300 ms ; flèche des sections de la Liste et chevron des lignes de « Meubles et étagères » en 200 ms avec décélération ; filet de l'en-tête et survol des lignes du menu en 150 à 200 ms. Jamais linéaire, toujours coupé par `prefers-reduced-motion`, aucun mouvement ne retarde une action (le focus est posé avant l'animation des feuilles).
+
+## Propositions refusées (cahier des charges ou identité)
+
+- Étiquettes de section en majuscules interlettrées, titres en 700, deux fonds blanc et indigo : imposés par le cahier (comme lors de la première passe).
+- Porte du meuble ouvert en 600 ms et lumière en 260 ms après 200 ms : fixées par la Phase 1.5 ; elles ne retardent aucune action et sont coupées en mouvement réduit.
