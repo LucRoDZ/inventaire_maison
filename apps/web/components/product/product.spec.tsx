@@ -14,8 +14,8 @@ import { ProductEdit } from './ProductEdit';
 import { StockByLocation } from './StockByLocation';
 
 const categories: CategoryDto[] = [
-  { id: 1, name: 'Laitier', icon: 'milk', sortOrder: 1, isFallback: false },
-  { id: 2, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true },
+  { id: 1, name: 'Laitier', icon: 'milk', sortOrder: 1, isFallback: false, shelfLifeDays: null },
+  { id: 2, name: 'Autre', icon: 'package', sortOrder: 2, isFallback: true, shelfLifeDays: null },
 ];
 const locations: LocationDto[] = [
   { id: 5, name: 'Frigo', kind: 'fridge', icon: 'x', productCount: 0, sortOrder: 1, shelves: [] },
@@ -33,6 +33,10 @@ const product: ProductDto = {
   source: 'off',
   createdBy: 1,
   createdAt: '2026-06-01T10:00:00.000Z',
+  minQuantity: null,
+  amount: null,
+  unit: null,
+  mergedIntoId: null,
 };
 
 beforeEach(() => {

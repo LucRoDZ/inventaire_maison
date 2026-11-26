@@ -10,11 +10,16 @@ beforeEach(() => {
 });
 
 describe('BottomNav', () => {
-  it('shows the three tabs in order', () => {
+  it('shows the four tabs in order', () => {
     render(<BottomNav />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.textContent)).toEqual(['Scanner', 'Inventaire', 'Plus']);
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/', '/inventaire', '/plus']);
+    expect(links.map((l) => l.textContent)).toEqual(['Scanner', 'Inventaire', 'Courses', 'Plus']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual([
+      '/',
+      '/inventaire',
+      '/courses',
+      '/plus',
+    ]);
   });
 
   it('marks only the Scanner tab as current on /', () => {

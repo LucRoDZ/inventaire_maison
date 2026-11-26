@@ -19,6 +19,7 @@ export async function applyHouseholdTemplate(tx: Transaction, householdId: numbe
         icon: c.icon,
         sortOrder: i,
         isFallback: !!c.isFallback,
+        shelfLifeDays: c.shelfLifeDays ?? null,
       })),
     )
     .returning({ id: categories.id, name: categories.name });

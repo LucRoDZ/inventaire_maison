@@ -13,6 +13,7 @@ import {
   type ProductDto,
   type ProductSource,
   type ProductStockByLocationDto,
+  QuantityUnit,
 } from '@inventaire/shared';
 import { and, asc, desc, eq, or, sql, type SQL } from 'drizzle-orm';
 import { isUniqueViolation } from '../common/pg-errors';
@@ -60,6 +61,10 @@ export function toProductDto(row: typeof products.$inferSelect): ProductDto {
     source: row.source as ProductSource,
     createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(),
+    minQuantity: row.minQuantity,
+    amount: row.amount === null ? null : Number(row.amount),
+    unit: row.unit as QuantityUnit | null,
+    mergedIntoId: row.mergedIntoId,
   };
 }
 

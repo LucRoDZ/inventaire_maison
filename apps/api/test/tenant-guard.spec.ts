@@ -16,6 +16,9 @@ const DATA_TABLES = [
   'products',
   'stockItems',
   'stockMovements',
+  'settings',
+  'shoppingItems',
+  'pushSubscriptions',
 ];
 const SQL_TABLES = [
   'locations',
@@ -25,6 +28,9 @@ const SQL_TABLES = [
   'products',
   'stock_items',
   'stock_movements',
+  'settings',
+  'shopping_items',
+  'push_subscriptions',
 ];
 /** The gate itself. */
 const ALLOWED = new Set(['database/tenant-db.ts']);

@@ -53,7 +53,11 @@ export interface CategoryDto {
   icon: CategoryIcon;
   sortOrder: number;
   isFallback: boolean;
+  /** Suggested shelf life (days) for a product added without an expiry date; null: none. */
+  shelfLifeDays: number | null;
 }
+
+export const SHELF_LIFE_DAYS_MAX = 3650;
 
 export interface OffCategoryMapDto {
   id: number;

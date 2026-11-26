@@ -21,6 +21,9 @@ export const APP_ROLE_PRIVILEGES: Readonly<Record<string, string>> = {
   stock_items: 'SELECT, INSERT, UPDATE, DELETE',
   // The journal is never modified.
   stock_movements: 'SELECT, INSERT',
+  settings: 'SELECT, INSERT, UPDATE',
+  shopping_items: 'SELECT, INSERT, UPDATE, DELETE',
+  push_subscriptions: 'SELECT, INSERT, UPDATE, DELETE',
 };
 
 /** Tables whose rows belong to a household: row-level secured, reached through TenantDb only. */
@@ -32,6 +35,9 @@ export const HOUSEHOLD_TABLES = [
   'products',
   'stock_items',
   'stock_movements',
+  'settings',
+  'shopping_items',
+  'push_subscriptions',
 ] as const;
 
 const ROLE_NAME = /^[a-z_][a-z0-9_]{0,62}$/;

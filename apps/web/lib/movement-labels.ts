@@ -7,6 +7,8 @@ export const REASON_LABELS: Record<MovementReason, string> = {
   manual: 'Modification manuelle',
   move: 'Déplacement',
   correction: 'Correction',
+  consumed: 'Consommé',
+  wasted: 'Jeté',
 };
 
 const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);

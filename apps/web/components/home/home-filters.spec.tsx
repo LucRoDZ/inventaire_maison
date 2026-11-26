@@ -13,8 +13,15 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/inventaire',
 }));
 const categories: CategoryDto[] = [
-  { id: 1, name: 'Laitier', icon: 'milk', sortOrder: 1, isFallback: false },
-  { id: 2, name: 'Boissons', icon: 'cup-soda', sortOrder: 2, isFallback: false },
+  { id: 1, name: 'Laitier', icon: 'milk', sortOrder: 1, isFallback: false, shelfLifeDays: null },
+  {
+    id: 2,
+    name: 'Boissons',
+    icon: 'cup-soda',
+    sortOrder: 2,
+    isFallback: false,
+    shelfLifeDays: null,
+  },
 ];
 vi.mock('../../lib/stock-api', () => ({ fetchCategories: async () => categories }));
 

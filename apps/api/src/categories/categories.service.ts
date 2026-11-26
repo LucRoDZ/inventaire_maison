@@ -25,6 +25,7 @@ const toCategory = (row: typeof categories.$inferSelect): CategoryDto => ({
   icon: row.icon as CategoryIcon,
   sortOrder: row.sortOrder,
   isFallback: row.isFallback,
+  shelfLifeDays: row.shelfLifeDays,
 });
 
 // Explicit fields: the household of the row never leaves the API.

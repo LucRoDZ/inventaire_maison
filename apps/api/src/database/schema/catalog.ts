@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  numeric,
   foreignKey,
   index,
   integer,
@@ -26,6 +27,8 @@ export const categories = pgTable(
     icon: text().notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
     isFallback: boolean('is_fallback').notNull().default(false),
+    /** Suggested shelf life in days for a product added without an expiry date; null: no suggestion. */
+    shelfLifeDays: integer('shelf_life_days'),
   },
   (t) => [
     index('categories_household_idx').on(t.householdId),
@@ -35,6 +38,10 @@ export const categories = pgTable(
     uniqueIndex('categories_household_fallback_key')
       .on(t.householdId)
       .where(sql`${t.isFallback}`),
+    check(
+      'categories_shelf_life_days_check',
+      sql`${t.shelfLifeDays} is null or ${t.shelfLifeDays} between 1 and 3650`,
+    ),
   ],
 );
 
@@ -79,6 +86,13 @@ export const products = pgTable(
     offPayload: jsonb('off_payload'),
     /** Lowercase name and brand without diacritics, computed by the API. */
     searchText: text('search_text').notNull().default(''),
+    /** Below this total stock the product goes to the shopping list (origin `auto`); null: none. */
+    minQuantity: integer('min_quantity'),
+    /** Net content of one unit (e.g. 226.8 with `g`); null when unknown. */
+    amount: numeric({ precision: 10, scale: 3 }),
+    unit: text(),
+    /** Set when the product was merged into another one of the household (never deleted). */
+    mergedIntoId: integer('merged_into_id'),
     createdBy: integer('created_by').references(() => users.id),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -101,5 +115,21 @@ export const products = pgTable(
       foreignColumns: [locations.id, locations.householdId],
     }),
     check('products_source_check', sql`${t.source} in ('off', 'manual')`),
+    check('products_min_quantity_check', sql`${t.minQuantity} is null or ${t.minQuantity} >= 1`),
+    check('products_amount_check', sql`${t.amount} is null or ${t.amount} > 0`),
+    check(
+      'products_unit_check',
+      sql`${t.unit} is null or ${t.unit} in ('g', 'kg', 'ml', 'cl', 'l', 'unit')`,
+    ),
+    check(
+      'products_merged_into_check',
+      sql`${t.mergedIntoId} is null or ${t.mergedIntoId} <> ${t.id}`,
+    ),
+    foreignKey({
+      name: 'products_merged_into_household_fk',
+      columns: [t.mergedIntoId, t.householdId],
+      foreignColumns: [t.id, t.householdId],
+    }),
+    index('products_merged_into_idx').on(t.mergedIntoId),
   ],
 );

@@ -14,9 +14,23 @@ import { ExpiryBadge, expiryLabel } from './ExpiryBadge';
 import { ListView } from './ListView';
 
 const categories: CategoryDto[] = [
-  { id: 1, name: 'Boissons', icon: 'cup-soda', sortOrder: 1, isFallback: false },
-  { id: 2, name: 'Produits laitiers et œufs', icon: 'milk', sortOrder: 2, isFallback: false },
-  { id: 3, name: 'Autre', icon: 'package', sortOrder: 3, isFallback: true },
+  {
+    id: 1,
+    name: 'Boissons',
+    icon: 'cup-soda',
+    sortOrder: 1,
+    isFallback: false,
+    shelfLifeDays: null,
+  },
+  {
+    id: 2,
+    name: 'Produits laitiers et œufs',
+    icon: 'milk',
+    sortOrder: 2,
+    isFallback: false,
+    shelfLifeDays: null,
+  },
+  { id: 3, name: 'Autre', icon: 'package', sortOrder: 3, isFallback: true, shelfLifeDays: null },
 ];
 const locations: LocationDto[] = [
   {

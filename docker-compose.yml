@@ -76,6 +76,9 @@ services:
       PUBLIC_ORIGIN: https://${APP_DOMAIN:-localhost}
       PROXY_SECRET: ${PROXY_SECRET:?PROXY_SECRET manquant dans .env}
       IMAGES_DIR: /data/images
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@localhost}
     volumes:
       - images:/data/images
     # Unique aliases: behind the shared nginx the api also joins easyq_default, where the plain

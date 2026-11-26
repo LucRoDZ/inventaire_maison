@@ -18,10 +18,10 @@
 - [x] **0.5 Mesures** dans la PR. Fin : avant et après dans la description.
 
 ### Contrat
-- [ ] **K.1 Migration unique** : `settings`, `shopping_items`, `push_subscriptions`, colonnes `categories`, `products`, `stock_movements`, RLS. Fin : `rls.spec.ts` vert.
-- [ ] **K.2 Types partagés** : DTO, unités, raisons, filtres d'échéance, signature de l'analyseur. Fin : build de `shared`.
-- [ ] **K.3 Navigation** : barre `Scanner · Inventaire · Courses · Plus`, `/courses` vide, redirections. Fin : e2e navigation.
-- [ ] **K.4 Plan** : `docs/phase-3.md`. Fin : vagues et tableau.
+- [x] **K.1 Migration unique** : `settings`, `shopping_items`, `push_subscriptions`, colonnes `categories`, `products`, `stock_movements`, RLS. Fin : `rls.spec.ts` vert.
+- [x] **K.2 Types partagés** : DTO, unités, raisons, filtres d'échéance, signature de l'analyseur. Fin : build de `shared`.
+- [x] **K.3 Navigation** : barre `Scanner · Inventaire · Courses · Plus`, `/courses` vide, redirections. Fin : e2e navigation.
+- [x] **K.4 Plan** : `docs/phase-3.md`. Fin : vagues et tableau.
 
 ### A. Péremption et gaspillage
 - [ ] **A1 Seuil d'alerte par foyer** (3 j), réglé dans la console. Fin : seuil à 5, J-5 devient « bientôt ».
@@ -77,6 +77,11 @@
 - I3 : état des filtres dans l'URL (`q`, `cat`, `meuble`, `tri`, `vue=liste`) via `useHomeFilters`.
 - I6 : la page ne défile jamais ; écran = `Screen` + `ScrollZone`.
 - U1 : un seul bouton principal indigo ; l'ambre marque seulement l'état actif, les pastilles et les dates proches.
+- P3.1 : migration 0004 écrite à la main (le snapshot 0003 était périmé) ; `0004_snapshot.json` régénéré, à jour.
+- P3.2 : `push_subscriptions` unique par foyer et `endpoint` (RLS empêche de voir une ligne d'un autre foyer) ; l'application se désabonne à la déconnexion ; le résumé ignore un compte désactivé ou changé de foyer.
+- P3.3 : durées suggérées du modèle : Viandes 3 j, Poissons 2 j, Laitiers et œufs 7 j, Fruits et légumes 5 j ; appliquées aussi aux foyers existants par la migration (catégories au même nom).
+- P3.4 : « Aujourd'hui » = statut `soon` avec `days: 0` (forme d'`ExpiryStatus` inchangée) ; filtres d'échéance `today`, `soon` (1 à seuil), `expired`.
+- P3.5 : variables VAPID vides lues comme absentes : notifications désactivées, l'API démarre.
 - U2 : barre du bas dans le flux (dernière ligne de la colonne du `body`), pas `fixed`.
 
 ## Problèmes bloquants
