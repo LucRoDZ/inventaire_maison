@@ -8,6 +8,7 @@ import { HomeView } from '../../../components/home/HomeView';
 import { SearchField } from '../../../components/home/SearchField';
 import { ListView, type ListSummary } from '../../../components/list/ListView';
 import { ViewToggle } from '../../../components/list/ViewToggle';
+import { AddFab } from '../../../components/add/AddFab';
 import { Screen } from '../../../components/ui/Screen';
 import {
   clearPanelFilters,
@@ -68,6 +69,7 @@ function Inventaire() {
       }
       zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}
       memoryKey={`inventaire-${view}`}
+      floatingAction
     >
       <SummaryCounters
         active={filters.expiry}
@@ -88,6 +90,7 @@ function Inventaire() {
       ) : (
         <HomeView />
       )}
+      <AddFab />
     </Screen>
   );
 }
