@@ -1,5 +1,6 @@
 'use client';
 
+import { HapticsSetting } from '../../../../components/account/HapticsSetting';
 import { PushSetting } from '../../../../components/account/PushSetting';
 import { PasswordForm } from '../../../../components/account/PasswordForm';
 import { useCurrentUser } from '../../../../components/auth/AuthProvider';
@@ -18,6 +19,7 @@ export default function ComptePage() {
         </dl>
       ) : null}
       {user ? <PushSetting userId={user.id} /> : null}
+      <HapticsSetting />
       <h2 className="text-card-title mt-2">Changer le mot de passe</h2>
       <PasswordForm />
     </Screen>

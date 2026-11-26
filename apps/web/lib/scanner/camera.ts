@@ -11,8 +11,17 @@ export interface CameraSession {
   /** Device actually in use, when the browser tells. */
   deviceId: string | null;
   torchSupported: boolean;
+  /** Only when the track announces a zoom range. */
+  zoom: ZoomRange | null;
   setTorch(on: boolean): Promise<void>;
+  setZoom(value: number): Promise<void>;
   stop(): void;
+}
+
+export interface ZoomRange {
+  min: number;
+  max: number;
+  step: number;
 }
 
 export interface CameraInfo {
@@ -20,7 +29,17 @@ export interface CameraInfo {
   label: string;
 }
 
-type ExtendedCapabilities = MediaTrackCapabilities & { torch?: boolean; focusMode?: string[] };
+type ExtendedCapabilities = MediaTrackCapabilities & {
+  torch?: boolean;
+  focusMode?: string[];
+  zoom?: { min: number; max: number; step?: number };
+};
+
+/** End-to-end builds only: what the tests can observe and simulate of the camera. */
+interface E2ECameraWindow {
+  __e2eCameraActive?: boolean;
+  __e2eCameraError?: CameraErrorKind;
+}
 
 function classify(error: unknown): CameraErrorKind {
   const name = error instanceof DOMException || error instanceof Error ? error.name : '';
@@ -36,11 +55,18 @@ export async function startCamera(
 ): Promise<CameraSession> {
   // End-to-end builds only (dropped from every other build): no camera in the test browsers.
   if (process.env.NEXT_PUBLIC_E2E === '1') {
+    const flags = window as E2ECameraWindow;
+    if (flags.__e2eCameraError) throw new CameraError(flags.__e2eCameraError);
+    flags.__e2eCameraActive = true;
     return {
       deviceId: null,
       torchSupported: false,
+      zoom: null,
       setTorch: async () => undefined,
-      stop: () => undefined,
+      setZoom: async () => undefined,
+      stop: () => {
+        flags.__e2eCameraActive = false;
+      },
     };
   }
   if (typeof window !== 'undefined' && window.isSecureContext === false) {
@@ -88,11 +114,21 @@ export async function startCamera(
       .catch(() => undefined);
   }
 
+  const zoomRange = capabilities.zoom;
+  const zoom: ZoomRange | null =
+    zoomRange && zoomRange.max > zoomRange.min
+      ? { min: zoomRange.min, max: zoomRange.max, step: zoomRange.step || 0.1 }
+      : null;
+
   return {
     deviceId: track?.getSettings?.().deviceId ?? null,
     torchSupported: capabilities.torch === true,
+    zoom,
     async setTorch(on) {
       await track?.applyConstraints({ advanced: [{ torch: on } as MediaTrackConstraintSet] });
+    },
+    async setZoom(value) {
+      await track?.applyConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
     },
     stop,
   };

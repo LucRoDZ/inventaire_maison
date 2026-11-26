@@ -9,7 +9,12 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as stockApi from '../../lib/stock-api';
+import { installFakeCamera } from './fake-camera';
 import { ScanFlow } from './ScanFlow';
+
+vi.mock('../../lib/scanner/create-scanner', () => ({
+  createScanner: async () => (await import('./fake-camera')).idleScanner(),
+}));
 
 vi.mock('../../lib/stock-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/stock-api')>()),
@@ -48,6 +53,7 @@ function setOnline(value: boolean) {
   Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => value });
 }
 beforeEach(() => {
+  installFakeCamera();
   setOnline(true);
   window.localStorage.clear();
   vi.mocked(stockApi.adjustStock).mockClear();

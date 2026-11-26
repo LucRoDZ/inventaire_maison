@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScanResult, Scanner } from '../../lib/scanner/types';
@@ -65,16 +65,18 @@ function renderView(overrides: Partial<React.ComponentProps<typeof ScannerView>>
   const { scanner, emit } = makeScanner();
   const onCode = vi.fn();
   const onModeChange = vi.fn();
+  const onClose = vi.fn();
   const utils = render(
     <ScannerView
       mode="add"
       onModeChange={onModeChange}
+      onClose={onClose}
       onCode={onCode}
       makeScanner={async () => scanner}
       {...overrides}
     />,
   );
-  return { scanner, emit, onCode, onModeChange, ...utils };
+  return { scanner, emit, onCode, onModeChange, onClose, ...utils };
 }
 
 describe('ScannerView', () => {
@@ -83,7 +85,6 @@ describe('ScannerView', () => {
     getUserMedia.mockResolvedValue(makeStream(track));
     const { scanner, emit, onCode } = renderView();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
 
     const constraints = getUserMedia.mock.calls[0]![0] as MediaStreamConstraints;
@@ -105,20 +106,18 @@ describe('ScannerView', () => {
     const track = makeTrack();
     getUserMedia.mockResolvedValue(makeStream(track));
     const { scanner } = renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
 
     act(() => setVisibility('hidden'));
     expect(track.stop).toHaveBeenCalled();
     expect(scanner.stop).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Scanner' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Activer la caméra' })).toBeInTheDocument();
   });
 
   it('turns the camera off when leaving the screen', async () => {
     const track = makeTrack();
     getUserMedia.mockResolvedValue(makeStream(track));
     const { scanner, unmount } = renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
     unmount();
     expect(track.stop).toHaveBeenCalled();
@@ -127,7 +126,6 @@ describe('ScannerView', () => {
   it('hides the torch button when the camera does not expose it', async () => {
     getUserMedia.mockResolvedValue(makeStream(makeTrack({})));
     const { scanner } = renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: /lampe/ })).toBeNull();
   });
@@ -136,7 +134,6 @@ describe('ScannerView', () => {
     const track = makeTrack({ torch: true });
     getUserMedia.mockResolvedValue(makeStream(track));
     const { scanner } = renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
 
     await userEvent.click(screen.getByRole('button', { name: 'Allumer la lampe' }));
@@ -151,7 +148,6 @@ describe('ScannerView', () => {
     const track = makeTrack({ focusMode: ['manual', 'continuous'] });
     getUserMedia.mockResolvedValue(makeStream(track));
     const { scanner } = renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
     expect(track.applyConstraints).toHaveBeenCalledWith({
       advanced: [{ focusMode: 'continuous' }],
@@ -166,7 +162,6 @@ describe('ScannerView', () => {
     ]);
     getUserMedia.mockImplementation(async () => makeStream(makeTrack()));
     const { scanner } = renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Caméra' }), 'cam-2');
@@ -179,7 +174,6 @@ describe('ScannerView', () => {
   it('explains how to allow the camera when permission is refused, with the fallbacks at hand', async () => {
     getUserMedia.mockRejectedValue(new DOMException('no', 'NotAllowedError'));
     renderView({ fallbacks: <input aria-label="Code" /> });
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Accès à la caméra refusé');
@@ -190,14 +184,12 @@ describe('ScannerView', () => {
   it('reports a missing camera', async () => {
     getUserMedia.mockRejectedValue(new DOMException('none', 'NotFoundError'));
     renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Aucune caméra disponible');
   });
 
   it('asks for HTTPS in an insecure context without calling the camera', async () => {
     Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false });
     renderView();
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('HTTPS requis');
     expect(getUserMedia).not.toHaveBeenCalled();
   });
@@ -209,18 +201,132 @@ describe('ScannerView', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Retirer' }));
     expect(onModeChange).toHaveBeenCalledWith('remove');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalled());
     rerender(
       <ScannerView
         mode="remove"
         onModeChange={onModeChange}
+        onClose={() => undefined}
         onCode={onCode}
         makeScanner={async () => scanner}
       />,
     );
     act(() => emit({ code: '96385074', format: 'ean_8' }));
     expect(onCode).toHaveBeenCalledWith({ code: '96385074', format: 'ean_8' }, 'remove');
+  });
+});
+
+describe('ScannerView, full screen', () => {
+  const READ = { code: '3017620422003', format: 'ean_13' } as const;
+
+  afterEach(() => {
+    vi.useRealTimers();
+    window.localStorage.clear();
+    Reflect.deleteProperty(navigator, 'vibrate');
+  });
+
+  it('opens the camera by itself and offers a close button of 44 px or more', async () => {
+    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
+    const { scanner, onClose } = renderView();
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    expect(screen.getByRole('heading', { level: 1, name: 'Scanner' })).toBeInTheDocument();
+    const close = screen.getByRole('button', { name: 'Fermer le scanner' });
+    expect(close).toHaveClass('tap-target');
+    await userEvent.click(close);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('locks the corners with a check mark and announces what was read', async () => {
+    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
+    const { scanner, emit, rerender, onCode } = renderView({ readLabel: null });
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    expect(document.querySelector('.lucide-check')).toBeNull();
+
+    act(() => emit(READ));
+    expect(document.querySelector('.lucide-check')).not.toBeNull();
+    rerender(
+      <ScannerView
+        mode="add"
+        onModeChange={() => undefined}
+        onClose={() => undefined}
+        onCode={onCode}
+        readLabel="Pâte à tartiner"
+        makeScanner={async () => scanner}
+      />,
+    );
+    expect(
+      screen.getByText('Lu : Pâte à tartiner', { selector: '[aria-live]' }),
+    ).toBeInTheDocument();
+  });
+
+  it('vibrates on a read only when supported and the setting is on', async () => {
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
+    const { scanner, emit } = renderView();
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    act(() => emit(READ));
+    expect(vibrate).toHaveBeenCalledTimes(1);
+
+    window.localStorage.setItem('inv_haptics', 'off');
+    act(() => emit({ code: '96385074', format: 'ean_8' }));
+    expect(vibrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores the same code for 1.5 s, then reads it again', async () => {
+    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
+    const { scanner, emit, onCode } = renderView();
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(10_000);
+    act(() => emit(READ));
+    now.mockReturnValue(11_000);
+    act(() => emit(READ));
+    expect(onCode).toHaveBeenCalledTimes(1);
+    act(() => emit({ code: '96385074', format: 'ean_8' }));
+    expect(onCode).toHaveBeenCalledTimes(2);
+    now.mockReturnValue(12_600);
+    act(() => emit({ code: '96385074', format: 'ean_8' }));
+    expect(onCode).toHaveBeenCalledTimes(3);
+    now.mockRestore();
+  });
+
+  it('offers zoom only when the track announces it, and applies it', async () => {
+    const track = makeTrack({ zoom: { min: 1, max: 4, step: 0.5 } });
+    getUserMedia.mockResolvedValue(makeStream(track));
+    const { scanner } = renderView();
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    const slider = await screen.findByLabelText('Zoom');
+    fireEvent.change(slider, { target: { value: '2.5' } });
+    await waitFor(() =>
+      expect(track.applyConstraints).toHaveBeenCalledWith({ advanced: [{ zoom: 2.5 }] }),
+    );
+  });
+
+  it('shows neither torch nor zoom without capabilities, and keeps the bottom panel', async () => {
+    getUserMedia.mockResolvedValue(makeStream(makeTrack({})));
+    const { scanner } = renderView({ fallbacks: <input aria-label="Code-barres" /> });
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    expect(screen.queryByLabelText('Zoom')).toBeNull();
+    expect(screen.queryByRole('button', { name: /lampe/ })).toBeNull();
+    expect(screen.getByLabelText('Code-barres')).toBeInTheDocument();
+  });
+
+  it('renders the offline slot at the top', async () => {
+    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
+    renderView({ topSlot: <p>À synchroniser (2)</p> });
+    expect(await screen.findByText('À synchroniser (2)')).toBeInTheDocument();
+  });
+
+  it('comes back with the tab after being hidden', async () => {
+    const track = makeTrack();
+    getUserMedia.mockResolvedValue(makeStream(track));
+    const { scanner } = renderView();
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    act(() => setVisibility('hidden'));
+    expect(track.stop).toHaveBeenCalled();
+    act(() => setVisibility('visible'));
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(2));
   });
 });
 

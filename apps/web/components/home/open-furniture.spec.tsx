@@ -104,7 +104,7 @@ describe('OpenFurniture', () => {
     expect(within(empty).getByText('Vide')).toBeInTheDocument();
     expect(
       within(empty).getByRole('link', { name: 'Ajouter un produit sur Étagère 1' }),
-    ).toHaveAttribute('href', '/?lieu=2&etagere=21');
+    ).toHaveAttribute('href', '/scanner?lieu=2&etagere=21');
     expect(
       within(screen.getByRole('region', { name: 'Étagère 2' })).queryByText('Vide'),
     ).toBeNull();
@@ -116,7 +116,7 @@ describe('OpenFurniture', () => {
     expect(within(tray).getByRole('button', { name: 'Beurre, quantité 2' })).toBeInTheDocument();
     expect(
       within(tray).getByRole('link', { name: 'Ajouter un produit non rangé' }),
-    ).toHaveAttribute('href', '/?lieu=2');
+    ).toHaveAttribute('href', '/scanner?lieu=2');
   });
 
   it('says the tray is empty', () => {
@@ -283,7 +283,7 @@ describe('OpenFurniture', () => {
       expect(within(empty).getByText('Vide')).toBeInTheDocument();
       expect(
         within(empty).getByRole('link', { name: 'Ajouter un produit sur Tiroir 3' }),
-      ).toHaveAttribute('href', '/?lieu=3&etagere=33');
+      ).toHaveAttribute('href', '/scanner?lieu=3&etagere=33');
       // The only buttons are the tiles.
       expect(screen.getAllByRole('button')).toHaveLength(4);
     });
@@ -426,7 +426,7 @@ describe('OpenFurniture', () => {
   });
 
   it('builds the scanner link', () => {
-    expect(scanHref(2)).toBe('/?lieu=2');
-    expect(scanHref(2, 21)).toBe('/?lieu=2&etagere=21');
+    expect(scanHref(2)).toBe('/scanner?lieu=2');
+    expect(scanHref(2, 21)).toBe('/scanner?lieu=2&etagere=21');
   });
 });
