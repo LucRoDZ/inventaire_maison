@@ -103,6 +103,8 @@
 - P4.3 : vibration, lampe, zoom, pastille, View Transitions : détection de capacité, repli silencieux, rien de promis sur iPhone.
 - P4.4 : `AuthUser.dataScope` = HMAC(`SESSION_SECRET`, compte et foyer), 32 caractères : la donnée de l'appareil est purgée quand il change, sans envoyer l'identifiant du foyer (D2).
 - P4.5 : `idempotency_keys` sans clé primaire propre : unicité (foyer, clé) ; droits sans `UPDATE`.
+- P4.6 : `/` redirige vers `/scanner` ; l'onglet « Scanner » ouvre l'écran plein écran.
+- P4.7 : B6 (mises à jour optimistes) confié à l'agent UI, propriétaire des listes et de Courses, pour éviter les conflits.
 
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
