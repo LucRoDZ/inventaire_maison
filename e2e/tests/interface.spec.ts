@@ -58,6 +58,31 @@ for (const size of PHONES) {
   test.describe(`${size.width} × ${size.height}`, () => {
     test.use({ viewport: size });
 
+    test('le bas de la zone n’est jamais caché par la barre, même plus haute que prévu', async ({
+      page,
+    }) => {
+      // A real phone adds its safe area and its own font metrics to the bar: make it 34 px taller.
+      await page.addStyleTag({
+        content: 'nav[aria-label="Navigation principale"] { padding-bottom: 34px !important; }',
+      });
+      for (const url of ['/inventaire', '/inventaire?vue=liste']) {
+        await page.goto(url);
+        const zone = page.locator('[data-scroll-zone]');
+        await expect(zone).toBeVisible();
+        await page.waitForLoadState('networkidle');
+        const m = await zone.evaluate((el) => {
+          el.scrollTop = el.scrollHeight;
+          const last = el.firstElementChild!.lastElementChild!.getBoundingClientRect();
+          const bar = document
+            .querySelector('nav[aria-label="Navigation principale"]')!
+            .getBoundingClientRect();
+          return { last: last.bottom, zone: el.getBoundingClientRect().bottom, bar: bar.top };
+        });
+        expect(m.zone, url).toBeLessThanOrEqual(m.bar + 0.5);
+        expect(m.last, url).toBeLessThanOrEqual(m.bar - 16);
+      }
+    });
+
     test('en-tête fixe et léger : titre, Filtres, bascule, recherche, et rien d’autre', async ({
       page,
     }) => {

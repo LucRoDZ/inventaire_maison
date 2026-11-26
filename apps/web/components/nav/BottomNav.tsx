@@ -20,12 +20,16 @@ export function isActive(pathname: string, href: string): boolean {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * The last row of the body column, never fixed: the scroll zone above it always ends where the bar
+ * begins, whatever its real height (font, safe area of the device).
+ */
 export function BottomNav() {
   const pathname = usePathname();
   return (
     <nav
       aria-label="Navigation principale"
-      className="border-line fixed inset-x-0 bottom-0 border-t bg-white pb-[env(safe-area-inset-bottom)]"
+      className="border-line shrink-0 border-t bg-white pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="mx-auto flex max-w-xl lg:max-w-3xl">
         {TABS.map(({ href, label, icon: Icon }) => {

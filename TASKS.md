@@ -825,6 +825,8 @@
 
 - 26/11/2026 : U1. Passe de finition (demande de Lucas, « unslop »). Étiquettes en casse normale sans interlettrage (`--text-label` : 600 14 px, ink) ; graisses 400 à 600 (titres 600, plus de 700) ; titre des sous-écrans à 22 px (`--text-subtitle`). Les champs ne reprennent plus la graisse ni l'interlettrage de leur étiquette (règle de base dans `globals.css`). Bouton principal indigo partout (variante `add` ambre retirée, variante `outline` pour une seconde action) ; état désactivé en lavande, sans opacité. L'ambre ne marque plus que l'état actif (barre du bas, choix d'icône), les pastilles de quantité, le décompte des filtres et les dates proches. Boutons « + » ronds en lavande. Bascules Maison/Liste et Ajouter/Retirer : le choix actif est une surface blanche. Viseur du scanner en ink (une caméra), bouton blanc. Titres de section des écrans d'administration et de la fiche produit en titre de carte. Réversible : `tokens.css` et `Button.tsx`.
 
+- 26/11/2026 : U2. Bas des zones caché par la barre (retour de Lucas sur téléphone, Maison et Liste). La barre du bas n'est plus `fixed` : c'est la dernière ligne de la colonne du `body`, et la zone qui défile s'arrête toujours là où elle commence, quelle que soit sa hauteur réelle (police, zone de sécurité). Le cadre ne réserve plus `--fx-nav-h` ; la variable ne sert plus qu'au calcul de la hauteur des rangées du meuble ouvert. Marge du bas de la zone portée à 24 px. Le message du meuble ouvert se pose en bas du cadre (`absolute`). Test e2e : barre grossie de 34 px, la dernière ligne reste au-dessus.
+
 ## Problèmes bloquants
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
 

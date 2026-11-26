@@ -93,7 +93,7 @@ export function ScrollZone({ label, memoryKey, children, className = '' }: Scrol
       }}
       className={`scroll-zone min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 ${className}`}
     >
-      <div className="flex flex-col gap-4 pt-1 pb-4">{children}</div>
+      <div className="flex flex-col gap-4 pt-1 pb-6">{children}</div>
     </div>
   );
 }
