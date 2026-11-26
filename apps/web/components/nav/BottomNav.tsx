@@ -17,14 +17,14 @@ interface Tab {
 }
 
 export const TABS: readonly Tab[] = [
-  { href: '/', label: 'Scanner', icon: ScanBarcode },
+  { href: '/scanner', label: 'Scanner', icon: ScanBarcode },
   { href: '/inventaire', label: 'Inventaire', icon: Package },
   { href: '/courses', label: 'Courses', icon: ShoppingBasket },
   { href: '/plus', label: 'Plus', icon: EllipsisVertical },
 ];
 
 export function isActive(pathname: string, href: string): boolean {
-  return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /**

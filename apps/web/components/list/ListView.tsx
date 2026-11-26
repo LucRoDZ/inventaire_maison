@@ -361,7 +361,7 @@ export function ListView({
               </Callout>
               {!filtering ? (
                 <Link
-                  href="/"
+                  href="/scanner"
                   className="tap-target bg-indigo text-white inline-flex items-center rounded-xl px-4 font-semibold transition-colors duration-150 hover:bg-indigo-mid"
                 >
                   Scanner un produit

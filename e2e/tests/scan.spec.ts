@@ -26,7 +26,9 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
   const sheet = page.getByRole('dialog');
   await expect(sheet.getByRole('heading', { name })).toBeVisible();
   await expect(sheet.getByText(/Catégorie proposée/)).toBeVisible();
-  // A proposal worth confirming is one line; « Changer la catégorie » opens the whole grid.
+  // « Plus d'options » opens the full sheet; a proposal worth confirming is one line there,
+  // « Changer la catégorie » opens the whole grid.
+  await sheet.getByRole('button', { name: 'Plus d’options' }).click();
   const change = sheet.getByRole('button', { name: 'Changer la catégorie' });
   if (await change.isVisible()) await change.click();
   const proposed = sheet.getByRole('radiogroup', { name: 'Catégorie proposée' });
@@ -55,14 +57,14 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
   await pushCode(page, code);
   await expect(sheet.getByRole('heading', { name })).toBeVisible();
   await expect(sheet.getByRole('radiogroup', { name: 'Catégorie proposée' })).toHaveCount(0);
-  await sheet.getByRole('button', { name: 'Fermer' }).click();
+  await sheet.getByRole('button', { name: 'Annuler' }).click();
   await expect(sheet).toHaveCount(0);
 
   // Typed code: the same product again.
   await page.getByLabel('Code-barres').fill(code);
   await page.getByLabel('Code-barres').press('Enter');
   await expect(sheet.getByRole('heading', { name })).toBeVisible();
-  await sheet.getByRole('button', { name: 'Fermer' }).click();
+  await sheet.getByRole('button', { name: 'Annuler' }).click();
 
   const products = await page.request.get(`/api/products?q=${search}`);
   expect(((await products.json()) as unknown[]).length).toBe(1);
@@ -86,7 +88,7 @@ async function describeAndAdd(page: Page, name: string) {
   const sheet = page.getByRole('dialog', { name });
   await expect(sheet).toBeVisible();
   await sheet.getByLabel('Lieu').selectOption({ label: 'Garde-manger' });
-  await sheet.getByRole('button', { name: 'Ajouter et scanner le suivant' }).click();
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` })).toBeVisible();
 }
 
@@ -198,7 +200,7 @@ test('mode Retirer : stock 2, deux retraits, l’article disparaît du stock', a
   const sheet = page.getByRole('dialog', { name });
   await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
   await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
-  await sheet.getByRole('button', { name: 'Ajouter et scanner le suivant' }).click();
+  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await expect.poll(quantity).toBe(2);
 
   await page.getByRole('button', { name: 'Retirer', exact: true }).click();
@@ -258,10 +260,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
   await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await expect.poll(quantity).toBe(3);
 
-  await page
-    .getByRole('navigation', { name: 'Navigation principale' })
-    .getByRole('link', { name: 'Inventaire' })
-    .click();
+  await page.goto('/inventaire');
   await page.getByRole('button', { name: 'Liste', exact: true }).click();
   await filterListByFurniture(page, /^Frigo/);
   const section = page.getByRole('button', { name: /^Produits laitiers et œufs/ });
@@ -288,10 +287,7 @@ test('vue Liste : 3 unités au Frigo sous la bonne catégorie, modification de q
 
 test('vue Maison : quatre meubles nommés', async ({ page }) => {
   await signIn(page);
-  await page
-    .getByRole('navigation', { name: 'Navigation principale' })
-    .getByRole('link', { name: 'Inventaire' })
-    .click();
+  await page.goto('/inventaire');
   await expect(page.getByRole('button', { name: 'Maison', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -322,17 +318,14 @@ test('meuble ouvert : ajout depuis une étagère vide, le produit y apparaît av
 }, testInfo) => {
   const { shelf, product } = SHELVES[testInfo.project.name as keyof typeof SHELVES];
   await signIn(page);
-  await page
-    .getByRole('navigation', { name: 'Navigation principale' })
-    .getByRole('link', { name: 'Inventaire' })
-    .click();
+  await page.goto('/inventaire');
   await page.getByRole('link', { name: /^Frigo/ }).click();
   await expect(page.getByRole('heading', { name: 'Frigo', level: 1 })).toBeVisible();
   const emptyShelf = page.getByRole('region', { name: shelf });
   await expect(emptyShelf.getByText('Vide')).toBeVisible();
 
   await emptyShelf.getByRole('link', { name: `Ajouter un produit sur ${shelf}` }).click();
-  await expect(page).toHaveURL(/\/\?lieu=\d+&etagere=\d+$/);
+  await expect(page).toHaveURL(/\/scanner\?lieu=\d+&etagere=\d+$/);
   await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
   await page.getByLabel('Nom du produit').fill(product);
   await page.getByRole('button', { name: 'Créer ce produit' }).click();
@@ -705,7 +698,7 @@ test('mot de passe : changement depuis Compte, puis reconnexion', async ({ page 
   await createMember(member, 'ancien-mot-de-passe');
   await signIn(page, member, 'ancien-mot-de-passe');
 
-  await page.getByRole('navigation').getByRole('link', { name: 'Plus', exact: true }).click();
+  await page.goto('/plus');
   await expect(page.getByRole('link', { name: 'Administration' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Compte' }).click();
   await expect(page.getByText(member, { exact: true })).toBeVisible();
@@ -885,6 +878,7 @@ test('administration : une correspondance ajoutée classe un produit scanné ens
   await pushCode(page, code);
   const sheet = page.getByRole('dialog', { name });
   await expect(sheet.getByText('Catégorie proposée : Boissons')).toBeVisible();
+  await sheet.getByRole('button', { name: 'Plus d’options' }).click();
   await sheet.getByRole('button', { name: 'Changer la catégorie' }).click();
   const proposed = sheet.getByRole('radiogroup', { name: 'Catégorie proposée' });
   await expect(proposed.getByRole('radio', { name: /Boissons/ })).toBeChecked();
@@ -917,6 +911,8 @@ test('installation : jamais sur la connexion, proposée après connexion, « Plu
   await expect(page.getByRole('dialog', { name: 'Installer l’application' })).toHaveCount(0);
 
   await signIn(page, undefined, undefined, { keepInstallInvite: true });
+  // The page is hydrated (the scanner has opened) before the browser event is simulated.
+  await startScanner(page);
   await fire();
   const sheet = page.getByRole('dialog', { name: 'Installer l’application' });
   await expect(sheet).toBeVisible();

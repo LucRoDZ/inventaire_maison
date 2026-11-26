@@ -13,7 +13,12 @@ import { ApiError } from '../../lib/api';
 import { resolveScan } from '../../lib/scan-flow';
 import type { ScanResult, Scanner } from '../../lib/scanner/types';
 import * as stockApi from '../../lib/stock-api';
+import { installFakeCamera } from './fake-camera';
 import { ScanFlow, type UnknownContext } from './ScanFlow';
+
+vi.mock('../../lib/scanner/create-scanner', () => ({
+  createScanner: async () => (await import('./fake-camera')).idleScanner(),
+}));
 
 vi.mock('../../lib/stock-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/stock-api')>()),
@@ -68,6 +73,7 @@ function setOnline(value: boolean) {
 }
 
 beforeEach(() => {
+  installFakeCamera();
   setOnline(true);
   window.localStorage.clear();
   vi.mocked(stockApi.adjustStock).mockClear();
@@ -173,6 +179,7 @@ describe('ScanFlow', () => {
   it('opens the add sheet with the proposed category, saved when the product is added', async () => {
     renderFlow({ status: 'suggested', product });
     await typeCode('3017620422003');
+    await userEvent.click(await screen.findByRole('button', { name: 'Plus d’options' }));
     const group = await screen.findByRole('radiogroup', { name: 'Catégorie proposée' });
     expect(within(group).getByRole('radio', { name: /Autre/ })).toBeChecked();
     await userEvent.click(within(group).getByRole('radio', { name: /Épicerie sucrée/ }));
@@ -183,6 +190,64 @@ describe('ScanFlow', () => {
     );
     await waitFor(() => expect(stockApi.updateProductCategory).toHaveBeenCalledWith(7, 5));
     await waitFor(() => expect(stockApi.adjustStock).toHaveBeenCalled());
+  });
+
+  it('confirms a proposed category when the quick sheet adds', async () => {
+    renderFlow({ status: 'suggested', product });
+    await typeCode('3017620422003');
+    const sheet = await screen.findByRole('dialog');
+    expect(within(sheet).getByRole('button', { name: 'Annuler' })).toBeInTheDocument();
+    expect(within(sheet).getByRole('group', { name: 'Quantité' })).toBeInTheDocument();
+    expect(within(sheet).getByLabelText('Lieu')).toHaveValue('2');
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(stockApi.updateProductCategory).toHaveBeenCalledWith(7, 9));
+    expect(stockApi.adjustStock).toHaveBeenCalledWith(
+      expect.objectContaining({ delta: 1, reason: 'scan_add', locationId: 2 }),
+    );
+  });
+
+  it('closes the quick sheet with Annuler, nothing is added', async () => {
+    renderFlow({ status: 'known', product: known });
+    await typeCode('3017620422003');
+    const sheet = await screen.findByRole('dialog');
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(stockApi.adjustStock).not.toHaveBeenCalled();
+  });
+
+  it('counts the products added in the session and takes the last one back', async () => {
+    renderFlow({ status: 'known', product: known });
+    expect(screen.queryByRole('button', { name: 'Annuler le dernier' })).toBeNull();
+    await typeCode('3017620422003');
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Ajouter' }),
+    );
+    expect(await screen.findByText('1 produit ajouté')).toBeInTheDocument();
+    await typeCode('3017620422003');
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Ajouter' }),
+    );
+    expect(await screen.findByText('2 produits ajoutés')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler le dernier' }));
+    await waitFor(() =>
+      expect(stockApi.adjustStock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ delta: -1, reason: 'correction' }),
+      ),
+    );
+    expect(await screen.findByText('1 produit ajouté')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler le dernier' }));
+    await waitFor(() => expect(screen.queryByText(/^\d+ produits? ajoutés?$/)).toBeNull());
+  });
+
+  it('announces what was read and offers the offline slot', async () => {
+    renderFlow({ status: 'known', product: known }, { statusSlot: <p>À synchroniser (2)</p> });
+    expect(screen.getByText('À synchroniser (2)')).toBeInTheDocument();
+    await typeCode('3017620422003');
+    await screen.findByRole('dialog');
+    expect(
+      screen.getByText('Lu : Pâte à tartiner Nutella', { selector: '[aria-live]' }),
+    ).toBeInTheDocument();
   });
 
   it('shows the unknown-product slot with the context of the scan', async () => {
@@ -283,14 +348,15 @@ describe('ScanFlow', () => {
       decodeImage: async () => null,
     };
     renderFlow({ status: 'known', product: known }, { makeScanner: async () => scanner });
-    await userEvent.click(screen.getByRole('button', { name: 'Scanner' }));
     await waitFor(() => expect(scanner.start).toHaveBeenCalledTimes(1));
 
     act(() => emit({ code: '3017620422003', format: 'ean_13' }));
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(scanner.stop).toHaveBeenCalled();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ajouter et scanner le suivant' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Ajouter' }),
+    );
     await waitFor(() => expect(scanner.start).toHaveBeenCalledTimes(2));
   });
 

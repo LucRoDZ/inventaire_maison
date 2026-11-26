@@ -2,11 +2,11 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BottomNav, isActive } from './BottomNav';
 
-let pathname = '/';
+let pathname = '/inventaire';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname }));
 
 beforeEach(() => {
-  pathname = '/';
+  pathname = '/inventaire';
 });
 
 describe('BottomNav', () => {
@@ -15,14 +15,15 @@ describe('BottomNav', () => {
     const links = screen.getAllByRole('link');
     expect(links.map((l) => l.textContent)).toEqual(['Scanner', 'Inventaire', 'Courses', 'Plus']);
     expect(links.map((l) => l.getAttribute('href'))).toEqual([
-      '/',
+      '/scanner',
       '/inventaire',
       '/courses',
       '/plus',
     ]);
   });
 
-  it('marks only the Scanner tab as current on /', () => {
+  it('marks only the Scanner tab as current on /scanner', () => {
+    pathname = '/scanner';
     render(<BottomNav />);
     expect(screen.getByRole('link', { name: 'Scanner' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Inventaire' })).not.toHaveAttribute('aria-current');
@@ -52,9 +53,9 @@ describe('BottomNav', () => {
 });
 
 describe('isActive', () => {
-  it('only matches the root exactly', () => {
-    expect(isActive('/', '/')).toBe(true);
-    expect(isActive('/plus', '/')).toBe(false);
+  it('matches the page itself and its sub-pages', () => {
+    expect(isActive('/scanner', '/scanner')).toBe(true);
+    expect(isActive('/plus', '/scanner')).toBe(false);
   });
 
   it('does not confuse similar prefixes', () => {

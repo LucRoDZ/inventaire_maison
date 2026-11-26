@@ -27,7 +27,7 @@ interface ShelfRowProps {
 
 /** Where the scanner opens from: the furniture and the shelf are chosen in advance. */
 export const scanHref = (locationId: number, shelfId?: number): string =>
-  `/?lieu=${locationId}${shelfId ? `&etagere=${shelfId}` : ''}`;
+  `/scanner?lieu=${locationId}${shelfId ? `&etagere=${shelfId}` : ''}`;
 
 /** The board under the tiles (`rack` adds posts). Scenery: hidden from assistive technology. */
 function Board({ look, kind }: { look: ShelfLook; kind: HomeShelfDto['kind'] }) {
