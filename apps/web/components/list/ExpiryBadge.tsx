@@ -11,7 +11,7 @@ export function ExpiryBadge({ expiry }: { expiry: ExpiryStatus | null }) {
   const colors = expiry.status === 'expired' ? 'bg-alert text-white' : 'bg-amber text-indigo';
   return (
     <span
-      className={`text-help inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${colors}`}
+      className={`text-help inline-flex items-center rounded-full px-2 py-0.5 font-semibold tabular-nums ${colors}`}
     >
       {expiryLabel(expiry)}
     </span>

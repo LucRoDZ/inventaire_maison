@@ -16,6 +16,8 @@ export interface RemovalPlan {
   units: number;
   /** « Frigo »: where the units came from, said in the message. */
   place?: string;
+  /** The reason the removal was recorded with (default: consumed). */
+  reason?: RemovalReason;
 }
 
 interface RemovalToastProps {

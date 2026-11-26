@@ -2,6 +2,7 @@ import type { StockListItemDto } from '@inventaire/shared';
 import { Minus, Plus } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { categoryIcon } from '../ui/CategoryIcon';
+import { FadeImage } from '../ui/FadeImage';
 import { IconBadge } from '../ui/IconBadge';
 import { ExpiryBadge } from './ExpiryBadge';
 
@@ -19,7 +20,7 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
   return (
     <Card className="flex items-center gap-3">
       {product.imageUrl ? (
-        <img src={product.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+        <FadeImage src={product.imageUrl} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
       ) : (
         <IconBadge icon={categoryIcon(item.category.icon)} />
       )}

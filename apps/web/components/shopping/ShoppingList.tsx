@@ -13,7 +13,7 @@ import type {
   StockAdjustInput,
   StockAdjustResponse,
 } from '@inventaire/shared';
-import { Minus, Plus, ShoppingBasket, Trash2 } from 'lucide-react';
+import { Check, Minus, Plus, Share2, Trash2, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { getProduct } from '../../lib/products-api';
@@ -32,7 +32,11 @@ import { AddSheet } from '../add/AddSheet';
 import { UndoToast } from '../add/UndoToast';
 import { ProductForm } from '../product/ProductForm';
 import { Button } from '../ui/Button';
-import { Callout } from '../ui/Callout';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { EmptyShoppingIllustration } from '../ui/Illustrations';
+import { ListSkeleton } from '../ui/Skeleton';
+import { SwipeRow } from '../ui/SwipeRow';
+import { shareText, shoppingShareText } from '../../lib/share';
 import { QuickEntry } from './QuickEntry';
 
 export interface ShoppingApi {
@@ -100,6 +104,7 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [shareNote, setShareNote] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -120,9 +125,32 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
 
   const add = useCallback(
     async (input: ShoppingItemCreateInput) => {
+      // A free line needs nothing from the server to be drawn: it appears at once, and goes away
+      // again (with the message) if the server refuses. A catalogue product may be merged into an
+      // existing line, so it waits for the answer.
+      const label = input.productId ? null : (input.label ?? null);
+      const temporaryId = -Date.now();
+      if (label) {
+        setItems((current) => [
+          ...(current ?? []).filter((line) => !line.checked),
+          {
+            id: temporaryId,
+            product: null,
+            label,
+            quantity: input.quantity ?? 1,
+            amount: input.amount ?? null,
+            unit: input.unit ?? null,
+            checked: false,
+            origin: 'manual',
+            createdAt: new Date().toISOString(),
+          },
+          ...(current ?? []).filter((line) => line.checked),
+        ]);
+      }
       try {
         await apiRef.current.add(input);
       } catch (caught) {
+        setItems((current) => (current ?? []).filter((line) => line.id !== temporaryId));
         throw new Error(messageOf(caught, 'Ajout impossible'));
       }
       await load();
@@ -133,12 +161,16 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
   /** Runs a change of the list; an error is said once, the list is loaded again either way. */
   const act = async (run: () => Promise<unknown>, fallback: string) => {
     setError(null);
+    let failure: string | null = null;
     try {
       await run();
     } catch (caught) {
-      setError(messageOf(caught, fallback));
+      failure = messageOf(caught, fallback);
     }
+    // The list comes back as the server has it (the optimistic change, if refused, is undone);
+    // the message is said after, so that the reload does not wipe it.
     await load();
+    if (failure) setError(failure);
   };
 
   const toggle = (item: ShoppingItemDto) => {
@@ -153,8 +185,48 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
     );
   };
 
-  const setQuantity = (item: ShoppingItemDto, quantity: number) =>
-    act(() => apiRef.current.patch(item.id, { quantity }), 'Modification impossible');
+  const setQuantity = (item: ShoppingItemDto, quantity: number) => {
+    setItems((current) =>
+      (current ?? []).map((line) => (line.id === item.id ? { ...line, quantity } : line)),
+    );
+    return act(() => apiRef.current.patch(item.id, { quantity }), 'Modification impossible');
+  };
+
+  /** Swipe right: checks the line (or unchecks it when it already is). */
+  const check = (item: ShoppingItemDto) => toggle(item);
+
+  /** Removes a line, with the 5 s Annuler that puts it back as it was. */
+  const removeLine = async (item: ShoppingItemDto) => {
+    setError(null);
+    setItems((current) => (current ?? []).filter((line) => line.id !== item.id));
+    try {
+      await apiRef.current.remove(item.id);
+    } catch (caught) {
+      await load();
+      setError(messageOf(caught, 'Suppression impossible'));
+      return;
+    }
+    setToast({
+      message: `Supprimé : ${itemName(item)}`,
+      undo: async () => {
+        await apiRef.current.add({
+          ...(item.product ? { productId: item.product.id } : { label: item.label }),
+          quantity: item.quantity,
+          amount: item.amount,
+          unit: item.unit,
+        });
+      },
+    });
+    await load();
+  };
+
+  const share = async () => {
+    const text = shoppingShareText(items ?? []);
+    const outcome = await shareText('Liste de courses', text);
+    if (outcome === 'shared') setShareNote('Liste partagée.');
+    else if (outcome === 'copied') setShareNote('Liste copiée dans le presse-papiers.');
+    else if (outcome === 'failed') setError('Partage impossible : copiez la liste à la main.');
+  };
 
   const checked = (items ?? []).filter((item) => item.checked);
 
@@ -252,11 +324,7 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      {error ? (
-        <Callout role="alert" title="Un instant">
-          {error}
-        </Callout>
-      ) : null}
+      {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
 
       {recent.length > 0 ? (
         <section aria-labelledby="recents" className="flex flex-col gap-2">
@@ -285,13 +353,11 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
 
       {items === null ? (
         error ? null : (
-          <p role="status" className="text-small">
-            Chargement…
-          </p>
+          <ListSkeleton rowClassName="h-[60px]" />
         )
       ) : items.length === 0 ? (
         <section className="border-line rounded-card shadow-card flex flex-col items-start gap-2 border bg-white p-4">
-          <ShoppingBasket size={28} aria-hidden="true" className="text-indigo-mid" />
+          <EmptyShoppingIllustration />
           <h2 className="text-card-title">La liste est vide</h2>
           <p className="text-body">
             Écrivez ce qu’il faut acheter dans le champ ci-dessus, ou touchez un produit récemment
@@ -307,9 +373,8 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
                 item={item}
                 onToggle={() => toggle(item)}
                 onQuantity={(quantity) => void setQuantity(item, quantity)}
-                onRemove={() =>
-                  void act(() => apiRef.current.remove(item.id), 'Suppression impossible')
-                }
+                onCheck={() => check(item)}
+                onRemove={() => void removeLine(item)}
               />
             ))}
           </ul>
@@ -328,6 +393,13 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
             >
               Vider les lignes cochées
             </Button>
+            <Button variant="outline" onClick={() => void share()}>
+              <Share2 size={18} aria-hidden="true" />
+              Partager la liste
+            </Button>
+            <p role="status" className="text-help">
+              {shareNote}
+            </p>
           </div>
         </>
       )}
@@ -394,62 +466,75 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
 interface ShoppingLineProps {
   item: ShoppingItemDto;
   onToggle: () => void;
+  onCheck: () => void;
   onQuantity: (quantity: number) => void;
   onRemove: () => void;
 }
 
-function ShoppingLine({ item, onToggle, onQuantity, onRemove }: ShoppingLineProps) {
+function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: ShoppingLineProps) {
   const name = itemName(item);
   const round =
     'tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line disabled:opacity-50';
   return (
-    <li className="border-line rounded-card shadow-card flex items-center gap-2 border bg-white py-1 pr-2 pl-1">
-      <label className="tap-target flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-2">
-        <input
-          type="checkbox"
-          checked={item.checked}
-          onChange={onToggle}
-          className="accent-indigo h-5 w-5 shrink-0"
-        />
-        <span className="min-w-0">
-          <span
-            className={`block truncate font-semibold ${item.checked ? 'text-grey line-through' : 'text-ink'}`}
-          >
-            {name}
-          </span>
-          <span className="text-help block">
-            {shoppingQuantityText(item)}
-            {item.product === null ? ' · ligne libre' : ''}
-          </span>
-        </span>
-      </label>
-      <div role="group" aria-label={`Quantité de ${name}`} className="flex items-center">
-        <button
-          type="button"
-          aria-label={`Diminuer la quantité de ${name}`}
-          disabled={item.quantity <= 1}
-          onClick={() => onQuantity(item.quantity - 1)}
-          className={round}
-        >
-          <Minus size={18} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label={`Augmenter la quantité de ${name}`}
-          onClick={() => onQuantity(item.quantity + 1)}
-          className={round}
-        >
-          <Plus size={18} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label={`Supprimer ${name}`}
-          onClick={onRemove}
-          className="tap-target text-indigo-mid inline-flex items-center justify-center rounded-full"
-        >
-          <Trash2 size={18} aria-hidden="true" />
-        </button>
-      </div>
+    <li>
+      <SwipeRow
+        right={{
+          label: item.checked ? 'Décocher' : 'Cocher',
+          icon: item.checked ? Undo2 : Check,
+          tone: 'consumed',
+          run: onCheck,
+        }}
+        left={{ label: 'Supprimer', icon: Trash2, tone: 'wasted', run: onRemove }}
+      >
+        <div className="border-line rounded-card shadow-card flex items-center gap-2 border bg-white py-1 pr-2 pl-1">
+          <label className="tap-target flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-2">
+            <input
+              type="checkbox"
+              checked={item.checked}
+              onChange={onToggle}
+              className="accent-indigo h-5 w-5 shrink-0"
+            />
+            <span className="min-w-0">
+              <span
+                className={`block truncate font-semibold ${item.checked ? 'text-grey line-through' : 'text-ink'}`}
+              >
+                {name}
+              </span>
+              <span className="text-help block tabular-nums">
+                {shoppingQuantityText(item)}
+                {item.product === null ? ' · ligne libre' : ''}
+              </span>
+            </span>
+          </label>
+          <div role="group" aria-label={`Quantité de ${name}`} className="flex items-center">
+            <button
+              type="button"
+              aria-label={`Diminuer la quantité de ${name}`}
+              disabled={item.quantity <= 1}
+              onClick={() => onQuantity(item.quantity - 1)}
+              className={round}
+            >
+              <Minus size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Augmenter la quantité de ${name}`}
+              onClick={() => onQuantity(item.quantity + 1)}
+              className={round}
+            >
+              <Plus size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Supprimer ${name}`}
+              onClick={onRemove}
+              className="tap-target text-indigo-mid inline-flex items-center justify-center rounded-full"
+            >
+              <Trash2 size={18} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </SwipeRow>
     </li>
   );
 }

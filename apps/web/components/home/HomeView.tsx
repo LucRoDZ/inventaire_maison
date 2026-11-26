@@ -23,7 +23,9 @@ import {
   type FurnitureChange,
 } from '../furniture/FurnitureOptions';
 import { Button } from '../ui/Button';
-import { Callout } from '../ui/Callout';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { EmptyFurnitureIllustration } from '../ui/Illustrations';
+import { Skeleton } from '../ui/Skeleton';
 import { FurnitureCard, furnitureCardId } from './FurnitureCard';
 
 interface HomeViewProps {
@@ -113,17 +115,19 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   };
 
   if (error) {
-    return (
-      <Callout role="alert" title="Un instant">
-        {error}
-      </Callout>
-    );
+    return <ErrorMessage message={error} onRetry={() => reload()} />;
   }
   if (!home) {
     return (
-      <p role="status" className="text-small">
-        Chargement…
-      </p>
+      <div
+        role="status"
+        aria-label="Chargement"
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
+      >
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="rounded-card min-h-52 w-full" />
+        ))}
+      </div>
     );
   }
 
@@ -146,6 +150,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
       <div className="flex flex-col gap-4">
         {live}
         <section className="border-line rounded-card shadow-card flex flex-col items-start gap-3 border bg-white p-4">
+          <EmptyFurnitureIllustration />
           <h2 className="text-card-title">Aucun meuble pour l’instant</h2>
           <p className="text-body">
             Ajoutez votre garde-manger, votre frigo ou votre cave pour y ranger vos produits.
