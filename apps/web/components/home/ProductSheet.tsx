@@ -19,6 +19,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
+import { FadeImage } from '../ui/FadeImage';
 import { IconBadge } from '../ui/IconBadge';
 import { MoveDialog } from './MoveDialog';
 
@@ -97,7 +98,7 @@ export function ProductSheet({
       <BottomSheet labelledBy={titleId} onClose={onClose}>
         <div className="flex items-center gap-3">
           {tile.imageUrl ? (
-            <img src={tile.imageUrl} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            <FadeImage src={tile.imageUrl} className="h-16 w-16 rounded-xl object-cover" />
           ) : (
             <IconBadge icon={Glyph} />
           )}

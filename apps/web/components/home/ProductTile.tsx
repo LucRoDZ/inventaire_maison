@@ -1,6 +1,7 @@
 import type { HomeTileDto } from '@inventaire/shared';
 import type { ButtonHTMLAttributes, Ref } from 'react';
 import { categoryIcon } from '../ui/CategoryIcon';
+import { FadeImage } from '../ui/FadeImage';
 
 interface ProductTileProps {
   tile: HomeTileDto;
@@ -37,7 +38,7 @@ export function ProductTile({
       }`}
     >
       {tile.imageUrl ? (
-        <img src={tile.imageUrl} alt="" className="h-full w-full object-cover" />
+        <FadeImage src={tile.imageUrl} className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center">
           <span className="fx-tile-badge bg-lavender text-indigo flex items-center justify-center rounded-full">

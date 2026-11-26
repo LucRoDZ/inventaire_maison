@@ -3,6 +3,7 @@
 import type {
   CategoryDto,
   LocationDto,
+  RemovalReason,
   StockAdjustInput,
   StockAdjustResponse,
   StockListItemDto,
@@ -25,6 +26,9 @@ import type { LocationChoice } from '../home/FiltersControl';
 import { RemovalToast, type RemovalPlan, removalKey } from '../add/RemovalToast';
 import { UndoToast } from '../add/UndoToast';
 import { Callout } from '../ui/Callout';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { EmptyFurnitureIllustration } from '../ui/Illustrations';
+import { ListSkeleton } from '../ui/Skeleton';
 import { MoveDialog } from '../home/MoveDialog';
 import { BatchBar } from './BatchBar';
 import { CategorySection } from './CategorySection';
@@ -171,7 +175,11 @@ export function ListView({
   }, [inCategories, locations]);
 
   /** Optimistic: the card changes at once and goes back to its old value if the server refuses. */
-  const change = async (item: StockListItemDto, delta: 1 | -1) => {
+  const change = async (
+    item: StockListItemDto,
+    delta: 1 | -1,
+    reason: RemovalReason = 'consumed',
+  ) => {
     const next = item.quantity + delta;
     setError(null);
     setItems((current) =>
@@ -186,7 +194,7 @@ export function ListView({
         shelfId: item.shelf?.id ?? null,
         expiryDate: item.expiryDate,
         delta,
-        reason: delta < 0 ? 'consumed' : 'manual',
+        reason: delta < 0 ? reason : 'manual',
       });
       if (delta < 0) {
         // One toast at a time: a new removal replaces the batch toast.
@@ -198,6 +206,7 @@ export function ListView({
           expiryDate: item.expiryDate,
           name: item.product.name,
           units: 1,
+          reason,
         });
       }
       void load(); // counters and order follow the server
@@ -319,17 +328,11 @@ export function ListView({
 
   return (
     <div className="flex flex-col gap-4">
-      {error ? (
-        <Callout role="alert" title="Un instant">
-          {error}
-        </Callout>
-      ) : null}
+      {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
 
       {items === null ? (
         error ? null : (
-          <p role="status" className="text-small">
-            Chargement…
-          </p>
+          <ListSkeleton />
         )
       ) : (
         <>
@@ -354,6 +357,7 @@ export function ListView({
           </p>
           {shown.length === 0 ? (
             <div className="flex flex-col items-start gap-3">
+              {!filtering ? <EmptyFurnitureIllustration /> : null}
               <Callout role="note" title={filtering ? 'Aucun résultat' : 'Rien ici pour l’instant'}>
                 {filtering
                   ? 'Aucun produit ne correspond à cette recherche et à ces filtres.'
@@ -375,6 +379,7 @@ export function ListView({
                 name={section.name}
                 items={lines}
                 onChange={(i, d) => void change(i, d)}
+                onRemove={(i, reason) => void change(i, -1, reason)}
                 selection={selected ? { ids: selected, onToggle: toggleSelected } : undefined}
               />
             ))
@@ -421,6 +426,7 @@ export function ListView({
         <RemovalToast
           key={removalKey(removal)}
           plan={removal}
+          reason={removal.reason}
           adjust={api.adjust}
           onChanged={() => {
             void load();
