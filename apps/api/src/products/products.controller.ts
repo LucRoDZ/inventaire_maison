@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Inject,
   Param,
   Patch,
@@ -17,10 +18,12 @@ import {
   PRODUCT_TEXT_MAX_LENGTH,
   type ProductDetailDto,
   type ProductDto,
+  type ProductMergeResponse,
 } from '@inventaire/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { parseBody, parseId } from '../common/validation';
+import { ProductMergeService } from './product-merge.service';
 import { ProductsService } from './products.service';
 
 const id = z.number().int().min(1).max(2_147_483_647);
@@ -59,6 +62,14 @@ const patchSchema = z
   .strict()
   .refine((v) => Object.keys(v).length > 0);
 
+const mergeSchema = z.object({ intoProductId: id }).strict();
+const barcodeSchema = z
+  .object({
+    barcode: z.string().max(40),
+    barcodeFormat: z.enum(['ean_13', 'ean_8', 'upc_a', 'upc_e']).optional(),
+  })
+  .strict();
+
 const searchSchema = z.object({
   q: z.string().max(100).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -66,7 +77,10 @@ const searchSchema = z.object({
 
 @Controller('products')
 export class ProductsController {
-  constructor(@Inject(ProductsService) private readonly products: ProductsService) {}
+  constructor(
+    @Inject(ProductsService) private readonly products: ProductsService,
+    @Inject(ProductMergeService) private readonly merges: ProductMergeService,
+  ) {}
 
   @Get()
   search(@Query() query: Record<string, unknown>): Promise<ProductDto[]> {
@@ -104,5 +118,29 @@ export class ProductsController {
         'Produit invalide : nom, marque, catégorie, lieu habituel, seuil (1 à 999) ou contenance',
       ),
     );
+  }
+
+  @Post(':id/merge')
+  @HttpCode(200)
+  merge(
+    @Param('id') rawId: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ): Promise<ProductMergeResponse> {
+    const productId = parseId(rawId);
+    const input = parseBody(
+      mergeSchema,
+      body,
+      'Fusion invalide : un produit à conserver est requis',
+    );
+    return this.merges.merge(productId, input, req.user!.id);
+  }
+
+  @Post(':id/barcode')
+  @HttpCode(200)
+  attachBarcode(@Param('id') rawId: string, @Body() body: unknown): Promise<ProductDto> {
+    const productId = parseId(rawId);
+    const input = parseBody(barcodeSchema, body, 'Code-barres invalide');
+    return this.products.attachBarcode(productId, input.barcode, input.barcodeFormat);
   }
 }
