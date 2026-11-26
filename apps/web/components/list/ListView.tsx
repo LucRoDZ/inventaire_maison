@@ -20,6 +20,7 @@ import {
   type StockFilters,
 } from '../../lib/stock-api';
 import type { LocationChoice } from '../home/FiltersControl';
+import { RemovalToast, type RemovalPlan } from '../add/RemovalToast';
 import { Callout } from '../ui/Callout';
 import { CategorySection } from './CategorySection';
 
@@ -34,6 +35,8 @@ export interface ListSummary {
 interface ListViewProps {
   /** The search and the filters of the URL (search, furniture, categories, order). */
   filters?: HomeFilters;
+  /** Called once the stock changed (a quantity edited), for the counters of the screen. */
+  onStockChanged?: () => void;
   /** Called when the furniture or their counts change, for the filter panel. */
   onSummary?: (summary: ListSummary) => void;
   /** Test seams. */
@@ -53,12 +56,19 @@ const distinctProducts = (items: StockListItemDto[]) =>
  * furniture and the categories are filtered here, so that the count of each piece of furniture in
  * the panel follows the chosen categories.
  */
-export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewProps) {
+export function ListView({
+  filters = NO_FILTER,
+  onSummary,
+  onStockChanged,
+  api = {},
+}: ListViewProps) {
   const apiRef = useRef(api);
   const summaryRef = useRef(onSummary);
+  const changedRef = useRef(onStockChanged);
   useEffect(() => {
     apiRef.current = api;
     summaryRef.current = onSummary;
+    changedRef.current = onStockChanged;
   });
 
   /** Null until loaded: no summary is given before, so no filter is taken for a stale one. */
@@ -67,7 +77,8 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
   const [items, setItems] = useState<StockListItemDto[] | null>(null);
   const [debounced, setDebounced] = useState(filters.q.trim());
   const [error, setError] = useState<string | null>(null);
-  const { sort, locationId, categoryIds } = filters;
+  const [removal, setRemoval] = useState<RemovalPlan | null>(null);
+  const { sort, locationId, categoryIds, expiry } = filters;
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(filters.q.trim()), SEARCH_DELAY_MS);
@@ -91,6 +102,7 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
       const response = await (apiRef.current.fetchStock ?? fetchStock)({
         q: debounced || undefined,
         sort,
+        expiry: expiry ?? undefined,
       });
       setItems(response.items);
       setError(null);
@@ -101,7 +113,7 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
           : 'Impossible de charger l’inventaire : vérifiez la connexion.',
       );
     }
-  }, [debounced, sort]);
+  }, [debounced, sort, expiry]);
 
   useEffect(() => {
     void load();
@@ -151,9 +163,20 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
         shelfId: item.shelf?.id ?? null,
         expiryDate: item.expiryDate,
         delta,
-        reason: 'manual',
+        reason: delta < 0 ? 'consumed' : 'manual',
       });
+      if (delta < 0) {
+        setRemoval({
+          productId: item.product.id,
+          locationId: item.location.id,
+          shelfId: item.shelf?.id ?? null,
+          expiryDate: item.expiryDate,
+          name: item.product.name,
+          units: 1,
+        });
+      }
       void load(); // counters and order follow the server
+      changedRef.current?.();
     } catch (caught) {
       setItems((current) => {
         const list = current ?? [];
@@ -181,7 +204,8 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
 
   const products = distinctProducts(shown);
   const units = shown.reduce((sum, item) => sum + item.quantity, 0);
-  const filtering = debounced !== '' || categoryIds.length > 0 || locationId !== null;
+  const filtering =
+    debounced !== '' || categoryIds.length > 0 || locationId !== null || expiry !== null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -231,6 +255,18 @@ export function ListView({ filters = NO_FILTER, onSummary, api = {} }: ListViewP
           )}
         </>
       )}
+      {removal ? (
+        <RemovalToast
+          plan={removal}
+          adjust={api.adjust}
+          onChanged={() => {
+            void load();
+            changedRef.current?.();
+          }}
+          onError={setError}
+          onClose={() => setRemoval(null)}
+        />
+      ) : null}
     </div>
   );
 }

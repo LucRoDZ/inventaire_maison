@@ -84,8 +84,14 @@ describe('locationMatches', () => {
 
 describe('URL', () => {
   it('writes and reads the filters', () => {
-    const filters = { q: ' lait ', categoryIds: [3, 5], locationId: 7, sort: 'expiry' as const };
-    expect(filtersToQuery(filters)).toBe('?q=lait&cat=3%2C5&meuble=7&tri=expiry');
+    const filters = {
+      q: ' lait ',
+      categoryIds: [3, 5],
+      locationId: 7,
+      sort: 'name' as const,
+      expiry: 'soon' as const,
+    };
+    expect(filtersToQuery(filters)).toBe('?q=lait&cat=3%2C5&meuble=7&tri=name&echeance=bientot');
     expect(filtersToQuery(NO_FILTER)).toBe('');
     expect(parseFilters(new URLSearchParams(filtersToQuery(filters)))).toEqual({
       ...filters,
@@ -93,17 +99,49 @@ describe('URL', () => {
     });
   });
 
+  it('reads the expiry filter of the counters and keeps the default order out of the link', () => {
+    const filters = { ...NO_FILTER, expiry: 'expired' as const };
+    expect(filtersToQuery(filters)).toBe('?echeance=perime');
+    expect(parseFilters(new URLSearchParams('echeance=aujourdhui')).expiry).toBe('today');
+    expect(parseFilters(new URLSearchParams('echeance=nimporte')).expiry).toBeNull();
+    expect(filtersToQuery({ ...NO_FILTER, sort: 'name' })).toBe('?tri=name');
+  });
+
+  it('matches a tile on its expiry bucket, like the server', () => {
+    const tileWith = (expiry: HomeTileDto['expiry']): HomeTileDto => ({
+      ...tile('Lait', 1),
+      expiry,
+    });
+    const today = { ...NO_FILTER, expiry: 'today' as const };
+    const soon = { ...NO_FILTER, expiry: 'soon' as const };
+    const expired = { ...NO_FILTER, expiry: 'expired' as const };
+    expect(tileMatches(tileWith({ status: 'soon', days: 0 }), today)).toBe(true);
+    expect(tileMatches(tileWith({ status: 'soon', days: 2 }), today)).toBe(false);
+    expect(tileMatches(tileWith({ status: 'soon', days: 2 }), soon)).toBe(true);
+    expect(tileMatches(tileWith({ status: 'expired' }), expired)).toBe(true);
+    expect(tileMatches(tileWith({ status: 'expired' }), soon)).toBe(false);
+    expect(tileMatches(tileWith(null), expired)).toBe(false);
+    expect(isFiltering(expired)).toBe(true);
+  });
+
   it('ignores what is not an identifier or a known order', () => {
     const parsed = parseFilters(new URLSearchParams('cat=abc,-2,4,4&meuble=x&tri=prix'));
     expect(parsed.categoryIds).toEqual([4]);
     expect(parsed.locationId).toBeNull();
-    expect(parsed.sort).toBe('name');
+    expect(parsed.sort).toBe('expiry');
+    expect(parsed.expiry).toBeNull();
     expect(parseFilters(new URLSearchParams('')).q).toBe('');
   });
 });
 
 describe('panel filters', () => {
-  const filters = { q: 'lait', categoryIds: [1, 2], locationId: 7, sort: 'added' as const };
+  const filters = {
+    q: 'lait',
+    categoryIds: [1, 2],
+    locationId: 7,
+    sort: 'added' as const,
+    expiry: null,
+  };
 
   it('counts the categories, and the furniture in the list view only', () => {
     expect(activeFilterCount(filters, 'home')).toBe(2);

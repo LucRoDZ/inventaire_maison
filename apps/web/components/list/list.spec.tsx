@@ -208,8 +208,8 @@ describe('ListView', () => {
     ];
     const { fetchStock, onSummary, rerender } = renderList(items);
     expect(await screen.findByText('3 articles · 11 unités')).toBeInTheDocument();
-    rerender({ q: 'eau', categoryIds: [1], locationId: 10, sort: 'expiry' });
-    await waitFor(() => expect(fetchStock).toHaveBeenLastCalledWith({ q: 'eau', sort: 'expiry' }));
+    rerender({ q: 'eau', categoryIds: [1], locationId: 10, sort: 'added', expiry: null });
+    await waitFor(() => expect(fetchStock).toHaveBeenLastCalledWith({ q: 'eau', sort: 'added' }));
     // The fake server ignores the search: only the furniture and the category filter here.
     expect(await screen.findByText('1 article · 6 unités')).toBeInTheDocument();
     expect(screen.queryByText('Vin')).toBeNull();
@@ -238,6 +238,19 @@ describe('ListView', () => {
       delta: 1,
       reason: 'manual',
     });
+  });
+
+  it('records a removal as consumed, with Jeté and Annuler for the toast', async () => {
+    const { adjust } = renderList([line(1, 'Lait', 2, 3, { expiryDate: '2026-12-01' })]);
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer une unité de Lait' }));
+    expect(adjust).toHaveBeenCalledWith(expect.objectContaining({ delta: -1, reason: 'consumed' }));
+    const toast = (await screen.findByText(/Consommé : 1 × Lait/)).closest('[role="status"]')!;
+    await userEvent.click(within(toast as HTMLElement).getByRole('button', { name: 'Jeté' }));
+    await waitFor(() =>
+      expect(adjust).toHaveBeenLastCalledWith(
+        expect.objectContaining({ delta: -1, reason: 'wasted', expiryDate: '2026-12-01' }),
+      ),
+    );
   });
 
   it('goes back to the old quantity and says so when the server refuses', async () => {
