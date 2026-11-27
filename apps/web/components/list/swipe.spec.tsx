@@ -2,6 +2,7 @@ import type { StockAdjustInput, StockListItemDto } from '@inventaire/shared';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ListView } from './ListView';
+import { outOfStockStore } from '../../lib/zero-stock';
 
 const item: StockListItemDto = {
   id: 1,
@@ -95,5 +96,35 @@ describe('List: swipe', () => {
       expect(adjust).toHaveBeenCalledWith(expect.objectContaining({ reason: 'consumed' })),
     );
     expect(await screen.findByRole('button', { name: 'Jeté' })).toBeInTheDocument();
+  });
+});
+
+describe('List: swipe and out of stock', () => {
+  it('invites after a swipe that took the last unit', async () => {
+    const adjust = vi.fn(
+      async () => ({ item: null, movement: {}, productTotal: 0, onShoppingList: false }) as never,
+    );
+    render(
+      <ListView
+        api={{
+          fetchStock: async () => ({ items: [item], counts: [] }),
+          fetchLocations: async () => [],
+          fetchCategories: async () => [
+            {
+              id: 1,
+              name: 'Boissons',
+              icon: 'package',
+              sortOrder: 1,
+              isFallback: false,
+              shelfLifeDays: null,
+            },
+          ],
+          adjust,
+        }}
+      />,
+    );
+    swipe(await rowOf(), 100);
+    await waitFor(() => expect(outOfStockStore.get()?.productId).toBe(10));
+    outOfStockStore.clear();
   });
 });
