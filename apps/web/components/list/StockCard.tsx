@@ -1,5 +1,4 @@
 import type { StockListItemDto } from '@inventaire/shared';
-import { Card } from '../ui/Card';
 import { categoryIcon } from '../ui/CategoryIcon';
 import { FadeImage } from '../ui/FadeImage';
 import { IconBadge } from '../ui/IconBadge';
@@ -18,15 +17,20 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
   const { product } = item;
   const place = [item.location.name, item.shelf?.name].filter(Boolean).join(', ');
   return (
-    <Card className="flex items-center gap-3">
+    <article className="bg-surface-raised border-line flex items-center gap-3 rounded-[14px] border p-3 shadow-none">
       {product.imageUrl ? (
-        <FadeImage src={product.imageUrl} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+        <FadeImage
+          src={product.imageUrl}
+          className="h-14 w-14 shrink-0 rounded-[10px] object-cover"
+        />
       ) : (
         <IconBadge icon={categoryIcon(item.category.icon)} />
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="text-ink truncate font-semibold">{product.name}</h3>
-        <p className="text-small truncate">{[product.brand, place].filter(Boolean).join(' · ')}</p>
+        <h3 className="text-body text-ink truncate font-semibold">{product.name}</h3>
+        <p className="text-small text-grey truncate">
+          {[product.brand, place].filter(Boolean).join(' · ')}
+        </p>
         <ExpiryBadge expiry={item.expiry} />
       </div>
       {selection ? (
@@ -53,6 +57,6 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
           onStep={(delta) => onChange(item, delta)}
         />
       )}
-    </Card>
+    </article>
   );
 }
