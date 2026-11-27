@@ -101,7 +101,8 @@ for (const size of PHONES) {
         // Filtres, Maison, Liste, and the three counters that filter (fixed since Phase 6).
         await expect(top.getByRole('button')).toHaveCount(6);
         const box = (await top.boundingBox())!;
-        if (size.width === 360) expect(box.height).toBeLessThanOrEqual(190);
+        // 190 px before Phase 6, plus the row of counters (56 px) and its gap.
+        if (size.width === 360) expect(box.height).toBeLessThanOrEqual(250);
         const filters = (await top.getByRole('button', { name: 'Filtres' }).boundingBox())!;
         expect(Math.round(filters.width)).toBeGreaterThanOrEqual(44);
         expect(Math.round(filters.height)).toBeGreaterThanOrEqual(44);

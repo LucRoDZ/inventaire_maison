@@ -39,4 +39,4 @@ Branche `phase-6`. Pour reprendre : lire ce tableau, puis `git log main..phase-6
 - P6.8 : les compteurs de l'Inventaire passent dans l'en-tête fixe (une rangée compacte), en mode Maison comme en mode Liste.
 - P6.9 : revue : trois points corrigés (annulation d'« Ajouter à nouveau » sans effet, borne de date, produit sans meuble) et une classe inexistante retirée.
 - P6.10 : les compteurs n'ont plus d'`aria-label` (axe `label-content-name-mismatch`) : le libellé complet est lu par un préfixe masqué, le libellé court visible reste dans le nom.
-- P6.11 : l'en-tête de l'Inventaire grandit d'une rangée (compteurs) : le test d'interface accepte une zone qui garde plus de 55 % de l'écran à 360 px (60 % avant).
+- P6.11 : l'en-tête de l'Inventaire grandit d'une rangée (compteurs) : le test d'interface accepte une zone qui garde plus de 55 % de l’écran à 360 px (60 % avant), et un en-tête de 250 px au plus (190 avant).
