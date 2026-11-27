@@ -334,7 +334,7 @@ export function ListView({
     debounced !== '' || categoryIds.length > 0 || locationId !== null || expiry !== null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
       {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
 
       {items === null ? (
@@ -344,7 +344,7 @@ export function ListView({
       ) : (
         <>
           <div className="flex items-center justify-between gap-2">
-            <p role="status" className="text-help">
+            <p role="status" className="text-small text-grey">
               {products} {products > 1 ? 'articles' : 'article'} · {units}{' '}
               {units > 1 ? 'unités' : 'unité'}
             </p>
@@ -353,7 +353,7 @@ export function ListView({
                 type="button"
                 aria-pressed={selected !== null}
                 onClick={() => setSelected(selected === null ? new Set() : null)}
-                className="tap-target text-indigo-mid -mr-2 px-2 font-semibold"
+                className="tap-target text-indigo-mid -mr-2 px-2 text-body font-semibold"
               >
                 {selected === null ? 'Sélectionner' : 'Terminer la sélection'}
               </button>

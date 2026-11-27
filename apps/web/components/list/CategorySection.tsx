@@ -31,13 +31,13 @@ export function CategorySection({
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="tap-target text-label flex items-center justify-between"
+        className="tap-target text-label text-grey flex items-center justify-between gap-2"
       >
         <span>
-          {name} <span className="text-grey font-normal tabular-nums">({items.length})</span>
+          {name} <span className="font-normal tabular-nums">({items.length})</span>
         </span>
         <ChevronDown
-          size={18}
+          size={16}
           aria-hidden="true"
           className={`transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}
         />
