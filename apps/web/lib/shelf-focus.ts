@@ -29,7 +29,8 @@ const canAnimate = (): boolean =>
 /**
  * Soft zoom between a shelf and its focus page (View Transitions, instant when unsupported or
  * with reduced motion). `data-focus-dir` stays on <html> until the latest transition ends.
- * `navigate` starts the navigation; the transition waits for the URL to change, then two frames.
+ * `navigate` starts the navigation; the transition waits for the URL to change (at most ~150 ms,
+ * then it is skipped), then two frames.
  */
 function transition(dir: 'open' | 'close', navigate: () => void): void {
   if (!canAnimate()) {
@@ -39,6 +40,9 @@ function transition(dir: 'open' | 'close', navigate: () => void): void {
   const root = document.documentElement;
   const id = ++latest;
   root.dataset.focusDir = dir;
+  // The screen is frozen while the transition waits: if the page is not there within about
+  // 150 ms (first visit, slow network), the zoom is dropped and the navigation goes on unanimated.
+  let late = false;
   const started = document.startViewTransition(
     () =>
       new Promise<void>((resolve) => {
@@ -46,8 +50,11 @@ function transition(dir: 'open' | 'close', navigate: () => void): void {
         navigate();
         let frames = 0;
         const tick = () => {
-          if (window.location.href !== before || ++frames > 40) {
+          if (window.location.href !== before) {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          } else if (++frames > 9) {
+            late = true;
+            resolve();
           } else {
             requestAnimationFrame(tick);
           }
@@ -55,6 +62,9 @@ function transition(dir: 'open' | 'close', navigate: () => void): void {
         tick();
       }),
   );
+  void started.updateCallbackDone.then(() => {
+    if (late) started.skipTransition();
+  });
   started.finished
     .catch(() => undefined)
     .finally(() => {
