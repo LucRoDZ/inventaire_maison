@@ -8,7 +8,7 @@ import type {
   ScanResponse,
   ScanUnknownReason,
 } from '@inventaire/shared';
-import { Keyboard, PackagePlus } from 'lucide-react';
+import { Keyboard, PackagePlus, SquarePlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../lib/api';
 import { handleOfflineScan, OFFLINE_SCAN_MESSAGE } from '../../lib/offline';
@@ -74,7 +74,8 @@ interface References {
 
 const NOTICE_MS = 4000;
 
-const chipClass = 'tap-target inline-flex items-center gap-2 rounded-full px-4 font-semibold';
+const chipClass =
+  'tap-target text-small flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-center leading-tight font-semibold';
 
 export function ScanFlow({
   origin = null,
@@ -150,6 +151,17 @@ export function ScanFlow({
     try {
       await loadReferences();
       setStep({ name: 'search' });
+    } catch {
+      showNotice('Impossible de charger les lieux et les catégories, réessayez.');
+    }
+  };
+
+  /** « Créer un article »: straight to the product form, without the search. */
+  const openCreate = async () => {
+    setNotice(null);
+    try {
+      await loadReferences();
+      setStep({ name: 'create', productName: '' });
     } catch {
       showNotice('Impossible de charger les lieux et les catégories, réessayez.');
     }
@@ -334,7 +346,7 @@ export function ScanFlow({
         }
         onManualCode={() => setManualOpen(true)}
         fallbacks={
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               data-manual-code=""
@@ -352,6 +364,14 @@ export function ScanFlow({
             >
               <PackagePlus size={18} aria-hidden="true" />
               Sans code-barres
+            </button>
+            <button
+              type="button"
+              onClick={() => void openCreate()}
+              className={`${chipClass} bg-scanner-veil text-scanner-ink`}
+            >
+              <SquarePlus size={18} aria-hidden="true" />
+              Créer un article
             </button>
           </div>
         }

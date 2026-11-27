@@ -8,6 +8,13 @@ import {
   filterListByFurniture,
 } from './helpers';
 
+// Burst scan is on by default: these flows open the add sheet, so it is turned off here.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('inventaire.scanner-settings.v1', JSON.stringify({ burst: false })),
+  );
+});
+
 // Both browser projects share one database: each one scans its own product.
 const FIXTURES = {
   'chromium-mobile': { code: '3017620422003', name: 'Pâte à tartiner Nutella', search: 'nutella' },
@@ -877,4 +884,39 @@ test('installation : jamais sur la connexion, proposée après connexion, « Plu
   await fire();
   await page.waitForTimeout(500);
   await expect(sheet).toHaveCount(0);
+});
+
+for (const [width, height] of [
+  [360, 740],
+  [390, 844],
+] as const) {
+  test(`viseur ${width}×${height} : trois boutons sur une seule rangée`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await signIn(page);
+    await openScanner(page);
+    const names = ['Saisir un code', 'Sans code-barres', 'Créer un article'];
+    const boxes = [];
+    for (const name of names) {
+      const button = page.getByRole('button', { name: new RegExp(name) });
+      await expect(button).toBeVisible();
+      const box = (await button.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+      boxes.push(box);
+    }
+    expect(Math.max(...boxes.map((b) => b.y)) - Math.min(...boxes.map((b) => b.y))).toBeLessThan(2);
+    await expect(page.getByRole('checkbox', { name: 'Scan en rafale' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Retirer', exact: true })).toHaveCount(0);
+  });
+}
+
+test('« Créer un article » ouvre le formulaire produit sans passer par la recherche', async ({
+  page,
+}) => {
+  await signIn(page);
+  await openScanner(page);
+  await page.getByRole('button', { name: 'Créer un article' }).click();
+  await expect(page.getByRole('heading', { name: 'Nouveau produit' })).toBeVisible();
+  await expect(page.getByLabel('Nom', { exact: true })).toHaveValue('');
 });

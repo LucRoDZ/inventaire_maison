@@ -24,7 +24,14 @@ const PATH = {
   },
 } as const;
 
-test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, second membre, retrait jusqu’à 0', async ({
+// Burst scan is on by default: this path opens the add sheet, so it is turned off here.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('inventaire.scanner-settings.v1', JSON.stringify({ burst: false })),
+  );
+});
+
+test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, second membre', async ({
   page,
   browser,
 }, testInfo) => {
