@@ -8,6 +8,8 @@ interface OpenFurnitureProps {
   location: HomeLocationDto;
   onSelect?: (tile: HomeTileDto) => void;
   isDimmed?: (tile: HomeTileDto) => boolean;
+  /** `?q=…`: the filters follow into the focus page of a shelf. */
+  focusQuery?: string;
 }
 
 /** Glass shelves in the fridge, drawers in the freezer, indigo boards elsewhere. */
@@ -38,7 +40,7 @@ export function shelvesVars(location: HomeLocationDto): CSSProperties {
  * The furniture opened: its shelves stacked in order, then the « Non rangé » tray, inside the
  * shell drawn for its kind. The door(s) swing open when it appears.
  */
-export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurnitureProps) {
+export function OpenFurniture({ location, onSelect, isDimmed, focusQuery }: OpenFurnitureProps) {
   const look = SHELF_LOOKS[location.kind];
   return (
     <FurnitureShell
@@ -55,6 +57,7 @@ export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurniturePro
           isDimmed={isDimmed}
           look={look}
           index={index}
+          focusQuery={focusQuery}
         />
       ))}
       <UnshelvedTray
@@ -62,6 +65,7 @@ export function OpenFurniture({ location, onSelect, isDimmed }: OpenFurniturePro
         tiles={location.unshelved}
         onSelect={onSelect}
         isDimmed={isDimmed}
+        focusQuery={focusQuery}
       />
     </FurnitureShell>
   );
