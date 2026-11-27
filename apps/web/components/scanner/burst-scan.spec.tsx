@@ -9,6 +9,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as stockApi from '../../lib/stock-api';
+import { writeScannerSettings } from '../../lib/scanner-settings';
 import { installFakeCamera } from './fake-camera';
 import { ScanFlow } from './ScanFlow';
 
@@ -81,7 +82,15 @@ const typeCode = async (code: string) => {
 };
 
 describe('burst scan', () => {
-  it('is off by default: a known product opens the form', async () => {
+  it('is on without any saved setting', async () => {
+    renderFlow({ status: 'known', product: known });
+    await typeCode('3017620422003');
+    await waitFor(() => expect(stockApi.adjustStock).toHaveBeenCalled());
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('can be turned off in the settings: a known product opens the form', async () => {
+    writeScannerSettings({ burst: false });
     renderFlow({ status: 'known', product: known });
     await typeCode('3017620422003');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -90,7 +99,6 @@ describe('burst scan', () => {
 
   it('adds +1 at the usual place without a form, with an Annuler toast', async () => {
     renderFlow({ status: 'known', product: known });
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Scan en rafale' }));
     await typeCode('3017620422003');
     const toast = (await screen.findByText(/Ajouté : 1 × Yaourt nature, Frigo/)).closest(
       '[role="status"]',
@@ -114,7 +122,6 @@ describe('burst scan', () => {
 
   it('opens the form for a known product without a usual place', async () => {
     renderFlow({ status: 'known', product: { ...known, defaultLocationId: null } });
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Scan en rafale' }));
     await typeCode('3017620422003');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(stockApi.adjustStock).not.toHaveBeenCalled();
@@ -122,7 +129,6 @@ describe('burst scan', () => {
 
   it('opens the creation form for an unknown code', async () => {
     renderFlow({ status: 'unknown', reason: 'not_found' });
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Scan en rafale' }));
     await typeCode('3017620422003');
     expect(await screen.findByRole('heading', { name: 'Nouveau produit' })).toBeInTheDocument();
   });

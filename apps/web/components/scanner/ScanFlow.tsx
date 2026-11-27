@@ -15,6 +15,7 @@ import { handleOfflineScan, OFFLINE_SCAN_MESSAGE } from '../../lib/offline';
 import { useOnline } from '../../lib/online';
 import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import { attachBarcode } from '../../lib/products-api';
+import { readScannerSettings } from '../../lib/scanner-settings';
 import { adjustStock, fetchCategories, fetchLocations } from '../../lib/stock-api';
 import type { ScanResult } from '../../lib/scanner/types';
 import { AddSheet, type AddedInfo } from '../add/AddSheet';
@@ -99,11 +100,10 @@ export function ScanFlow({
   const [readLabel, setReadLabel] = useState<string | null>(null);
   const [refs, setRefs] = useState<References | null>(null);
   /** Burst scan: a known product with a usual place is added in one gesture, without the form. */
-  const [burst, setBurst] = useState(false);
-  const burstRef = useRef(burst);
+  const burstRef = useRef(true);
   useEffect(() => {
-    burstRef.current = burst;
-  });
+    burstRef.current = readScannerSettings().burst;
+  }, []);
   const controls = useRef<ScannerControls>(null);
   const busy = useRef(false);
   const referencesPromise = useRef<Promise<References> | null>(null);
@@ -353,21 +353,6 @@ export function ScanFlow({
               <PackagePlus size={18} aria-hidden="true" />
               Sans code-barres
             </button>
-            <label className={`${chipClass} bg-scanner-veil text-scanner-ink cursor-pointer`}>
-              <input
-                type="checkbox"
-                aria-label="Scan en rafale"
-                checked={burst}
-                onChange={(event) => setBurst(event.target.checked)}
-                aria-describedby="burst-help"
-                className="accent-amber h-5 w-5"
-              />
-              Rafale
-            </label>
-            <p id="burst-help" className="sr-only">
-              Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les
-              autres ouvrent le formulaire.
-            </p>
           </div>
         }
       />

@@ -4,6 +4,7 @@ import {
   BarChart3,
   ChevronRight,
   Refrigerator,
+  ScanBarcode,
   Settings,
   UserRound,
   type LucideIcon,
@@ -37,6 +38,7 @@ export function PlusMenu() {
         <Entry href="/plus/compte" label="Compte" icon={UserRound} />
         <Entry href="/plus/meubles" label="Meubles et étagères" icon={Refrigerator} />
         <Entry href="/plus/statistiques" label="Statistiques" icon={BarChart3} />
+        <Entry href="/plus/scanner" label="Scanner" icon={ScanBarcode} />
         {user?.role === 'admin' ? (
           <Entry href="/plus/administration" label="Administration" icon={Settings} />
         ) : null}
