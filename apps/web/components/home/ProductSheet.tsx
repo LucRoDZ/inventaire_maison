@@ -9,7 +9,7 @@ import type {
   StockMoveInput,
   StockMoveResponse,
 } from '@inventaire/shared';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import { ApiError } from '../../lib/api';
@@ -22,6 +22,7 @@ import { Callout } from '../ui/Callout';
 import { categoryIcon } from '../ui/CategoryIcon';
 import { FadeImage } from '../ui/FadeImage';
 import { IconBadge } from '../ui/IconBadge';
+import { QuantityControl } from '../ui/QuantityControl';
 import { MoveDialog } from './MoveDialog';
 
 interface ProductSheetProps {
@@ -117,31 +118,18 @@ export function ProductSheet({
           </div>
         </div>
 
-        <div role="group" aria-label="Quantité" className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Retirer une unité"
+        <div className="flex items-center gap-3">
+          <QuantityControl
+            size="regular"
+            value={quantity}
+            min={Number.NEGATIVE_INFINITY}
+            label="Quantité"
+            valueLabel="Quantité en stock"
+            decreaseLabel="Retirer une unité"
+            increaseLabel="Ajouter une unité"
             disabled={busy}
-            onClick={() => void change(-1, 'consumed')}
-            className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
-          >
-            <Minus size={20} aria-hidden="true" />
-          </button>
-          <output
-            aria-label="Quantité en stock"
-            className="text-stat text-indigo min-w-[2ch] text-center"
-          >
-            {quantity}
-          </output>
-          <button
-            type="button"
-            aria-label="Ajouter une unité"
-            disabled={busy}
-            onClick={() => void change(1)}
-            className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
-          >
-            <Plus size={20} aria-hidden="true" />
-          </button>
+            onStep={(delta) => void (delta === 1 ? change(1) : change(-1, 'consumed'))}
+          />
           <Button variant="outline" disabled={busy} onClick={() => void change(-1, 'wasted')}>
             <Trash2 size={18} aria-hidden="true" />
             Jeté<span className="sr-only"> : retirer une unité jetée</span>
