@@ -8,13 +8,14 @@ import type {
   ScanResponse,
   ScanUnknownReason,
 } from '@inventaire/shared';
-import { Keyboard, PackagePlus } from 'lucide-react';
+import { Keyboard, PackagePlus, SquarePlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../lib/api';
 import { handleOfflineScan, OFFLINE_SCAN_MESSAGE } from '../../lib/offline';
 import { useOnline } from '../../lib/online';
 import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import { attachBarcode } from '../../lib/products-api';
+import { readScannerSettings } from '../../lib/scanner-settings';
 import { adjustStock, fetchCategories, fetchLocations } from '../../lib/stock-api';
 import type { ScanResult } from '../../lib/scanner/types';
 import { AddSheet, type AddedInfo } from '../add/AddSheet';
@@ -25,9 +26,8 @@ import { ProductForm } from '../product/ProductForm';
 import { ProductPicker } from '../product/ProductPicker';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
 import { ManualCodeSheet } from './ManualCodeSheet';
-import { RemoveFlow, type RemoveRequest } from './RemoveFlow';
 import { ScanSheet } from './ScanSheet';
-import { ScannerView, type ScanMode, type ScannerControls } from './ScannerView';
+import { ScannerView, type ScannerControls } from './ScannerView';
 
 export interface UnknownContext {
   barcode: string;
@@ -53,7 +53,6 @@ interface ScanFlowProps {
     fetchLocations?: () => Promise<LocationDto[]>;
     fetchCategories?: () => Promise<CategoryDto[]>;
     searchProducts?: (query: string) => Promise<ProductDto[]>;
-    remove?: React.ComponentProps<typeof RemoveFlow>['api'];
     attachBarcode?: (productId: number, barcode: string) => Promise<ProductDto>;
   };
   makeScanner?: React.ComponentProps<typeof ScannerView>['makeScanner'];
@@ -75,7 +74,8 @@ interface References {
 
 const NOTICE_MS = 4000;
 
-const chipClass = 'tap-target inline-flex items-center gap-2 rounded-full px-4 font-semibold';
+const chipClass =
+  'tap-target text-small flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-center leading-tight font-semibold';
 
 export function ScanFlow({
   origin = null,
@@ -86,7 +86,6 @@ export function ScanFlow({
   makeScanner,
 }: ScanFlowProps) {
   const online = useOnline();
-  const [mode, setMode] = useState<ScanMode>('add');
   const [step, setStep] = useState<Step>({ name: 'scanning' });
   const [manualOpen, setManualOpen] = useState(false);
   const [notice, setNotice] = useState<{ title: string; text: string } | null>(null);
@@ -102,11 +101,10 @@ export function ScanFlow({
   const [readLabel, setReadLabel] = useState<string | null>(null);
   const [refs, setRefs] = useState<References | null>(null);
   /** Burst scan: a known product with a usual place is added in one gesture, without the form. */
-  const [burst, setBurst] = useState(false);
-  const burstRef = useRef(burst);
+  const burstRef = useRef(true);
   useEffect(() => {
-    burstRef.current = burst;
-  });
+    burstRef.current = readScannerSettings().burst;
+  }, []);
   const controls = useRef<ScannerControls>(null);
   const busy = useRef(false);
   const referencesPromise = useRef<Promise<References> | null>(null);
@@ -153,6 +151,17 @@ export function ScanFlow({
     try {
       await loadReferences();
       setStep({ name: 'search' });
+    } catch {
+      showNotice('Impossible de charger les lieux et les catégories, réessayez.');
+    }
+  };
+
+  /** « Créer un article »: straight to the product form, without the search. */
+  const openCreate = async () => {
+    setNotice(null);
+    try {
+      await loadReferences();
+      setStep({ name: 'create', productName: '' });
     } catch {
       showNotice('Impossible de charger les lieux et les catégories, réessayez.');
     }
@@ -259,22 +268,9 @@ export function ScanFlow({
     [online, openAdd],
   );
 
-  const removeCount = useRef(0);
-  const [removeRequest, setRemoveRequest] = useState<RemoveRequest | null>(null);
-
-  const onCode = (result: ScanResult, scanMode: ScanMode) => {
+  const onCode = (result: ScanResult) => {
     setReadLabel(result.code);
-    if (scanMode === 'remove') {
-      setNotice(null);
-      removeCount.current += 1;
-      setRemoveRequest({ id: removeCount.current, result });
-    } else void handleCode(result);
-  };
-
-  const changeMode = (next: ScanMode) => {
-    setMode(next);
-    setRemoveRequest(null);
-    setNotice(null);
+    void handleCode(result);
   };
 
   // The full-screen scanner stays on after an add: it is the screen for scanning (decision P4.14).
@@ -317,8 +313,6 @@ export function ScanFlow({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ScannerView
-        mode={mode}
-        onModeChange={changeMode}
         onCode={onCode}
         onClose={onClose}
         paused={step.name !== 'scanning'}
@@ -333,18 +327,6 @@ export function ScanFlow({
               <Callout role="alert" title={notice.title} className="w-full max-w-xl">
                 {notice.text}
               </Callout>
-            ) : null}
-            {mode === 'remove' ? (
-              <div className="w-full max-w-xl">
-                <RemoveFlow
-                  request={removeRequest}
-                  api={api.remove}
-                  onSwitchToAdd={(result) => {
-                    changeMode('add');
-                    void handleCode(result);
-                  }}
-                />
-              </div>
             ) : null}
             {sessionCount > 0 ? (
               <div className="bg-scanner-veil text-scanner-ink flex items-center gap-3 rounded-full py-1 pr-1 pl-4">
@@ -364,7 +346,7 @@ export function ScanFlow({
         }
         onManualCode={() => setManualOpen(true)}
         fallbacks={
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               data-manual-code=""
@@ -383,25 +365,14 @@ export function ScanFlow({
               <PackagePlus size={18} aria-hidden="true" />
               Sans code-barres
             </button>
-            {mode === 'add' ? (
-              <label className={`${chipClass} bg-scanner-veil text-scanner-ink cursor-pointer`}>
-                <input
-                  type="checkbox"
-                  aria-label="Scan en rafale"
-                  checked={burst}
-                  onChange={(event) => setBurst(event.target.checked)}
-                  aria-describedby="burst-help"
-                  className="accent-amber h-5 w-5"
-                />
-                Rafale
-              </label>
-            ) : null}
-            {mode === 'add' ? (
-              <p id="burst-help" className="sr-only">
-                Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les
-                autres ouvrent le formulaire.
-              </p>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => void openCreate()}
+              className={`${chipClass} bg-scanner-veil text-scanner-ink`}
+            >
+              <SquarePlus size={18} aria-hidden="true" />
+              Créer un article
+            </button>
           </div>
         }
       />
@@ -411,7 +382,7 @@ export function ScanFlow({
           onClose={() => setManualOpen(false)}
           onCode={(result) => {
             setManualOpen(false);
-            onCode(result, mode);
+            onCode(result);
           }}
         />
       ) : null}

@@ -13,10 +13,8 @@ import {
 import { vibrateOnRead } from '../../lib/haptics';
 import {
   CameraError,
-  listCameras,
   startCamera,
   type CameraErrorKind,
-  type CameraInfo,
   type CameraSession,
   type ZoomRange,
 } from '../../lib/scanner/camera';
@@ -24,22 +22,19 @@ import { createScanner } from '../../lib/scanner/create-scanner';
 import type { ScanResult, Scanner } from '../../lib/scanner/types';
 import { setBusy } from '../../lib/silent-update';
 import { Button } from '../ui/Button';
-import { CameraControls } from './CameraControls';
+import { readScannerSettings } from '../../lib/scanner-settings';
+import { TorchButton, ZoomSlider } from './CameraControls';
 import { PermissionHelp } from './PermissionHelp';
-
-export type ScanMode = 'add' | 'remove';
 
 /** The same code read again within this delay is ignored. */
 export const SAME_CODE_DELAY_MS = 1500;
 
 interface ScannerViewProps {
-  /** Called for every code read, with the mode chosen at that moment. */
-  onCode: (result: ScanResult, mode: ScanMode) => void;
-  mode: ScanMode;
-  onModeChange: (mode: ScanMode) => void;
+  /** Called for every code read. */
+  onCode: (result: ScanResult) => void;
   /** « Fermer le scanner ». */
   onClose: () => void;
-  /** Compact row at the bottom, always reachable: typed code, no barcode, burst. */
+  /** Compact row at the bottom, always reachable: typed code, no barcode, new item. */
   fallbacks?: ReactNode;
   /** Free slot at the top of the screen, under the buttons (e.g. « À synchroniser (n) »). */
   topSlot?: ReactNode;
@@ -94,8 +89,6 @@ const CORNERS = [
 
 export function ScannerView({
   onCode,
-  mode,
-  onModeChange,
   onClose,
   fallbacks,
   onManualCode,
@@ -110,7 +103,6 @@ export function ScannerView({
   const fallbackRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<CameraSession | null>(null);
   const scannerRef = useRef<Scanner | null>(null);
-  const modeRef = useRef(mode);
   const onCodeRef = useRef(onCode);
   const makeScannerRef = useRef(makeScanner);
   const startId = useRef(0);
@@ -122,12 +114,9 @@ export function ScannerView({
   const [torchSupported, setTorchSupported] = useState(false);
   const [zoom, setZoom] = useState<ZoomRange | null>(null);
   const [zoomValue, setZoomValue] = useState(1);
-  const [cameras, setCameras] = useState<CameraInfo[]>([]);
-  const [cameraId, setCameraId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
 
   useEffect(() => {
-    modeRef.current = mode;
     onCodeRef.current = onCode;
     makeScannerRef.current = makeScanner;
   });
@@ -156,11 +145,11 @@ export function ScannerView({
       vibrateOnRead();
       beep();
       setLocked(true);
-      onCodeRef.current(result, modeRef.current);
+      onCodeRef.current(result);
     });
   }, []);
 
-  const start = useCallback(async (deviceId?: string) => {
+  const start = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
     scannerRef.current?.stop();
@@ -172,7 +161,16 @@ export function ScannerView({
     setPhase({ name: 'starting' });
     let session: CameraSession | null = null;
     try {
-      session = await startCamera(video, { deviceId });
+      // The camera chosen in Plus › Scanner; if it is gone, the rear camera as usual.
+      const preferred = readScannerSettings().cameraId ?? undefined;
+      try {
+        session = await startCamera(video, { deviceId: preferred });
+      } catch (error) {
+        if (!preferred || !(error instanceof CameraError) || error.kind !== 'absent') {
+          throw error;
+        }
+        session = await startCamera(video, {});
+      }
       if (id !== startId.current) {
         session.stop();
         return;
@@ -181,8 +179,6 @@ export function ScannerView({
       setTorchSupported(session.torchSupported);
       setZoom(session.zoom);
       setZoomValue(session.zoom?.min ?? 1);
-      setCameraId(session.deviceId);
-      setCameras(await listCameras());
       scannerRef.current ??= await makeScannerRef.current();
       if (id !== startId.current) return;
       setPhase({ name: 'running' });
@@ -346,31 +342,12 @@ export function ScannerView({
           >
             <X size={24} aria-hidden="true" />
           </button>
-          <h1 className="bg-scanner-veil text-scanner-ink rounded-full px-4 py-1 text-base font-semibold">
-            Scanner
-          </h1>
-          <div
-            role="group"
-            aria-label="Mode du scan"
-            className="bg-scanner-veil flex gap-1 justify-self-end rounded-full p-1"
-          >
-            {(
-              [
-                ['add', 'Ajouter'],
-                ['remove', 'Retirer'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={mode === value}
-                onClick={() => onModeChange(value)}
-                className={`tap-target rounded-full px-3 font-semibold ${mode === value ? 'bg-scanner-frame text-scanner-on-frame' : 'text-scanner-ink'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <h1 className="text-scanner-ink text-center text-base font-semibold">Scanner</h1>
+          {running && torchSupported ? (
+            <TorchButton torchOn={torchOn} onToggle={() => void toggleTorch()} />
+          ) : (
+            <span aria-hidden="true" />
+          )}
         </div>
         {topSlot}
       </div>
@@ -404,17 +381,11 @@ export function ScannerView({
             Placez le code-barres dans le cadre
           </p>
         ) : null}
-        {running ? (
-          <CameraControls
-            torchSupported={torchSupported}
-            torchOn={torchOn}
-            onToggleTorch={() => void toggleTorch()}
+        {running && zoom ? (
+          <ZoomSlider
             zoom={zoom}
             zoomValue={zoomValue}
             onZoom={(value) => void changeZoom(value)}
-            cameras={cameras}
-            cameraId={cameraId}
-            onSelectCamera={(id) => void start(id)}
           />
         ) : null}
         <div ref={fallbackRef} className="w-full max-w-xl">

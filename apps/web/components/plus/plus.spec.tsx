@@ -19,6 +19,12 @@ describe('PlusMenu', () => {
     expect(screen.getByRole('button', { name: 'Se déconnecter' })).toBeInTheDocument();
   });
 
+  it('links to the scanner settings', () => {
+    user = { id: 2, username: 'marie', role: 'member', dataScope: 'scope-test' };
+    render(<PlusMenu />);
+    expect(screen.getByRole('link', { name: 'Scanner' })).toHaveAttribute('href', '/plus/scanner');
+  });
+
   it('shows Administration to the admin', () => {
     user = { id: 1, username: 'root', role: 'admin', dataScope: 'scope-test' };
     render(<PlusMenu />);

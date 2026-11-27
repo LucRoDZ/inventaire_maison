@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { writeScannerSettings } from '../../lib/scanner-settings';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScanResult, Scanner } from '../../lib/scanner/types';
@@ -47,6 +48,7 @@ function setVisibility(state: 'visible' | 'hidden') {
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
   getUserMedia.mockReset();
   enumerateDevices.mockReset().mockResolvedValue([]);
   Object.defineProperty(navigator, 'mediaDevices', {
@@ -64,19 +66,16 @@ afterEach(() => {
 function renderView(overrides: Partial<React.ComponentProps<typeof ScannerView>> = {}) {
   const { scanner, emit } = makeScanner();
   const onCode = vi.fn();
-  const onModeChange = vi.fn();
   const onClose = vi.fn();
   const utils = render(
     <ScannerView
-      mode="add"
-      onModeChange={onModeChange}
       onClose={onClose}
       onCode={onCode}
       makeScanner={async () => scanner}
       {...overrides}
     />,
   );
-  return { scanner, emit, onCode, onModeChange, onClose, ...utils };
+  return { scanner, emit, onCode, onClose, ...utils };
 }
 
 describe('ScannerView', () => {
@@ -99,7 +98,7 @@ describe('ScannerView', () => {
     expect(video.playsInline).toBe(true);
 
     act(() => emit({ code: '3017620422003', format: 'ean_13' }));
-    expect(onCode).toHaveBeenCalledWith({ code: '3017620422003', format: 'ean_13' }, 'add');
+    expect(onCode).toHaveBeenCalledWith({ code: '3017620422003', format: 'ean_13' });
   });
 
   it('turns the camera off when the tab is hidden', async () => {
@@ -154,20 +153,26 @@ describe('ScannerView', () => {
     });
   });
 
-  it('lets the user pick a camera when there are several', async () => {
-    enumerateDevices.mockResolvedValue([
-      { kind: 'videoinput', deviceId: 'cam-1', label: 'Arrière' },
-      { kind: 'videoinput', deviceId: 'cam-2', label: 'Avant' },
-      { kind: 'audioinput', deviceId: 'mic', label: 'Micro' },
-    ]);
+  it('starts the camera chosen in the settings', async () => {
+    writeScannerSettings({ cameraId: 'cam-2' });
     getUserMedia.mockImplementation(async () => makeStream(makeTrack()));
-    const { scanner } = renderView();
-    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    renderView();
+    await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(1));
+    expect((getUserMedia.mock.calls[0]![0] as MediaStreamConstraints).video).toMatchObject({
+      deviceId: { exact: 'cam-2' },
+    });
+    expect(screen.queryByRole('combobox')).toBeNull();
+  });
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Caméra' }), 'cam-2');
+  it('falls back to the rear camera when the chosen one is gone', async () => {
+    writeScannerSettings({ cameraId: 'cam-gone' });
+    getUserMedia
+      .mockRejectedValueOnce(new DOMException('gone', 'OverconstrainedError'))
+      .mockImplementation(async () => makeStream(makeTrack()));
+    renderView();
     await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(2));
     expect((getUserMedia.mock.calls[1]![0] as MediaStreamConstraints).video).toMatchObject({
-      deviceId: { exact: 'cam-2' },
+      facingMode: { ideal: 'environment' },
     });
   });
 
@@ -194,27 +199,6 @@ describe('ScannerView', () => {
     renderView();
     expect(await screen.findByRole('alert')).toHaveTextContent('HTTPS requis');
     expect(getUserMedia).not.toHaveBeenCalled();
-  });
-
-  it('switches mode and reports the mode current at the time of the scan', async () => {
-    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
-    const { scanner, emit, onCode, onModeChange, rerender } = renderView();
-    expect(screen.getByRole('button', { name: 'Ajouter' })).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.click(screen.getByRole('button', { name: 'Retirer' }));
-    expect(onModeChange).toHaveBeenCalledWith('remove');
-
-    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
-    rerender(
-      <ScannerView
-        mode="remove"
-        onModeChange={onModeChange}
-        onClose={() => undefined}
-        onCode={onCode}
-        makeScanner={async () => scanner}
-      />,
-    );
-    act(() => emit({ code: '96385074', format: 'ean_8' }));
-    expect(onCode).toHaveBeenCalledWith({ code: '96385074', format: 'ean_8' }, 'remove');
   });
 });
 
@@ -262,8 +246,6 @@ describe('ScannerView, full screen', () => {
     expect(document.querySelector('.lucide-check')).not.toBeNull();
     rerender(
       <ScannerView
-        mode="add"
-        onModeChange={() => undefined}
         onClose={() => undefined}
         onCode={onCode}
         readLabel="Pâte à tartiner"

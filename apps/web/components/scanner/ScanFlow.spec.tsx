@@ -385,4 +385,31 @@ describe('ScanFlow', () => {
       ),
     );
   });
+
+  it('offers exactly three buttons in the bottom row', () => {
+    render(
+      <ScanFlow
+        api={{ fetchLocations: async () => locations, fetchCategories: async () => categories }}
+      />,
+    );
+    const row = screen.getByRole('button', { name: 'Saisir un code' }).parentElement!;
+    expect(
+      within(row)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Saisir un code', 'Sans code-barres', 'Créer un article']);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('opens the product form directly from « Créer un article »', async () => {
+    render(
+      <ScanFlow
+        api={{ fetchLocations: async () => locations, fetchCategories: async () => categories }}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Créer un article' }));
+    expect(await screen.findByRole('heading', { name: 'Nouveau produit' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Nom')).toHaveValue('');
+    expect(screen.queryByRole('button', { name: /Pâte à tartiner/ })).toBeNull();
+  });
 });

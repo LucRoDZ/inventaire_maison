@@ -24,7 +24,14 @@ const PATH = {
   },
 } as const;
 
-test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, second membre, retrait jusqu’à 0', async ({
+// Burst scan is on by default: this path opens the add sheet, so it is turned off here.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('inventaire.scanner-settings.v1', JSON.stringify({ burst: false })),
+  );
+});
+
+test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, second membre', async ({
   page,
   browser,
 }, testInfo) => {
@@ -127,15 +134,4 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   expect(seen).toHaveLength(1);
   expect(seen[0]).toMatchObject({ quantity: 3, location: { name: 'Garde-manger' } });
   await other.close();
-
-  // 8. Remove down to zero in Retirer mode.
-  await openScanner(page);
-  await page.getByRole('button', { name: 'Retirer', exact: true }).click();
-  for (const left of [2, 1, 0]) {
-    await pushCode(page, scanned.code);
-    await expect.poll(() => quantity(scanned.name)).toBe(left);
-  }
-  await pushCode(page, scanned.code);
-  await expect(page.getByRole('alert').filter({ hasText: 'Pas en stock' })).toBeVisible();
-  expect(await stock(page, scanned.name)).toHaveLength(0);
 });

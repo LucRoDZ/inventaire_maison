@@ -217,7 +217,6 @@ for (const viewport of VIEWPORTS) {
       });
 
       await openScanner(page);
-      await page.getByRole('checkbox', { name: 'Scan en rafale' }).check();
       await pushCode(page, code);
       const toast = page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` });
       await expect(toast).toBeVisible();

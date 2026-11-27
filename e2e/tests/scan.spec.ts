@@ -8,6 +8,13 @@ import {
   filterListByFurniture,
 } from './helpers';
 
+// Burst scan is on by default: these flows open the add sheet, so it is turned off here.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem('inventaire.scanner-settings.v1', JSON.stringify({ burst: false })),
+  );
+});
+
 // Both browser projects share one database: each one scans its own product.
 const FIXTURES = {
   'chromium-mobile': { code: '3017620422003', name: 'Pâte à tartiner Nutella', search: 'nutella' },
@@ -168,62 +175,6 @@ test('ajout manuel d’un produit sans code-barres', async ({ page }, testInfo) 
     items: { reason: string; delta: number }[];
   };
   expect(history.items[0]).toMatchObject({ reason: 'manual', delta: 1 });
-});
-
-const REMOVAL = {
-  'chromium-mobile': {
-    code: '5412345678908',
-    name: 'Lait demi-écrémé du retrait',
-    search: 'lait demi',
-  },
-  'webkit-mobile': {
-    code: '8009876543217',
-    name: 'Jus d’orange du retrait',
-    search: 'jus d',
-  },
-} as const;
-
-test('mode Retirer : stock 2, deux retraits, l’article disparaît du stock', async ({
-  page,
-}, testInfo) => {
-  const { code, name, search } = REMOVAL[testInfo.project.name as keyof typeof REMOVAL];
-  const quantity = async () => {
-    const body = (await (
-      await page.request.get(`/api/stock?q=${encodeURIComponent(search)}`)
-    ).json()) as {
-      items: { quantity: number }[];
-    };
-    return body.items.reduce((sum, item) => sum + item.quantity, 0);
-  };
-  await signIn(page);
-  await openScanner(page);
-
-  await pushCode(page, code);
-  const sheet = page.getByRole('dialog', { name });
-  await sheet.getByRole('button', { name: 'Augmenter la quantité' }).click();
-  await sheet.getByLabel('Lieu').selectOption({ label: 'Frigo' });
-  await sheet.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  await expect.poll(quantity).toBe(2);
-
-  await page.getByRole('button', { name: 'Retirer', exact: true }).click();
-  await pushCode(page, code);
-  await expect(
-    page.getByRole('status').filter({ hasText: `Consommé : 1 × ${name}, Frigo` }),
-  ).toBeVisible();
-  await expect.poll(quantity).toBe(1);
-
-  await pushCode(page, code);
-  await expect.poll(quantity).toBe(0);
-  const left = (await (
-    await page.request.get(`/api/stock?q=${encodeURIComponent(search)}`)
-  ).json()) as {
-    items: unknown[];
-  };
-  expect(left.items).toHaveLength(0);
-
-  // A third read: known but no longer in stock.
-  await pushCode(page, code);
-  await expect(page.getByRole('alert').filter({ hasText: 'Pas en stock' })).toBeVisible();
 });
 
 const LISTED = {
@@ -933,4 +884,39 @@ test('installation : jamais sur la connexion, proposée après connexion, « Plu
   await fire();
   await page.waitForTimeout(500);
   await expect(sheet).toHaveCount(0);
+});
+
+for (const [width, height] of [
+  [360, 740],
+  [390, 844],
+] as const) {
+  test(`viseur ${width}×${height} : trois boutons sur une seule rangée`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await signIn(page);
+    await openScanner(page);
+    const names = ['Saisir un code', 'Sans code-barres', 'Créer un article'];
+    const boxes = [];
+    for (const name of names) {
+      const button = page.getByRole('button', { name: new RegExp(name) });
+      await expect(button).toBeVisible();
+      const box = (await button.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+      boxes.push(box);
+    }
+    expect(Math.max(...boxes.map((b) => b.y)) - Math.min(...boxes.map((b) => b.y))).toBeLessThan(2);
+    await expect(page.getByRole('checkbox', { name: 'Scan en rafale' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Retirer', exact: true })).toHaveCount(0);
+  });
+}
+
+test('« Créer un article » ouvre le formulaire produit sans passer par la recherche', async ({
+  page,
+}) => {
+  await signIn(page);
+  await openScanner(page);
+  await page.getByRole('button', { name: 'Créer un article' }).click();
+  await expect(page.getByRole('heading', { name: 'Nouveau produit' })).toBeVisible();
+  await expect(page.getByLabel('Nom', { exact: true })).toHaveValue('');
 });
