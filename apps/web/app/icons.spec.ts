@@ -74,6 +74,19 @@ describe('icon files', () => {
     for (let i = 3; i < data.length; i += 4) expect(data[i]).toBe(255);
   });
 
+  it('has transparent cut-outs in the monochrome icon (alpha is all a themed icon keeps)', async () => {
+    const { data, width } = await pixels('icons/v3/icon-monochrome-512.png');
+    // Centres of lavender cut-outs of the source (1024 px): reflection, label, bands.
+    for (const [x, y] of [
+      [402, 310],
+      [359, 714],
+      [725, 361],
+      [707, 713],
+    ] as const) {
+      expect(data[((y >> 1) * width + (x >> 1)) * 4 + 3], `${x},${y}`).toBeLessThan(16);
+    }
+  });
+
   it('has a transparent monochrome icon with an opaque silhouette', async () => {
     const { data, width, height } = await pixels('icons/v3/icon-monochrome-512.png');
     for (const [x, y] of [

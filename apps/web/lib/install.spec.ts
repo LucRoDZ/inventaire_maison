@@ -17,6 +17,8 @@ const CHROME_ANDROID =
   'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36';
 const FIREFOX_ANDROID = 'Mozilla/5.0 (Android 14; Mobile; rv:120.0) Gecko/120.0 Firefox/120.0';
 const DESKTOP = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36';
+const FACEBOOK_ANDROID =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/470.0]';
 const INSTAGRAM = `${IPHONE} Instagram 300.0`;
 
 const env = (over: Partial<InstallEnv>): InstallEnv => ({
@@ -44,7 +46,8 @@ describe('installMode', () => {
       'none',
     ],
     ['standalone, even with the event', { hasPrompt: true, standalone: true }, 'none'],
-    ['an in-app browser', { userAgent: INSTAGRAM }, 'none'],
+    ['an in-app browser on iOS: Safari is the way', { userAgent: INSTAGRAM }, 'ios-other'],
+    ['an in-app browser on Android', { userAgent: FACEBOOK_ANDROID, hasPrompt: true }, 'none'],
   ] as const)('%s', (_label, over, expected) => {
     expect(installMode(env(over))).toBe(expected);
   });

@@ -117,7 +117,7 @@ describe('InstallEntry in Plus', () => {
     setBrowser(IPHONE, true);
     renderEntry();
     expect(await screen.findByText('Application installée')).toBeInTheDocument();
-    expect(screen.getByText('Ouverte depuis l’écran d’accueil')).toBeInTheDocument();
+    expect(screen.getByText('Disponible sur l’écran d’accueil')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 

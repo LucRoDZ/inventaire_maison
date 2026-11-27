@@ -20,9 +20,11 @@ export interface InstallEnv {
 
 /** How the app can be installed here; `none` when it is installed already or cannot be. */
 export function installMode(env: InstallEnv): InstallMode {
-  if (env.standalone || isInAppBrowser(env.userAgent)) return 'none';
-  if (env.hasPrompt) return 'prompt';
+  if (env.standalone) return 'none';
   const platform = detectPlatform(env.userAgent, env.maxTouchPoints);
+  // In an app's own browser (Instagram, Facebook…) on iOS, the way out is Safari.
+  if (isInAppBrowser(env.userAgent)) return platform === 'ios' ? 'ios-other' : 'none';
+  if (env.hasPrompt) return 'prompt';
   if (platform === 'ios') {
     // Only Safari can add a site to the home screen on iOS; other browsers are shells around it.
     return /CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|DuckDuckGo|GSA\//i.test(env.userAgent)

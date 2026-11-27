@@ -91,7 +91,7 @@ export function InstallEntry() {
           <span className="flex-1">
             <span className="block font-semibold">Application installée</span>
             <span className="text-indigo-mid text-small block">
-              Ouverte depuis l’écran d’accueil
+              Disponible sur l’écran d’accueil
             </span>
           </span>
         </div>

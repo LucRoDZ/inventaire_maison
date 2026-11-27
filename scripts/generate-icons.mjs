@@ -59,7 +59,8 @@ async function maskable(size) {
     .toBuffer();
 }
 
-// Monochrome: drop the background rectangle, keep the silhouette only (alpha is what counts).
+// Monochrome: drop the background rectangle, keep the silhouette only (alpha is what counts);
+// the lavender cut-outs inside the drawing become transparent too (see `monochromeAlpha`).
 function monochromeSvg() {
   const svg = read('monochrome').toString('utf8');
   const pattern = /<rect width="1024" height="1024" fill="#[0-9A-Fa-f]{6}"\/>/;
@@ -67,6 +68,28 @@ function monochromeSvg() {
     throw new Error('generate-icons: background rectangle not found in monochrome.svg');
   }
   return Buffer.from(svg.replace(pattern, ''));
+}
+
+/**
+ * Alpha of the monochrome icon: indigo stays opaque, lavender (the cut-outs: reflection, label,
+ * bands) becomes transparent, anti-aliased edges in between. Colour is indigo everywhere.
+ */
+async function monochromeAlpha(size) {
+  const { data, info } = await sharp(monochromeSvg(), { density: 300 })
+    .resize(size, size)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const indigoRed = 0x18;
+  const lavenderRed = 0xea;
+  for (let i = 0; i < data.length; i += 4) {
+    const t = Math.min(1, Math.max(0, (lavenderRed - data[i]) / (lavenderRed - indigoRed)));
+    data[i + 3] = Math.round(data[i + 3] * t);
+    data[i] = 0x18;
+    data[i + 1] = 0x00;
+    data[i + 2] = 0xad;
+  }
+  return sharp(data, { raw: info }).png().toBuffer();
 }
 
 const write = async (file, buffer) => {
@@ -78,10 +101,7 @@ for (const size of [192, 512]) {
   await write(`icon-${size}.png`, await render('principale', size).toBuffer());
   await write(`icon-${size}-maskable.png`, await maskable(size));
 }
-await write(
-  'icon-monochrome-512.png',
-  await sharp(monochromeSvg(), { density: 72 }).resize(512, 512).png().toBuffer(),
-);
+await write('icon-monochrome-512.png', await monochromeAlpha(512));
 await write(
   'apple-touch-icon.png',
   await render('fond_indigo', 180).flatten({ background: INDIGO }).toBuffer(),
