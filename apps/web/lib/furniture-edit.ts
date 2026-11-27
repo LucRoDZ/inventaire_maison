@@ -1,4 +1,10 @@
-import { CATEGORY_ICONS, PLACE_NAME_MAX_LENGTH } from '@inventaire/shared';
+import {
+  CATEGORY_ICONS,
+  LOCATION_KIND_DEFAULTS,
+  PLACE_NAME_MAX_LENGTH,
+  type LocationDto,
+  type ShelfKind,
+} from '@inventaire/shared';
 
 /** Renumbers a list after moving one item, and returns only what changed. */
 export function reorder<T extends { id: number; sortOrder: number }>(
@@ -37,3 +43,18 @@ export const FURNITURE_ICON_CHOICES: readonly string[] = [
   ...CATEGORY_ICONS.filter((icon) => icon !== 'package'),
   'package',
 ];
+
+/**
+ * The shelf added at the bottom of a piece of furniture: « Étagère n », « Tiroir n » or « Rangée n »
+ * after the label of its kind, with the first number not taken (compared without case).
+ */
+export function nextShelf(location: Pick<LocationDto, 'kind' | 'shelves'>): {
+  name: string;
+  kind: ShelfKind;
+} {
+  const { shelfLabel, shelfKind } = LOCATION_KIND_DEFAULTS[location.kind];
+  const taken = new Set(location.shelves.map((s) => s.name.trim().toLowerCase()));
+  let n = location.shelves.length + 1;
+  while (taken.has(`${shelfLabel} ${n}`.toLowerCase())) n += 1;
+  return { name: `${shelfLabel} ${n}`, kind: shelfKind };
+}

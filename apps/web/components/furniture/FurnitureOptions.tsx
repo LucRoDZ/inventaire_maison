@@ -1,21 +1,36 @@
 'use client';
 
-import type { LocationDto } from '@inventaire/shared';
-import { ArrowDown, ArrowUp, Ellipsis, ImageIcon, Pencil, Trash2, X } from 'lucide-react';
+import { MAX_SHELVES_PER_LOCATION, type LocationDto, type ShelfDto } from '@inventaire/shared';
+import {
+  ArrowDown,
+  ArrowUp,
+  Ellipsis,
+  ImageIcon,
+  Minus,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../lib/api';
-import { reorder } from '../../lib/furniture-edit';
+import { nextShelf, reorder } from '../../lib/furniture-edit';
 import * as placesApi from '../../lib/places-api';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Callout } from '../ui/Callout';
 import { DeleteFurnitureDialog } from './DeleteFurnitureDialog';
+import { DeleteShelfDialog } from './DeleteShelfDialog';
 import { IconPickerSheet } from './IconPickerSheet';
 import { RenameFurnitureSheet } from './RenameFurnitureSheet';
 
-type Api = Pick<typeof placesApi, 'fetchLocations' | 'updateLocation' | 'deleteLocation'>;
+type Api = Pick<
+  typeof placesApi,
+  'fetchLocations' | 'updateLocation' | 'deleteLocation' | 'createShelf' | 'deleteShelf'
+>;
 
 export type FurnitureChange =
-  { kind: 'renamed' | 'icon' | 'moved'; message: string } | { kind: 'deleted'; message: string };
+  | { kind: 'renamed' | 'icon' | 'moved' | 'shelves'; message: string }
+  | { kind: 'deleted'; message: string };
 
 /** Id of the « ⋯ » button of a piece of furniture, to give it the focus back after a change. */
 export const furnitureOptionsId = (locationId: number) => `options-meuble-${locationId}`;
@@ -30,7 +45,7 @@ interface FurnitureOptionsProps {
   api?: Api;
 }
 
-type Step = 'closed' | 'menu' | 'rename' | 'icon' | 'delete';
+type Step = 'closed' | 'menu' | 'rename' | 'icon' | 'delete' | 'pick-shelf' | 'delete-shelf';
 
 function MenuItem({
   icon,
@@ -63,7 +78,8 @@ function MenuItem({
 
 /**
  * The « ⋯ » button of a piece of furniture (card of the house, header of the open furniture) and
- * its menu: rename, change the icon, move up or down, delete. The same sheets and the same
+ * its menu: rename, change the icon, move up or down, add a shelf at the bottom, delete a shelf
+ * chosen by its line number, delete. The same sheets and the same
  * deletion dialog as the screen « Meubles et étagères ».
  */
 export function FurnitureOptions({
@@ -78,8 +94,10 @@ export function FurnitureOptions({
   const [step, setStep] = useState<Step>('closed');
   const [locations, setLocations] = useState<LocationDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** A double tap on « Monter » sends the change once. */
+  const [shelfToDelete, setShelfToDelete] = useState<ShelfDto | null>(null);
+  /** A double tap on « Monter » or « Ajouter une étagère » sends the change once. */
   const moving = useRef(false);
+  const pickTitleId = useId();
 
   const open = () => {
     setStep('menu');
@@ -98,6 +116,35 @@ export function FurnitureOptions({
   const sorted = locations ?? [];
   const index = sorted.findIndex((l) => l.id === locationId);
   const current = index >= 0 ? sorted[index]! : null;
+  /** Top to bottom: line 1 is the top shelf. */
+  const shelves = current ? [...current.shelves].sort((a, b) => a.sortOrder - b.sortOrder) : [];
+  const full = shelves.length >= MAX_SHELVES_PER_LOCATION;
+
+  const failed = (caught: unknown) =>
+    setError(
+      caught instanceof ApiError && caught.status !== 0
+        ? caught.message
+        : 'Pas de connexion : réessayez une fois en ligne.',
+    );
+
+  async function addShelf() {
+    if (!current || full || moving.current) return;
+    moving.current = true;
+    const next = nextShelf(current);
+    try {
+      await api.createShelf({ locationId, ...next });
+    } catch (caught) {
+      moving.current = false;
+      failed(caught);
+      return;
+    }
+    moving.current = false;
+    close();
+    onChanged({
+      kind: 'shelves',
+      message: `${next.name} ajoutée en bas de ${name} (ligne ${shelves.length + 1}).`,
+    });
+  }
 
   async function move(direction: -1 | 1) {
     const changes = reorder(sorted, index, direction);
@@ -107,11 +154,7 @@ export function FurnitureOptions({
       await Promise.all(changes.map((c) => api.updateLocation(c.id, { sortOrder: c.sortOrder })));
     } catch (caught) {
       moving.current = false;
-      setError(
-        caught instanceof ApiError && caught.status !== 0
-          ? caught.message
-          : 'Pas de connexion : réessayez une fois en ligne.',
-      );
+      failed(caught);
       return;
     }
     moving.current = false;
@@ -180,8 +223,24 @@ export function FurnitureOptions({
                 Descendre
               </MenuItem>
               <li aria-hidden="true" className="border-line my-1 border-t" />
+              <MenuItem icon={<Plus size={20} />} disabled={full} onClick={() => void addShelf()}>
+                Ajouter une étagère
+              </MenuItem>
+              <MenuItem
+                icon={<Minus size={20} />}
+                disabled={shelves.length === 0}
+                onClick={() => setStep('pick-shelf')}
+              >
+                Supprimer une étagère
+              </MenuItem>
+              {full ? (
+                <li className="text-small px-3">
+                  {MAX_SHELVES_PER_LOCATION} étagères au plus : ce meuble est complet.
+                </li>
+              ) : null}
+              <li aria-hidden="true" className="border-line my-1 border-t" />
               <MenuItem icon={<Trash2 size={20} />} onClick={() => setStep('delete')}>
-                Supprimer
+                Supprimer le meuble
               </MenuItem>
             </ul>
           ) : error ? null : (
@@ -190,6 +249,75 @@ export function FurnitureOptions({
             </p>
           )}
         </BottomSheet>
+      ) : null}
+
+      {(step === 'pick-shelf' || step === 'delete-shelf') && current ? (
+        <BottomSheet labelledBy={pickTitleId} onClose={close}>
+          <div className="flex items-center justify-between gap-2">
+            <h2 id={pickTitleId} className="text-card-title min-w-0 truncate">
+              Supprimer une étagère
+            </h2>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Fermer"
+              className="tap-target text-indigo -mr-2 inline-flex items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
+            >
+              <X size={22} aria-hidden="true" />
+            </button>
+          </div>
+          <p className="text-small">
+            Ligne 1 = étagère du haut. Ses produits passent sur le plateau « Non rangé ».
+          </p>
+          <ul className="flex flex-col gap-1">
+            {shelves.map((shelf, line) => (
+              <li key={shelf.id}>
+                <button
+                  type="button"
+                  aria-label={`Ligne ${line + 1} : ${shelf.name}`}
+                  onClick={() => {
+                    setShelfToDelete(shelf);
+                    setStep('delete-shelf');
+                  }}
+                  className="tap-target hover:bg-lavender flex w-full items-center gap-3 rounded-xl px-3 text-left transition-colors duration-150 ease-out"
+                >
+                  <span className="text-indigo w-16 shrink-0 font-semibold tabular-nums">
+                    Ligne {line + 1}
+                  </span>
+                  <span className="text-ink min-w-0 truncate">{shelf.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </BottomSheet>
+      ) : null}
+
+      {step === 'delete-shelf' && current && shelfToDelete ? (
+        <DeleteShelfDialog
+          shelf={shelfToDelete}
+          location={current}
+          onClose={() => {
+            setShelfToDelete(null);
+            setStep('pick-shelf');
+          }}
+          onConfirm={async () => {
+            try {
+              await api.deleteShelf(shelfToDelete.id);
+            } catch (caught) {
+              failed(caught);
+              setShelfToDelete(null);
+              setStep('menu');
+              return;
+            }
+            const removed = shelfToDelete.name;
+            setShelfToDelete(null);
+            close();
+            onChanged({
+              kind: 'shelves',
+              message: `${removed} supprimée : ses produits sont sur le plateau « Non rangé ».`,
+            });
+          }}
+        />
       ) : null}
 
       {step === 'rename' && current ? (
