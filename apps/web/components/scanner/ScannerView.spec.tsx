@@ -173,12 +173,14 @@ describe('ScannerView', () => {
 
   it('explains how to allow the camera when permission is refused, with the fallbacks at hand', async () => {
     getUserMedia.mockRejectedValue(new DOMException('no', 'NotAllowedError'));
-    renderView({ fallbacks: <input aria-label="Code" /> });
+    const onManualCode = vi.fn();
+    renderView({ onManualCode });
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Accès à la caméra refusé');
-    await userEvent.click(screen.getByRole('button', { name: 'Saisir le code à la main' }));
-    expect(screen.getByLabelText('Code')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Saisir un code' }));
+    expect(onManualCode).toHaveBeenCalledTimes(1);
   });
 
   it('reports a missing camera', async () => {
@@ -234,6 +236,20 @@ describe('ScannerView, full screen', () => {
     expect(close).toHaveClass('tap-target');
     await userEvent.click(close);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('locks the page scroll while scanning and restores it on leaving', async () => {
+    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
+    document.body.style.overflow = 'auto';
+    const { scanner, unmount } = renderView();
+    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body.style.overscrollBehavior).toBe('none');
+    expect(screen.getByText('Placez le code-barres dans le cadre')).toBeInTheDocument();
+    unmount();
+    expect(document.body.style.overflow).toBe('auto');
+    expect(document.body.style.overscrollBehavior).toBe('');
+    document.body.style.overflow = '';
   });
 
   it('locks the corners with a check mark and announces what was read', async () => {

@@ -10,7 +10,10 @@ import { InstallSheet } from '../../components/pwa/InstallSheet';
 export default function ScanLayout({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
-      <div className="bg-scanner-backdrop text-scanner-ink fixed inset-0 z-20 flex flex-col">
+      <div
+        data-testid="scanner-screen"
+        className="bg-scanner-backdrop text-scanner-ink fixed inset-0 z-20 flex h-dvh w-full flex-col overflow-hidden"
+      >
         {children}
       </div>
       <InstallSheet />
