@@ -6,12 +6,12 @@ Branche `phase-6`. Pour reprendre : lire ce tableau, puis `git log main..phase-6
 
 | Tâche | Worker | Statut | Commit |
 | --- | --- | --- | --- |
-| Étape 0 : branche, contrat (types, `GET /shopping/recent`, date du mouvement), ce plan | pilote | fait | |
-| W1 · `FullPageList`, `SelectableRow`, groupe `(page)` | worker | à faire | |
-| W3 · scanner sans Retirer, Réglages › Scanner, viseur à 3 boutons, « Créer un article » | worker | à faire | |
-| W4 · ligne « Créer », feuille sans code-barres qui défile, bouton Ajouter centré | worker | à faire | |
-| W2 · page « Ajouter à nouveau », Courses sur `FullPageList` | worker | à faire | |
-| W5 · Inventaire › Liste à défilement interne, compteurs compacts | worker | à faire | |
+| Étape 0 : branche, contrat (types, `GET /shopping/recent`, date du mouvement), ce plan | pilote | fait | 12454ca |
+| W1 · `FullPageList`, `SelectableRow`, groupe `(page)` | worker | fait | 389bae9 |
+| W3 · scanner sans Retirer, Réglages › Scanner, viseur à 3 boutons, « Créer un article » | worker | fait | cf70ddd, 5d5f895, a20326a |
+| W4 · ligne « Créer », feuille sans code-barres qui défile, bouton Ajouter centré | worker | fait | 888ffaf, 9c3ae1e |
+| W2 · page « Ajouter à nouveau », Courses sur `FullPageList` | worker | en cours | |
+| W5 · Inventaire › Liste à défilement interne, compteurs compacts | worker | en cours | |
 | Clôture : suite complète, revue, PR | pilote | à faire | |
 
 ## Contrat (figé à l'étape 0)
@@ -35,3 +35,5 @@ Branche `phase-6`. Pour reprendre : lire ce tableau, puis `git log main..phase-6
 - P6.4 : T4.2 (« Créer un article » du scanner) est fait par W3, qui possède les fichiers du scanner ; W4 garde la recherche manuelle.
 - P6.5 : `FullPageList` est bâti sur `ScrollZone` ; `Screen` reste pour les écrans simples.
 - P6.6 : les opérations `remove` déjà en file restent traitées par `POST /sync` ; le scanner n'en produit plus.
+- P6.7 : rafale active par défaut : un produit connu avec meuble habituel s'ajoute sans fiche. Les e2e qui attendent la fiche désactivent la rafale par `localStorage` (`inventaire.scanner-settings.v1`).
+- P6.8 : les compteurs de l'Inventaire passent dans l'en-tête fixe (une rangée compacte), en mode Maison comme en mode Liste.
