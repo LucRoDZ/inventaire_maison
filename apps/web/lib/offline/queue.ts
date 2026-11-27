@@ -8,7 +8,10 @@ import type { OfflineStore, QueuedOp, UnknownBarcode } from './types';
 
 /** What the screens give to `queueOp`: the key, device and date are added here. */
 export type NewSyncOp =
-  | Omit<Extract<SyncOp, { kind: 'add' }>, 'key' | 'deviceId' | 'createdAt'>
+  | (Omit<Extract<SyncOp, { kind: 'add' }>, 'key' | 'deviceId' | 'createdAt'> & {
+      /** ISO date of the movement when it is not now (« Acheté le »). */
+      createdAt?: string;
+    })
   | Omit<Extract<SyncOp, { kind: 'remove' }>, 'key' | 'deviceId' | 'createdAt'>
   | Omit<Extract<SyncOp, { kind: 'shop' }>, 'key' | 'deviceId' | 'createdAt'>;
 
@@ -71,7 +74,7 @@ export class OfflineQueue {
       ...input,
       key: this.uuid(),
       deviceId: await this.deviceId(),
-      createdAt: this.now().toISOString(),
+      createdAt: ('createdAt' in input && input.createdAt) || this.now().toISOString(),
     } as SyncOp;
     const item = await this.store.addOp(op);
     await this.changed();
