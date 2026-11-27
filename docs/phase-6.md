@@ -10,9 +10,9 @@ Branche `phase-6`. Pour reprendre : lire ce tableau, puis `git log main..phase-6
 | W1 · `FullPageList`, `SelectableRow`, groupe `(page)` | worker | fait | 389bae9 |
 | W3 · scanner sans Retirer, Réglages › Scanner, viseur à 3 boutons, « Créer un article » | worker | fait | cf70ddd, 5d5f895, a20326a |
 | W4 · ligne « Créer », feuille sans code-barres qui défile, bouton Ajouter centré | worker | fait | 888ffaf, 9c3ae1e |
-| W2 · page « Ajouter à nouveau », Courses sur `FullPageList` | worker | en cours | |
-| W5 · Inventaire › Liste à défilement interne, compteurs compacts | worker | en cours | |
-| Clôture : suite complète, revue, PR | pilote | à faire | |
+| W2 · page « Ajouter à nouveau », Courses sur `FullPageList` | worker | fait | 4bb71df, 39b3db6 |
+| W5 · Inventaire › Liste à défilement interne, compteurs compacts | worker | fait | ba4bdc4 |
+| Clôture : suite complète, revue (corrigée : 171c61c), e2e corrigés, PR | pilote | en cours | |
 
 ## Contrat (figé à l'étape 0)
 
@@ -38,3 +38,5 @@ Branche `phase-6`. Pour reprendre : lire ce tableau, puis `git log main..phase-6
 - P6.7 : rafale active par défaut : un produit connu avec meuble habituel s'ajoute sans fiche. Les e2e qui attendent la fiche désactivent la rafale par `localStorage` (`inventaire.scanner-settings.v1`).
 - P6.8 : les compteurs de l'Inventaire passent dans l'en-tête fixe (une rangée compacte), en mode Maison comme en mode Liste.
 - P6.9 : revue : trois points corrigés (annulation d'« Ajouter à nouveau » sans effet, borne de date, produit sans meuble) et une classe inexistante retirée.
+- P6.10 : les compteurs n'ont plus d'`aria-label` (axe `label-content-name-mismatch`) : le libellé complet est lu par un préfixe masqué, le libellé court visible reste dans le nom.
+- P6.11 : l'en-tête de l'Inventaire grandit d'une rangée (compteurs) : le test d'interface accepte une zone qui garde plus de 55 % de l'écran à 360 px (60 % avant).

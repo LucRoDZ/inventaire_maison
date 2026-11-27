@@ -4,15 +4,15 @@
 > Coche une tâche avec le hash court de son commit, sans compte rendu. Une ligne par décision réelle.
 > Tâche bloquée : commande et erreur dans « Problèmes bloquants » ; si une tâche suivante en dépend, écris le marqueur d'arrêt et arrête-toi.
 > Phase terminée : écris seul sur la dernière ligne de ce fichier `STOP: validation requise` et arrête-toi. Tout est terminé : `ALL DONE` seul sur la dernière ligne. Ces deux marqueurs ne commencent jamais une autre ligne.
-> Phases terminées : `docs/archive/TASKS-phases-0-1.md` `docs/archive/TASKS-phase-3.md` et `docs/archive/TASKS-phase-4.md`, à ne pas lire sauf demande.
+> Phases terminées : `docs/archive/TASKS-phases-0-1.md` `docs/archive/TASKS-phase-3.md`, `docs/archive/TASKS-phase-4.md` et `docs/phase-5.md`, à ne pas lire sauf demande.
 
-## Phase 5 : thème clair, scanner plein écran, ajout rapide, rupture → courses (branche `phase-5`)
+## Phase 6 : pages à défilement interne, scanner allégé, création d'article (branche `phase-6`)
 
-> Plan, contrat, tableau d'avancement et décisions P5.x : `docs/phase-5.md`.
+> Plan, contrat, tableau d'avancement et décisions P6.x : `docs/phase-6.md`.
 
-- [x] **Vague 1** : thème clair unique, polish, bouton Ajouter et barre à 3 onglets (8feceb0, e8e6261, 546ebab).
-- [x] **Vague 2** : scanner plein écran, rupture → courses (API et web), documentation (2c7b10e, 876d108, b442a01).
-- [x] **Clôture** : suite complète, revue corrigée, PR #29, CI verte, fusion.
+- [x] **Vague 1** : `FullPageList`, scanner sans Retirer et Réglages › Scanner, ligne « Créer », bouton Ajouter centré (389bae9, a20326a, 9c3ae1e).
+- [x] **Vague 2** : page « Ajouter à nouveau », Courses et Inventaire à défilement interne, compteurs compacts (4bb71df, 39b3db6, ba4bdc4).
+- [x] **Clôture** : suite complète, revue corrigée, PR, CI verte, fusion.
 
 ## Décisions prises
 

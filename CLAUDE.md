@@ -30,6 +30,7 @@ Cherche le titre avec `grep -n "^## \|^### " <fichier>`, puis lis la plage de li
 | Tests manuels sur appareils | `README.md` | `## Test manuel sur vrais appareils` |
 | Phase 3 : vagues, avancement | `docs/phase-3.md` | tableau en tête |
 | Phase 5 : contrat, avancement, décisions | `docs/phase-5.md` | tableau en tête |
+| Phase 6 : contrat, avancement, décisions | `docs/phase-6.md` | tableau en tête |
 
 ## Stack (imposée)
 - Front : Next.js (App Router), TypeScript, Tailwind, PWA.
@@ -44,6 +45,7 @@ Cherche le titre avec `grep -n "^## \|^### " <fichier>`, puis lis la plage de li
 - Interface 100 % en français. Code, commits et noms de variables en anglais.
 - Design Indigo Ambre : utilise `tokens.css` du dépôt, ne recopie jamais une couleur en dur. Thème clair uniquement (décision Phase 5 : aucun thème sombre). Un seul accent ambre, pas de couleur par catégorie, pas d'emoji.
 - Police Carlito. Cartes : rayon 16 px, filet `line` ; ombres par les jetons `shadow-raised` et `shadow-sheet` (Phase 5).
+- Défilement interne (Phase 6) : `body` ne défile jamais. Tout écran a un en-tête `shrink-0`, une seule zone `min-h-0 flex-1 overflow-y-auto overscroll-contain` et un pied `shrink-0`. Écran simple : `Screen` ; écran à liste avec barre d'outils ou pied fixe : `FullPageList` (`components/ui/FullPageList.tsx`, variante onglet dans `(app)`, variante pleine page dans le groupe `(page)` sans barre du bas). Feuille à liste : `max-h-[85dvh] flex flex-col`, seule la liste défile.
 
 ## Méthode de travail
 1. Une phase à la fois. Une branche par phase et une Pull Request par phase vers `main`. Ne pousse jamais directement sur `main`.

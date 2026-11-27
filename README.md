@@ -222,6 +222,10 @@ Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
 Après un déploiement, les téléphones passent à la nouvelle version **sans rien demander** : le service worker prend la main tout seul, et une page déjà ouverte change de version à la navigation suivante (jamais pendant un scan, une saisie, un glisser-déposer ou avec un panneau ouvert), ou au prochain lancement. Aucun message « Nouvelle version disponible ».
 
+### Mise à jour vers la Phase 6
+
+`./deploy.sh`. Aucune migration, aucune nouvelle variable d'environnement. La caméra par défaut et le scan en rafale se règlent par appareil dans Plus › Scanner (rafale active par défaut).
+
 ### Mise à jour vers la Phase 5 (une seule fois)
 
 `./deploy.sh`. Aucune migration, aucune nouvelle variable d'environnement. Un téléphone réglé en « Sombre » en Phase 4 repasse en clair tout seul (le réglage est effacé au premier lancement).
@@ -380,8 +384,8 @@ Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécuris�
 1. Inventaire › bouton « Ajouter » › « Scanner », toucher « Scanner » : la caméra arrière s'allume, un cadre ambre apparaît (le voyant de la caméra est allumé).
 2. Passer à un autre onglet du navigateur : le voyant s'éteint. Revenir : le bouton « Scanner » est de nouveau proposé.
 3. Changer d'onglet de l'application (Inventaire) : le voyant s'éteint aussi.
-4. Si l'appareil a une lampe, « Allumer la lampe » l'allume ; sinon le bouton est absent. S'il y a plusieurs caméras, le sélecteur « Caméra » en change.
-5. Mode Retirer / Ajouter : la bascule en haut garde son choix.
+4. Si l'appareil a une lampe, l'icône ronde en haut à droite l'allume ; sinon elle est absente. La caméra se choisit dans Plus › Scanner (Phase 6).
+5. La rangée du bas n'a que trois boutons : « Saisir un code », « Sans code-barres », « Créer un article » (Phase 6 : plus de mode Retirer dans le scanner).
 6. Refuser la permission (réglages du site) : le message donne les étapes de la plateforme et « Saisir le code à la main » met le focus sur la saisie.
 7. Ouvrir l'application en `http://` sur le réseau local (hors `localhost`) : message « HTTPS requis ».
 
@@ -390,7 +394,7 @@ Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécuris�
 1. Plus › Compte › « Activer les notifications » sur Android (Chrome) puis sur un iPhone avec l'application installée ; sur un iPhone dans Safari sans installation, l'option est remplacée par un texte d'aide.
 2. Mettre un produit à date du jour, attendre 8 h (ou relancer l'API avec l'horloge du serveur avancée) : une notification « urgent » arrive, le toucher ouvre la vue Liste filtrée.
 3. Se déconnecter, se connecter avec un compte d'un autre foyer : l'appareil ne reçoit plus le résumé du premier foyer.
-4. Scanner : cocher « Scan en rafale », scanner dix produits connus à la suite : chacun est ajouté sans fiche, « Annuler » retire le dernier.
+4. Scanner (rafale active par défaut, Plus › Scanner pour la couper) : scanner dix produits connus à la suite : chacun est ajouté sans fiche, « Annuler » retire le dernier.
 
 ### Scanner plein écran, hors ligne et application installée (Phase 4)
 
@@ -405,8 +409,12 @@ Ce que les tests automatiques ne peuvent pas prouver, à vérifier sur Android (
 7. **Icône** : pastille du nombre de produits périmés ou sous le seuil sur l'icône (Android Chrome, iPhone 16.4+ installé, macOS) ; raccourcis Scanner et Courses par appui long sur l'icône (Android) ; écran de lancement aux couleurs de l'application sur iPhone.
 8. **Partage** : « Partager la liste » ouvre la feuille de partage du téléphone ; sur ordinateur, la liste est copiée.
 9. **Thème** : l'application reste claire même quand le téléphone est en mode sombre (thème clair uniquement, décision Phase 5).
-10. **Ajouter** (Phase 5) : le bouton rond « Ajouter » de l'Inventaire ouvre la feuille Ajouter à nouveau · Scanner · Ajouter manuellement ; « Ajouter à nouveau » met +1 au lieu habituel, « Annuler » le retire.
-11. **Rupture → courses** (Phase 5) : retirer le dernier exemplaire d'un produit (scanner en mode Retirer, « − », glissement, « Jeté ») propose « l'ajouter aux courses ? » pendant 8 s ; « Ajouter » deux fois de suite ne crée qu'une ligne ; en mode avion, l'ajout part à la reconnexion.
+10. **Ajouter** (Phase 5, centré en Phase 6) : le bouton « + Ajouter » centré en bas de l'Inventaire ouvre la feuille Ajouter à nouveau · Scanner · Ajouter manuellement ; il disparaît clavier ouvert.
+11. **Rupture → courses** (Phase 5) : retirer le dernier exemplaire d'un produit (« − », glissement, « Jeté ») propose « l'ajouter aux courses ? » pendant 8 s ; « Ajouter » deux fois de suite ne crée qu'une ligne ; en mode avion, l'ajout part à la reconnexion.
+12. **Défilement interne** (Phase 6) : sur Courses, Inventaire › Liste et « Ajouter à nouveau », clavier ouvert : le titre, le champ et le pied restent fixes, seule la liste défile ; les puces « Récemment consommés » tiennent sur une rangée qui défile horizontalement.
+13. **Ajouter à nouveau** (Phase 6) : page complète ; cocher trois produits, changer « Acheté le », « Ajouter 3 produits » : retour à l'Inventaire avec « Annuler » pendant 5 s ; « Annuler » ne laisse rien en stock.
+14. **Créer un article** (Phase 6) : dans « Sans code-barres », taper le nom d'un vin déjà proche d'autres bouteilles : la dernière ligne « Créer « nom » » est toujours là. Le bouton « Créer un article » du scanner ouvre directement le formulaire.
+15. **Réglages › Scanner** (Phase 6) : choisir une autre caméra, couper la rafale, rouvrir le scanner : les deux réglages sont appliqués.
 
 Replis sans erreur visible : vibration, lampe, zoom, pastille d'icône, partage et View Transitions sont détectés avant usage ; sans IndexedDB, les scans hors ligne restent en mémoire jusqu'à la fermeture de l'onglet.
 
