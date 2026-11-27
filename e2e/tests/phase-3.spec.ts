@@ -77,6 +77,12 @@ async function noPageScroll(page: Page) {
 }
 
 async function axeClean(page: Page, context?: string) {
+  // A toast that is still fading in has a lower contrast for axe: wait for finite animations.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+  );
   const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
   const results = await (context ? builder.include(context) : builder).analyze();
   expect(
