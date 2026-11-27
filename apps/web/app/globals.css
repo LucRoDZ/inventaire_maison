@@ -212,3 +212,66 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Inventaire: horizontal slide of the scrolling zone when the view changes (Maison / Liste).
+   The zone is only named during a transition (data-view-dir on <html>, set by the page), so the
+   header never moves and the snapshot is clipped by the zone. No colours here. */
+html[data-view-dir] .scroll-zone {
+  view-transition-name: inventory-pane;
+}
+html[data-view-dir]::view-transition-old(root),
+html[data-view-dir]::view-transition-new(root) {
+  animation: none;
+}
+html[data-view-dir]::view-transition-group(inventory-pane) {
+  animation: none;
+  overflow: clip;
+}
+html[data-view-dir]::view-transition-old(inventory-pane),
+html[data-view-dir]::view-transition-new(inventory-pane) {
+  animation-duration: var(--dur-slide);
+  animation-timing-function: var(--ease-out-soft);
+  animation-fill-mode: both;
+}
+html[data-view-dir='forward']::view-transition-old(inventory-pane) {
+  animation-name: inventory-out-left;
+}
+html[data-view-dir='forward']::view-transition-new(inventory-pane) {
+  animation-name: inventory-in-right;
+}
+html[data-view-dir='back']::view-transition-old(inventory-pane) {
+  animation-name: inventory-out-right;
+}
+html[data-view-dir='back']::view-transition-new(inventory-pane) {
+  animation-name: inventory-in-left;
+}
+@keyframes inventory-out-left {
+  to {
+    transform: translateX(-100%);
+    opacity: 0.4;
+  }
+}
+@keyframes inventory-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0.4;
+  }
+}
+@keyframes inventory-out-right {
+  to {
+    transform: translateX(100%);
+    opacity: 0.4;
+  }
+}
+@keyframes inventory-in-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-view-dir]::view-transition-old(inventory-pane),
+  html[data-view-dir]::view-transition-new(inventory-pane) {
+    animation-name: none;
+  }
+}

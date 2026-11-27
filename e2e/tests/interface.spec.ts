@@ -168,6 +168,32 @@ for (const size of PHONES) {
   });
 }
 
+test('bascule Maison / Liste : ni décalage horizontal, ni titre qui bouge, pendant et après', async ({
+  page,
+}) => {
+  for (const size of PHONES) {
+    await page.setViewportSize(size);
+    await page.goto('/inventaire');
+    await expect(page.getByRole('link', { name: /^Frigo/ })).toBeVisible();
+    const h1 = page.getByRole('heading', { level: 1, name: 'Inventaire' });
+    const before = (await h1.boundingBox())!;
+    const overflow = () =>
+      page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    for (const name of ['Liste', 'Maison']) {
+      await page.getByRole('button', { name, exact: true }).click();
+      // Mid-transition samples, then the settled state.
+      for (let i = 0; i < 4; i++) {
+        await page.waitForTimeout(70);
+        expect(await overflow()).toBeLessThanOrEqual(0);
+        expect(await h1.boundingBox()).toEqual(before);
+      }
+      await page.waitForTimeout(200);
+      expect(await overflow()).toBeLessThanOrEqual(0);
+      expect(await h1.boundingBox()).toEqual(before);
+    }
+  }
+});
+
 test('filtres : meuble et catégorie, pastille, rappel, recherche combinée, état gardé, Effacer et Réinitialiser', async ({
   page,
 }) => {

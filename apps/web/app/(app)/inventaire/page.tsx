@@ -1,13 +1,14 @@
 'use client';
 
 import type { CategoryDto } from '@inventaire/shared';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { FilterReminder, FiltersControl } from '../../../components/home/FiltersControl';
 import { SummaryCounters } from '../../../components/home/SummaryCounters';
 import { HomeView } from '../../../components/home/HomeView';
 import { SearchField } from '../../../components/home/SearchField';
 import { ListView, type ListSummary } from '../../../components/list/ListView';
-import { ViewToggle } from '../../../components/list/ViewToggle';
+import { ViewToggle, type InventoryView } from '../../../components/list/ViewToggle';
 import { AddFab } from '../../../components/add/AddFab';
 import { Screen } from '../../../components/ui/Screen';
 import {
@@ -26,7 +27,29 @@ import { fetchCategories } from '../../../lib/stock-api';
  * says which ones are on. The search and the filters live in the URL.
  */
 function Inventaire() {
-  const [view, setView] = useInventoryView();
+  const [urlView, setUrlView] = useInventoryView();
+  // Local copy of the view: the swap is synchronous inside the view transition, the URL follows.
+  const [view, setLocalView] = useState(urlView);
+  useEffect(() => setLocalView(urlView), [urlView]);
+  const setView = useCallback(
+    (next: InventoryView) => {
+      if (next === view) return;
+      const root = document.documentElement;
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      if (typeof document.startViewTransition !== 'function' || reduced) {
+        setLocalView(next);
+        setUrlView(next);
+        return;
+      }
+      root.dataset.viewDir = next === 'list' ? 'forward' : 'back';
+      const transition = document.startViewTransition(() => {
+        flushSync(() => setLocalView(next));
+      });
+      setUrlView(next);
+      void transition.finished.finally(() => delete root.dataset.viewDir);
+    },
+    [view, setUrlView],
+  );
   const [urlFilters, setFilters] = useHomeFilters();
   const [categories, setCategories] = useState<CategoryDto[] | null>(null);
   const [summary, setSummary] = useState<ListSummary | null>(null);
