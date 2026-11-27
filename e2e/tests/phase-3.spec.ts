@@ -1,6 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { burstOff, ensureAccountInOwnHousehold, openScanner, pushCode, signIn } from './helpers';
+import {
+  burstOff,
+  ensureAccountInOwnHousehold,
+  settleAnimations,
+  openScanner,
+  pushCode,
+  signIn,
+} from './helpers';
 
 const VIEWPORTS = [
   { width: 360, height: 740 },
@@ -77,12 +84,7 @@ async function noPageScroll(page: Page) {
 }
 
 async function axeClean(page: Page, context?: string) {
-  // A toast that is still fading in has a lower contrast for axe: wait for finite animations.
-  await page.waitForFunction(() =>
-    document
-      .getAnimations()
-      .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
-  );
+  await settleAnimations(page);
   const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
   const results = await (context ? builder.include(context) : builder).analyze();
   expect(
