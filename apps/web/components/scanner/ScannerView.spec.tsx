@@ -64,19 +64,16 @@ afterEach(() => {
 function renderView(overrides: Partial<React.ComponentProps<typeof ScannerView>> = {}) {
   const { scanner, emit } = makeScanner();
   const onCode = vi.fn();
-  const onModeChange = vi.fn();
   const onClose = vi.fn();
   const utils = render(
     <ScannerView
-      mode="add"
-      onModeChange={onModeChange}
       onClose={onClose}
       onCode={onCode}
       makeScanner={async () => scanner}
       {...overrides}
     />,
   );
-  return { scanner, emit, onCode, onModeChange, onClose, ...utils };
+  return { scanner, emit, onCode, onClose, ...utils };
 }
 
 describe('ScannerView', () => {
@@ -195,27 +192,6 @@ describe('ScannerView', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('HTTPS requis');
     expect(getUserMedia).not.toHaveBeenCalled();
   });
-
-  it('switches mode and reports the mode current at the time of the scan', async () => {
-    getUserMedia.mockResolvedValue(makeStream(makeTrack()));
-    const { scanner, emit, onCode, onModeChange, rerender } = renderView();
-    expect(screen.getByRole('button', { name: 'Ajouter' })).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.click(screen.getByRole('button', { name: 'Retirer' }));
-    expect(onModeChange).toHaveBeenCalledWith('remove');
-
-    await waitFor(() => expect(scanner.start).toHaveBeenCalled());
-    rerender(
-      <ScannerView
-        mode="remove"
-        onModeChange={onModeChange}
-        onClose={() => undefined}
-        onCode={onCode}
-        makeScanner={async () => scanner}
-      />,
-    );
-    act(() => emit({ code: '96385074', format: 'ean_8' }));
-    expect(onCode).toHaveBeenCalledWith({ code: '96385074', format: 'ean_8' }, 'remove');
-  });
 });
 
 describe('ScannerView, full screen', () => {
@@ -262,8 +238,6 @@ describe('ScannerView, full screen', () => {
     expect(document.querySelector('.lucide-check')).not.toBeNull();
     rerender(
       <ScannerView
-        mode="add"
-        onModeChange={() => undefined}
         onClose={() => undefined}
         onCode={onCode}
         readLabel="Pâte à tartiner"

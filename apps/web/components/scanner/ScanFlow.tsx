@@ -25,9 +25,8 @@ import { ProductForm } from '../product/ProductForm';
 import { ProductPicker } from '../product/ProductPicker';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
 import { ManualCodeSheet } from './ManualCodeSheet';
-import { RemoveFlow, type RemoveRequest } from './RemoveFlow';
 import { ScanSheet } from './ScanSheet';
-import { ScannerView, type ScanMode, type ScannerControls } from './ScannerView';
+import { ScannerView, type ScannerControls } from './ScannerView';
 
 export interface UnknownContext {
   barcode: string;
@@ -53,7 +52,6 @@ interface ScanFlowProps {
     fetchLocations?: () => Promise<LocationDto[]>;
     fetchCategories?: () => Promise<CategoryDto[]>;
     searchProducts?: (query: string) => Promise<ProductDto[]>;
-    remove?: React.ComponentProps<typeof RemoveFlow>['api'];
     attachBarcode?: (productId: number, barcode: string) => Promise<ProductDto>;
   };
   makeScanner?: React.ComponentProps<typeof ScannerView>['makeScanner'];
@@ -86,7 +84,6 @@ export function ScanFlow({
   makeScanner,
 }: ScanFlowProps) {
   const online = useOnline();
-  const [mode, setMode] = useState<ScanMode>('add');
   const [step, setStep] = useState<Step>({ name: 'scanning' });
   const [manualOpen, setManualOpen] = useState(false);
   const [notice, setNotice] = useState<{ title: string; text: string } | null>(null);
@@ -259,22 +256,9 @@ export function ScanFlow({
     [online, openAdd],
   );
 
-  const removeCount = useRef(0);
-  const [removeRequest, setRemoveRequest] = useState<RemoveRequest | null>(null);
-
-  const onCode = (result: ScanResult, scanMode: ScanMode) => {
+  const onCode = (result: ScanResult) => {
     setReadLabel(result.code);
-    if (scanMode === 'remove') {
-      setNotice(null);
-      removeCount.current += 1;
-      setRemoveRequest({ id: removeCount.current, result });
-    } else void handleCode(result);
-  };
-
-  const changeMode = (next: ScanMode) => {
-    setMode(next);
-    setRemoveRequest(null);
-    setNotice(null);
+    void handleCode(result);
   };
 
   // The full-screen scanner stays on after an add: it is the screen for scanning (decision P4.14).
@@ -317,8 +301,6 @@ export function ScanFlow({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ScannerView
-        mode={mode}
-        onModeChange={changeMode}
         onCode={onCode}
         onClose={onClose}
         paused={step.name !== 'scanning'}
@@ -333,18 +315,6 @@ export function ScanFlow({
               <Callout role="alert" title={notice.title} className="w-full max-w-xl">
                 {notice.text}
               </Callout>
-            ) : null}
-            {mode === 'remove' ? (
-              <div className="w-full max-w-xl">
-                <RemoveFlow
-                  request={removeRequest}
-                  api={api.remove}
-                  onSwitchToAdd={(result) => {
-                    changeMode('add');
-                    void handleCode(result);
-                  }}
-                />
-              </div>
             ) : null}
             {sessionCount > 0 ? (
               <div className="bg-scanner-veil text-scanner-ink flex items-center gap-3 rounded-full py-1 pr-1 pl-4">
@@ -383,25 +353,21 @@ export function ScanFlow({
               <PackagePlus size={18} aria-hidden="true" />
               Sans code-barres
             </button>
-            {mode === 'add' ? (
-              <label className={`${chipClass} bg-scanner-veil text-scanner-ink cursor-pointer`}>
-                <input
-                  type="checkbox"
-                  aria-label="Scan en rafale"
-                  checked={burst}
-                  onChange={(event) => setBurst(event.target.checked)}
-                  aria-describedby="burst-help"
-                  className="accent-amber h-5 w-5"
-                />
-                Rafale
-              </label>
-            ) : null}
-            {mode === 'add' ? (
-              <p id="burst-help" className="sr-only">
-                Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les
-                autres ouvrent le formulaire.
-              </p>
-            ) : null}
+            <label className={`${chipClass} bg-scanner-veil text-scanner-ink cursor-pointer`}>
+              <input
+                type="checkbox"
+                aria-label="Scan en rafale"
+                checked={burst}
+                onChange={(event) => setBurst(event.target.checked)}
+                aria-describedby="burst-help"
+                className="accent-amber h-5 w-5"
+              />
+              Rafale
+            </label>
+            <p id="burst-help" className="sr-only">
+              Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les
+              autres ouvrent le formulaire.
+            </p>
           </div>
         }
       />
@@ -411,7 +377,7 @@ export function ScanFlow({
           onClose={() => setManualOpen(false)}
           onCode={(result) => {
             setManualOpen(false);
-            onCode(result, mode);
+            onCode(result);
           }}
         />
       ) : null}

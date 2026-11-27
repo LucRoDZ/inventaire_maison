@@ -27,16 +27,12 @@ import { Button } from '../ui/Button';
 import { CameraControls } from './CameraControls';
 import { PermissionHelp } from './PermissionHelp';
 
-export type ScanMode = 'add' | 'remove';
-
 /** The same code read again within this delay is ignored. */
 export const SAME_CODE_DELAY_MS = 1500;
 
 interface ScannerViewProps {
-  /** Called for every code read, with the mode chosen at that moment. */
-  onCode: (result: ScanResult, mode: ScanMode) => void;
-  mode: ScanMode;
-  onModeChange: (mode: ScanMode) => void;
+  /** Called for every code read. */
+  onCode: (result: ScanResult) => void;
   /** « Fermer le scanner ». */
   onClose: () => void;
   /** Compact row at the bottom, always reachable: typed code, no barcode, burst. */
@@ -94,8 +90,6 @@ const CORNERS = [
 
 export function ScannerView({
   onCode,
-  mode,
-  onModeChange,
   onClose,
   fallbacks,
   onManualCode,
@@ -110,7 +104,6 @@ export function ScannerView({
   const fallbackRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<CameraSession | null>(null);
   const scannerRef = useRef<Scanner | null>(null);
-  const modeRef = useRef(mode);
   const onCodeRef = useRef(onCode);
   const makeScannerRef = useRef(makeScanner);
   const startId = useRef(0);
@@ -127,7 +120,6 @@ export function ScannerView({
   const [locked, setLocked] = useState(false);
 
   useEffect(() => {
-    modeRef.current = mode;
     onCodeRef.current = onCode;
     makeScannerRef.current = makeScanner;
   });
@@ -156,7 +148,7 @@ export function ScannerView({
       vibrateOnRead();
       beep();
       setLocked(true);
-      onCodeRef.current(result, modeRef.current);
+      onCodeRef.current(result);
     });
   }, []);
 
@@ -349,28 +341,6 @@ export function ScannerView({
           <h1 className="bg-scanner-veil text-scanner-ink rounded-full px-4 py-1 text-base font-semibold">
             Scanner
           </h1>
-          <div
-            role="group"
-            aria-label="Mode du scan"
-            className="bg-scanner-veil flex gap-1 justify-self-end rounded-full p-1"
-          >
-            {(
-              [
-                ['add', 'Ajouter'],
-                ['remove', 'Retirer'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={mode === value}
-                onClick={() => onModeChange(value)}
-                className={`tap-target rounded-full px-3 font-semibold ${mode === value ? 'bg-scanner-frame text-scanner-on-frame' : 'text-scanner-ink'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
         {topSlot}
       </div>
