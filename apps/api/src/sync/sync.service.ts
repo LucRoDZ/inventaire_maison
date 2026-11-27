@@ -122,6 +122,7 @@ export class SyncService {
           reason: 'scan_add',
         },
         userId,
+        movementDate(op.createdAt),
       );
       return;
     }
@@ -182,4 +183,19 @@ export class SyncService {
       return rows.length;
     });
   }
+}
+
+/** Oldest date a queued add may give its movement (« Acheté le », a scan kept offline). */
+export const MOVEMENT_DATE_MAX_AGE_DAYS = 30;
+
+/**
+ * The date of the movement of a queued add: the date of the device when it is a real date within
+ * the last 30 days and not in the future; otherwise none (the server's now).
+ */
+export function movementDate(createdAt: string, now = new Date()): Date | undefined {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return undefined;
+  const oldest = now.getTime() - MOVEMENT_DATE_MAX_AGE_DAYS * 86_400_000;
+  if (date.getTime() > now.getTime() || date.getTime() < oldest) return undefined;
+  return date;
 }

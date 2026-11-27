@@ -104,9 +104,22 @@ export interface RecentProductDto {
   imageUrl: string | null;
   /** Number of `consumed` movements in the period. */
   count: number;
+  /** ISO date of the last `consumed` movement in the period. */
+  lastConsumedAt: string;
+  /** Usual location of the product; null when it has none. */
+  locationName: string | null;
+  /** « 1 L », « 500 g »…; null when unknown. */
+  sizeLabel: string | null;
+  /** Units in stock in the household, all lines together. */
+  inStock: number;
 }
+/** `GET /shopping/recent?limit=&days=`: defaults, and the bounds of both parameters. */
 export const RECENT_PRODUCTS_DAYS = 30;
 export const RECENT_PRODUCTS_MAX = 12;
+export const RECENT_PRODUCTS_LIMIT_MAX = 200;
+export const RECENT_PRODUCTS_DAYS_MAX = 365;
+/** « Ajouter à nouveau »: one page of the list, then « Voir plus » asks this many more. */
+export const RECENT_PRODUCTS_PAGE = 50;
 
 // ---------- Statistics ----------
 

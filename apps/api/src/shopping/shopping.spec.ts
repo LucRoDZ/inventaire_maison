@@ -1,3 +1,4 @@
+import type { RecentProductDto } from '@inventaire/shared';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -315,8 +316,8 @@ describe('GET /api/shopping/recent', () => {
     const res = await mine.get('/api/shopping/recent');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
-      { productId: often, name: 'Pâtes', imageUrl: null, count: 3 },
-      { productId: rarely, name: 'Café', imageUrl: null, count: 1 },
+      expect.objectContaining({ productId: often, name: 'Pâtes', imageUrl: null, count: 3 }),
+      expect.objectContaining({ productId: rarely, name: 'Café', imageUrl: null, count: 1 }),
     ]);
     expect((await theirs.get('/api/shopping/recent')).body).toEqual([]);
   });
@@ -324,5 +325,34 @@ describe('GET /api/shopping/recent', () => {
   it('caps the list at 12', async () => {
     for (let i = 0; i < 14; i += 1) await consume(await addProduct(`Produit ${i}`), 1);
     expect((await mine.get('/api/shopping/recent')).body).toHaveLength(12);
+  });
+
+  it('says where the product lives, its size, its stock and its last consumption', async () => {
+    const milk = await addProduct('Lait', { location: locationId });
+    await q(`UPDATE products SET size_label = '1 L' WHERE id = $1`, [milk]);
+    await q(
+      `INSERT INTO stock_items (household_id, product_id, location_id, quantity)
+       VALUES (1, $1, $2, 2)`,
+      [milk, locationId],
+    );
+    await consume(milk, 1, 3);
+    await consume(milk, 1, 1);
+    const [row] = (await mine.get('/api/shopping/recent')).body as RecentProductDto[];
+    expect(row).toMatchObject({ productId: milk, sizeLabel: '1 L', inStock: 2, count: 2 });
+    expect(row!.locationName).toEqual(expect.any(String));
+    const age = Date.now() - new Date(row!.lastConsumedAt).getTime();
+    expect(age).toBeGreaterThan(0.5 * 86_400_000);
+    expect(age).toBeLessThan(1.5 * 86_400_000);
+  });
+
+  it('takes a limit and a period, within bounds', async () => {
+    for (let i = 0; i < 14; i += 1) await consume(await addProduct(`Produit ${i}`), 1);
+    await consume(await addProduct('Ancien'), 1, 100);
+    expect((await mine.get('/api/shopping/recent?limit=50')).body).toHaveLength(14);
+    expect((await mine.get('/api/shopping/recent?limit=50&days=365')).body).toHaveLength(15);
+    expect((await mine.get('/api/shopping/recent?limit=0')).status).toBe(400);
+    expect((await mine.get('/api/shopping/recent?limit=201')).status).toBe(400);
+    expect((await mine.get('/api/shopping/recent?days=366')).status).toBe(400);
+    expect((await mine.get('/api/shopping/recent?other=1')).status).toBe(400);
   });
 });

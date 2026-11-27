@@ -17,7 +17,7 @@ import {
   seedHousehold,
 } from '../../test/helpers';
 import { categories, locations, products, stockItems } from '../database/schema';
-import { SyncService } from './sync.service';
+import { movementDate, SyncService } from './sync.service';
 
 const clock = new FakeClock(new Date('2026-06-01T10:00:00.000Z'));
 let app: INestApplication;
@@ -243,6 +243,29 @@ describe('POST /sync', () => {
   it('requires a session', async () => {
     const res = await request(server()).post('/api/sync').set('Origin', ORIGIN).send({ ops: [] });
     expect(res.status).toBe(401);
+  });
+});
+
+describe('date of a queued add', () => {
+  const now = new Date('2026-11-27T12:00:00.000Z');
+  it('keeps a real date of the last 30 days, else the server time', () => {
+    expect(movementDate('2026-11-20T08:00:00.000Z', now)?.toISOString()).toBe(
+      '2026-11-20T08:00:00.000Z',
+    );
+    expect(movementDate('2026-10-01T08:00:00.000Z', now)).toBeUndefined();
+    expect(movementDate('2026-11-28T08:00:00.000Z', now)).toBeUndefined();
+    expect(movementDate('pas une date', now)).toBeUndefined();
+  });
+
+  it('dates the movement with the date of the device', async () => {
+    const day = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    const add = op({ createdAt: day });
+    expect(await results([add])).toEqual([{ key: add.key, status: 'applied' }]);
+    const rows = await ownerPool().query<{ created_at: Date }>(
+      'SELECT created_at FROM stock_movements WHERE product_id = $1',
+      [milk],
+    );
+    expect(rows.rows.map((r) => r.created_at.toISOString())).toEqual([day]);
   });
 });
 

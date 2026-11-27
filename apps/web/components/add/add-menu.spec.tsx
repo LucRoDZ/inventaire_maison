@@ -36,6 +36,10 @@ const recent = (count: number): RecentProductDto[] =>
     name: `Produit ${i + 1}`,
     imageUrl: null,
     count: 1,
+    lastConsumedAt: '2026-11-20T10:00:00.000Z',
+    locationName: null,
+    sizeLabel: null,
+    inStock: 0,
   }));
 
 const openMenu = async () => {
@@ -157,7 +161,16 @@ describe('add menu', () => {
 
   it('lists only what the household endpoint returns', async () => {
     fetchRecentProducts.mockResolvedValue([
-      { productId: 9, name: 'Lait du foyer', imageUrl: null, count: 3 },
+      {
+        productId: 9,
+        name: 'Lait du foyer',
+        imageUrl: null,
+        count: 3,
+        lastConsumedAt: '2026-11-20T10:00:00.000Z',
+        locationName: null,
+        sizeLabel: null,
+        inStock: 0,
+      },
     ]);
     const { user, dialog } = await openMenu();
     await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));

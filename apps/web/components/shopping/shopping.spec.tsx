@@ -103,7 +103,18 @@ describe('ShoppingList', () => {
 
   it('adds a recently consumed product with one tap', async () => {
     const api = setup([], {
-      fetchRecent: vi.fn(async () => [{ productId: 9, name: 'Lait', imageUrl: null, count: 4 }]),
+      fetchRecent: vi.fn(async () => [
+        {
+          productId: 9,
+          name: 'Lait',
+          imageUrl: null,
+          count: 4,
+          lastConsumedAt: '2026-11-20T10:00:00.000Z',
+          locationName: null,
+          sizeLabel: null,
+          inStock: 0,
+        },
+      ]),
     });
     await userEvent.click(await screen.findByRole('button', { name: 'Ajouter Lait à la liste' }));
     expect(api.add).toHaveBeenCalledWith({ productId: 9 });
