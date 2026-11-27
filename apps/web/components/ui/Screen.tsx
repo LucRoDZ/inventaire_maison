@@ -141,7 +141,7 @@ export function Screen({
 }: ScreenProps) {
   return (
     <main className="flex min-h-0 flex-1 flex-col">
-      <header className="flex shrink-0 flex-col gap-2 px-4 pt-6 pb-2">
+      <header className="flex shrink-0 flex-col gap-2 px-4 pt-3 pb-2">
         <div className="flex min-h-11 items-center gap-1">
           {back ? (
             <Link

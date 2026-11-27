@@ -34,6 +34,11 @@ async function axe(page: Page) {
 }
 
 /** Scrolls the zone by the wheel over it, then checks that only the zone has moved. */
+/** The Maison / Liste slide is over (the page clears `data-view-dir` at its end). */
+async function settled(page: Page) {
+  await expect(page.locator('html')).not.toHaveAttribute('data-view-dir', /.*/);
+}
+
 async function scrollZoneAndCheck(page: Page, zoneName: string) {
   const zone = page.getByRole('region', { name: zoneName });
   await expect(zone).toBeVisible();
@@ -134,6 +139,8 @@ for (const size of PHONES) {
       const housePosition = await houseZone.evaluate((el) => el.scrollTop);
 
       await page.getByRole('button', { name: 'Liste', exact: true }).click();
+
+      await settled(page);
       await expect(page.getByText(/^Rutabaga 01$/)).toBeVisible();
       await expect(page.getByText(/^\d+ articles · \d+ unités$/)).toBeVisible();
       const listZone = await scrollZoneAndCheck(page, 'Liste des produits');
@@ -141,21 +148,26 @@ for (const size of PHONES) {
       const listPosition = await listZone.evaluate((el) => el.scrollTop);
 
       await page.getByRole('button', { name: 'Maison', exact: true }).click();
+
+      await settled(page);
       const back = page.getByRole('region', { name: 'Liste des meubles' });
       await expect.poll(() => back.evaluate((el) => el.scrollTop)).toBe(housePosition);
       await page.getByRole('button', { name: 'Liste', exact: true }).click();
+      await settled(page);
       const again = page.getByRole('region', { name: 'Liste des produits' });
       await expect.poll(() => again.evaluate((el) => el.scrollTop)).toBe(listPosition);
       // The counter is a help line of the list only.
       await page.getByRole('button', { name: 'Maison', exact: true }).click();
+      await settled(page);
       await expect(page.getByText(/^\d+ articles · \d+ unités$/)).toHaveCount(0);
 
       // Back from an open piece of furniture: the house is where it was.
       await expect.poll(() => back.evaluate((el) => el.scrollTop)).toBe(housePosition);
       await back.evaluate((el) => el.scrollBy(0, 200));
       const furniture = page.getByRole('link', { name: /^Mini-frigo du bureau/ });
-      // The click would scroll the card into view: do it first, then measure.
-      await furniture.scrollIntoViewIfNeeded();
+      // The click would scroll the card into view (and clear of the floating Add button): centre
+      // it first, then measure.
+      await furniture.evaluate((el) => el.scrollIntoView({ block: 'center' }));
       const before = await back.evaluate((el) => el.scrollTop);
       await furniture.click();
       await expect(

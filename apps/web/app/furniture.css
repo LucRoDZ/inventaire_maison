@@ -200,7 +200,7 @@
    (ordinateur, paysage), 120 px. Sur un téléphone en portrait (plus bas), le partage de l'espace
    disponible : min(120 px, (espace − plateau vide − écarts) / rangées). */
 .fx-shelves {
-  --fx-gap: 8px;
+  --fx-gap: 3px;
   --fx-row-h: 120px;
   gap: var(--fx-gap);
 }

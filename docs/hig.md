@@ -21,10 +21,10 @@ Branche `hig`. Règle absolue : aucune logique métier, aucun endpoint, aucune m
 | W1 : `QuantityControl`, boutons-icônes sans fond (T2) | worker | fait | 214530a, 9e1ded1, 945e9dc, 1610df3 |
 | W2 : contrôle segmenté et transition Maison ↔ Liste (T3) | worker | fait | f985973, 6333ed8 |
 | W3 : barre du bas, titres, compteurs, bouton Ajouter (T4) | worker | fait | 9708d4e, 029da1a |
-| W4 : liste d'inventaire et Courses (T5) | worker | en cours | |
-| W5 : vue Maison et meubles (T6) | worker | en cours | |
-| W6 : feuilles, filtres, scanner, documentation (T7) | worker | en cours | |
-| Suite complète, revue, PR | pilote | à faire | |
+| W4 : liste d'inventaire et Courses (T5) | worker | fait | 0d20d2c, bf3b4e5 |
+| W5 : vue Maison et meubles (T6) | worker | fait | 531b5b9, e61ed94 |
+| W6 : feuilles, filtres, scanner, documentation (T7) | worker | fait | cdd9c2a, 8ca9868 |
+| Suite complète, revue (corrigée), PR | pilote | fait | voir PR |
 
 ## Décisions prises
 
@@ -38,3 +38,8 @@ Branche `hig`. Règle absolue : aucune logique métier, aucun endpoint, aucune m
 - H8 : test e2e « police Carlito chargée » remplacé par « police du système, sans police téléchargée ».
 - H9 : transition Maison ↔ Liste par l'API View Transitions : seule la zone de défilement est nommée, et seulement pendant la bascule ; sans l'API (ou mouvement réduit), changement instantané. La vue locale est mise à jour dans `flushSync`, l'URL suit comme avant.
 - H10 : dans Courses, la quantité figure déjà dans le texte de la ligne : `QuantityControl` y est utilisé sans valeur entre − et + (`hideValue`).
+- H11 : revue corrigée : `QuantityControl` sans plafond par défaut (le + reste actif comme avant), course entre deux bascules rapides, double marge basse de la Liste, ambre retiré hors péremption (pastille des filtres, quantité des vignettes, interrupteur rafale, barre de dépôt, encadrés, sélecteur d'icône), titre du scanner gardé blanc.
+- H12 : `IconBadge` (vignette d'un produit sans photo) garde son fond lavande : c'est un espace réservé d'image, pas un bouton.
+- H13 : écart entre étagères gardé à 3 px : à 8 px, un meuble de 8 étagères pleines ne tient plus en 360 × 740 (`fit.spec.ts`). L'air vient du cadre fin (1 px au lieu de 5) et des étagères en aplat.
+- H14 : en-tête d'écran `pt-3` (et non `pt-6`) : l'en-tête Inventaire doit rester sous 250 px à 360 px avec le titre 34/41.
+- H15 : pendant le glissement Maison ↔ Liste (340 ms), les touches vont à la transition ; les e2e attendent sa fin (`data-view-dir` retiré) avant d'enchaîner.
