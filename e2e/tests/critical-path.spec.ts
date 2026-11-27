@@ -47,7 +47,7 @@ test('parcours critique : ajout, scan, quantité, vue Maison, déplacement, seco
   await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
   const search = page.getByRole('dialog', { name: 'Ajouter sans code-barres' });
   await search.getByLabel('Nom du produit').fill(manual);
-  await search.getByRole('button', { name: 'Créer ce produit' }).click();
+  await search.getByRole('button', { name: /Créer «/ }).click();
   const form = page.getByRole('dialog', { name: 'Nouveau produit' });
   await form.getByLabel('Catégorie').selectOption({ index: 1 });
   await form.getByRole('button', { name: 'Enregistrer et ajouter' }).click();

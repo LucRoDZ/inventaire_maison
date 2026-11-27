@@ -141,7 +141,7 @@ test('ajout manuel d’un produit sans code-barres', async ({ page }, testInfo) 
   const search = page.getByRole('dialog', { name: 'Ajouter sans code-barres' });
   await search.getByLabel('Nom du produit').fill(name);
   await expect(search.getByText(`Aucun produit trouvé pour « ${name} »`)).toBeVisible();
-  await search.getByRole('button', { name: 'Créer ce produit' }).click();
+  await search.getByRole('button', { name: /Créer «/ }).click();
 
   const form = page.getByRole('dialog', { name: 'Nouveau produit' });
   await expect(form.getByLabel('Nom')).toHaveValue(name);
@@ -330,7 +330,7 @@ test('meuble ouvert : ajout depuis une étagère vide, le produit y apparaît av
   await expect(page).toHaveURL(/\/scanner\?lieu=\d+&etagere=\d+$/);
   await page.getByRole('button', { name: 'Ajouter sans code-barres' }).click();
   await page.getByLabel('Nom du produit').fill(product);
-  await page.getByRole('button', { name: 'Créer ce produit' }).click();
+  await page.getByRole('button', { name: /Créer «/ }).click();
   const form = page.getByRole('dialog', { name: 'Nouveau produit' });
   await form.getByLabel('Catégorie').selectOption({ index: 1 });
   await form
