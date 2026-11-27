@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProductDto } from '@inventaire/shared';
-import { Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { searchProducts } from '../../lib/products-api';
 import { Button } from '../ui/Button';
@@ -68,12 +68,12 @@ export function CatalogSearch({
         aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.key === 'Escape' && onClose()}
-        className="rounded-card mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        className="rounded-card mx-auto flex max-h-[85dvh] w-full max-w-xl flex-col gap-4 rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
-        <h2 id={titleId} className="text-title">
+        <h2 id={titleId} className="text-title shrink-0">
           Ajouter sans code-barres
         </h2>
-        <label className="text-label flex flex-col gap-1">
+        <label className="text-label flex shrink-0 flex-col gap-1">
           Nom du produit
           <span className="relative">
             <Search
@@ -92,52 +92,76 @@ export function CatalogSearch({
           </span>
         </label>
 
-        {state.name === 'idle' && query.length > 0 ? (
-          <p className="text-small">Tapez au moins {SEARCH_MIN_CHARS} caractères.</p>
-        ) : null}
-        {state.name === 'loading' ? (
-          <p role="status" className="text-small">
-            Recherche…
-          </p>
-        ) : null}
-        {state.name === 'error' ? (
-          <p role="alert" className="text-small text-alert">
-            La recherche a échoué : vérifiez la connexion et réessayez.
-          </p>
-        ) : null}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
+          {state.name === 'idle' && query.length > 0 ? (
+            <p className="text-small">Tapez au moins {SEARCH_MIN_CHARS} caractères.</p>
+          ) : null}
+          {state.name === 'loading' ? (
+            <p role="status" className="text-small">
+              Recherche…
+            </p>
+          ) : null}
+          {state.name === 'error' ? (
+            <p role="alert" className="text-small text-alert">
+              La recherche a échoué : vérifiez la connexion et réessayez.
+            </p>
+          ) : null}
 
-        {state.name === 'done' && state.results.length > 0 ? (
-          <ul className="flex flex-col gap-2">
-            {state.results.map((product) => (
-              <li key={product.id}>
-                <button
-                  type="button"
-                  onClick={() => onPick(product)}
-                  className="tap-target border-line text-ink flex w-full flex-col items-start rounded-xl border bg-white px-3 py-2 text-left"
-                >
-                  <span className="text-card-title">{product.name}</span>
-                  {product.brand ? <span className="text-small">{product.brand}</span> : null}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+          {state.name === 'done' && state.results.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {state.results.map((product) => (
+                <li key={product.id}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(product)}
+                    className="tap-target border-line text-ink flex w-full flex-col items-start rounded-xl border bg-white px-3 py-2 text-left"
+                  >
+                    <span className="text-card-title">{product.name}</span>
+                    {product.brand ? <span className="text-small">{product.brand}</span> : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
-        {state.name === 'done' && state.results.length === 0 ? (
-          <div className="flex flex-col gap-3">
+          {state.name === 'done' && state.results.length === 0 ? (
             <p role="status" className="text-body">
               Aucun produit trouvé pour « {state.query} ».
             </p>
-            <Button variant="primary" onClick={() => onCreate(state.query)}>
-              Créer ce produit
-            </Button>
-          </div>
-        ) : null}
+          ) : null}
 
-        <Button variant="secondary" onClick={onClose}>
+          {state.name === 'done' ? (
+            <div className={state.results.length > 0 ? 'border-line border-t pt-3' : ''}>
+              <button
+                type="button"
+                onClick={() => onCreate(state.query)}
+                className={`tap-target flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left ${
+                  state.results.length === 0
+                    ? 'bg-indigo text-white'
+                    : 'border-line text-ink border bg-white'
+                }`}
+              >
+                <Plus size={18} aria-hidden="true" className="shrink-0" />
+                <span className="flex flex-col">
+                  <span className="text-card-title">Créer « {state.query} »</span>
+                  {hasDuplicate(state.results, state.query) ? (
+                    <span className="text-small">Un produit porte déjà ce nom</span>
+                  ) : null}
+                </span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <Button variant="secondary" onClick={onClose} className="shrink-0">
           Fermer
         </Button>
       </div>
     </div>
   );
+}
+
+function hasDuplicate(results: ProductDto[], query: string): boolean {
+  const wanted = query.trim().toLowerCase();
+  return results.some((product) => product.name.trim().toLowerCase() === wanted);
 }
