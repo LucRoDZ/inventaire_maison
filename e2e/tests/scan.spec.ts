@@ -62,8 +62,8 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
 
   // Typed code: the same product again.
   await page.getByRole('button', { name: 'Saisir un code' }).click();
-  await page.getByLabel('Code-barres').fill(code);
-  await page.getByLabel('Code-barres').press('Enter');
+  await page.getByRole('textbox', { name: 'Code-barres' }).fill(code);
+  await page.getByRole('textbox', { name: 'Code-barres' }).press('Enter');
   await expect(sheet.getByRole('heading', { name })).toBeVisible();
   await sheet.getByRole('button', { name: 'Annuler' }).click();
 
@@ -690,7 +690,7 @@ test('la catégorie proposée est confirmée par l’ajout, sans écran de relec
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(
     page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link'),
-  ).toHaveCount(4);
+  ).toHaveCount(3);
 });
 
 const PASSWORD_CHANGE = { 'chromium-mobile': 'sophie', 'webkit-mobile': 'julien' } as const;
@@ -887,7 +887,6 @@ test('administration : une correspondance ajoutée classe un produit scanné ens
 });
 
 async function startScannerFrom(page: Page) {
-  await page.goto('/');
   await openScanner(page);
 }
 

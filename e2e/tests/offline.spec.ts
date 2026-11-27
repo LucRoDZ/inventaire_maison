@@ -13,7 +13,9 @@ test('hors connexion, la coquille s’ouvre et l’encadré « Pas de connexion 
   await page.getByLabel('Pseudo').fill('admin');
   await page.getByLabel('Mot de passe').fill('e2e-admin-password');
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await expect(page.getByRole('heading', { name: 'Inventaire', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
   // The scanner is a route of its own: its shell is cached from here.
   await page.goto('/scanner');
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();

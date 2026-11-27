@@ -35,11 +35,15 @@ test('un mauvais mot de passe affiche une erreur', async ({ page }) => {
 test('connexion, rechargement toujours connecté, onglets, déconnexion', async ({ page }) => {
   await signIn(page);
   await expect(page).toHaveURL(/\/inventaire$/);
-  await expect(page.getByRole('heading', { name: 'Inventaire', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
 
   await page.reload();
   await expect(page).toHaveURL(/\/inventaire$/);
-  await expect(page.getByRole('heading', { name: 'Inventaire', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
 
   // The scanner is no tab: it opens from Ajouter, full screen, without the bottom bar.
   const nav = page.getByRole('navigation', { name: 'Navigation principale' });

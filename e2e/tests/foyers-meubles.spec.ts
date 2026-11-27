@@ -201,7 +201,6 @@ const SCAN = {
 } as const;
 
 async function scanAndAdd(page: Page, code: string, name: string) {
-  await page.goto('/');
   await openScanner(page);
   await pushCode(page, code);
   const sheet = page.getByRole('dialog');

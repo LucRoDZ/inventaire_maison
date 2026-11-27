@@ -143,8 +143,8 @@ test('saisie manuelle d’un code connu : fiche en bas, compteur, « Annuler le 
 
   await page.getByRole('button', { name: 'Saisir un code' }).click();
 
-  await page.getByLabel('Code-barres').fill(code);
-  await page.getByLabel('Code-barres').press('Enter');
+  await page.getByRole('textbox', { name: 'Code-barres' }).fill(code);
+  await page.getByRole('textbox', { name: 'Code-barres' }).press('Enter');
   const sheet = page.getByRole('dialog', { name });
   await expect(sheet).toBeVisible();
   // Still the same page, the usual place is preselected.
@@ -191,7 +191,7 @@ test('caméra refusée : aide pas à pas et saisie manuelle toujours là', async
   expect(await cameraActive(page)).toBeFalsy();
 
   await page.getByRole('button', { name: 'Saisir un code' }).first().click();
-  await page.getByLabel('Code-barres').fill(code);
-  await page.getByLabel('Code-barres').press('Enter');
+  await page.getByRole('textbox', { name: 'Code-barres' }).fill(code);
+  await page.getByRole('textbox', { name: 'Code-barres' }).press('Enter');
   await expect(page.getByRole('dialog', { name })).toBeVisible();
 });

@@ -38,7 +38,11 @@ export async function signIn(
   await page.getByLabel('Pseudo').fill(username);
   await page.getByLabel('Mot de passe').fill(password);
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await expect(page.getByRole('heading', { name: 'Inventaire', level: 1 })).toBeVisible();
+  // Exact: the login page itself is titled « Inventaire maison ».
+  await page.waitForURL(/\/inventaire(\?|$)/);
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
 }
 
 /**
@@ -46,7 +50,14 @@ export async function signIn(
  * codes. Straight to the route; the Ajouter › Scanner path has its own test.
  */
 export async function openScanner(page: Page) {
-  if (!/\/scanner$/.test(page.url())) await page.goto('/scanner');
+  if (!/\/scanner$/.test(page.url())) {
+    // The screen left behind may still replace its own URL (filters of the inventory): that
+    // navigation can abort this one, so it is tried once more.
+    await page.goto('/scanner').catch(async (error: Error) => {
+      if (!/ERR_ABORTED|interrupted/.test(error.message)) throw error;
+      await page.goto('/scanner');
+    });
+  }
   await startScanner(page);
 }
 
