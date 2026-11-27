@@ -739,9 +739,10 @@ test('administration : une étagère ajoutée apparaît dans la vue Maison ; sup
   await expect(cellar).toBeVisible();
   await cellar.getByRole('button', { name: /^Cave/ }).click();
 
-  // « Ajouter une étagère » adds « Étagère n » and puts the focus on its name; one save.
+  // « Ajouter une étagère » adds « Rangée n » in a cellar (the label of its kind) and puts the
+  // focus on its name; one save.
   await cellar.getByRole('button', { name: 'Ajouter une étagère' }).click();
-  const added = cellar.getByRole('textbox', { name: /^Nom de Étagère \d+$/ }).last();
+  const added = cellar.getByRole('textbox', { name: /^Nom de Rangée \d+$/ }).last();
   // Safari (and the WebKit of the tests) never focuses a field outside a gesture of the person,
   // here after the answer of the server: the focus is checked on Chromium only.
   if (testInfo.project.name === 'chromium-mobile') await expect(added).toBeFocused();
