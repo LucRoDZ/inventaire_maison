@@ -10,7 +10,7 @@ import type {
 import { ChevronLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { fetchHome } from '../../lib/home-api';
 import {
   filtersToQuery,
@@ -88,9 +88,13 @@ function ShelfFocus() {
   const shelfId = shelf?.id ?? (etagere === TRAY_SEGMENT ? null : Number(etagere));
   const furnitureHref = `/inventaire/${lieu}${filtersToQuery(filters)}`;
 
+  // Read once when the page opens, then forgotten: a later visit (after a system back gesture,
+  // or from « Voir dans le meuble ») never inherits it.
+  const fromFurniture = useRef(arrivedFromFurniture());
+  useEffect(() => forgetArrival(), []);
+
   const back = () => {
-    const go = arrivedFromFurniture() ? () => router.back() : () => router.replace(furnitureHref);
-    forgetArrival();
+    const go = fromFurniture.current ? () => router.back() : () => router.replace(furnitureHref);
     closeFocus(Number.isNaN(shelfId) ? null : shelfId, go);
   };
 

@@ -71,7 +71,7 @@ export function UnshelvedTray({
           </div>
         ) : (
           <>
-            <div className="fx-zone">
+            <div className="fx-zone z-[1]">
               <ul className="fx-tiles flex min-w-0 flex-1 overflow-x-auto">
                 {tiles.map((tile) => (
                   <li key={tile.stockItemId} className="shrink-0">

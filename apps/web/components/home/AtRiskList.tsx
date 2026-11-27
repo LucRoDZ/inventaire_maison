@@ -82,6 +82,13 @@ export function AtRiskList({ filters, onClear, onStockChanged, api = {} }: AtRis
   const [error, setError] = useState<string | null>(null);
   const [removal, setRemoval] = useState<RemovalPlan | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  // Confirmation of a move made in the product sheet, as on the furniture page.
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 5000);
+    return () => clearTimeout(timer);
+  }, [notice]);
   const [debounced, setDebounced] = useState(filters.q.trim());
   const { categoryIds } = filters;
 
@@ -230,6 +237,11 @@ export function AtRiskList({ filters, onClear, onStockChanged, api = {} }: AtRis
           ))}
         </ul>
       )}
+      {notice ? (
+        <Callout role="status" title="C’est fait">
+          {notice}
+        </Callout>
+      ) : null}
       {current ? (
         <ProductSheet
           key={current.id}
@@ -246,7 +258,8 @@ export function AtRiskList({ filters, onClear, onStockChanged, api = {} }: AtRis
               ? focusHref(current.location.id, current.shelf.id)
               : `/inventaire/${current.location.id}`
           }
-          onChanged={() => {
+          onChanged={(message) => {
+            if (message) setNotice(message);
             void load();
             changedRef.current?.();
           }}

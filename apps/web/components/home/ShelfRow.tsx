@@ -112,7 +112,7 @@ export function ShelfRow({
         data-shelf-kind={drawer ? shelf.kind : undefined}
         style={drawer ? ({ '--i': index } as CSSProperties) : undefined}
       >
-        <div className={`fx-zone ${empty ? 'fx-zone-empty' : ''}`}>
+        <div className={`fx-zone z-[1] ${empty ? 'fx-zone-empty' : ''}`}>
           {empty ? (
             <>
               <span className="text-help">Vide</span>

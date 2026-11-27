@@ -68,10 +68,11 @@ function transition(dir: 'open' | 'close', navigate: () => void): void {
 
 /** Click on the « Ouvrir l’étagère » link: the link navigates by itself, the zoom starts from the shelf. */
 export function openFocus(event: MouseEvent<HTMLElement>, shelfId: number | null): void {
-  cameFromFurniture = true;
   focusedKey = keyOf(shelfId);
   if (event.defaultPrevented || event.button !== 0) return;
+  // A new tab or window: this page stays where it is.
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  cameFromFurniture = true;
   const shelf = event.currentTarget.closest<HTMLElement>('[data-shelf-key]');
   if (shelf && canAnimate()) shelf.style.viewTransitionName = NAME;
   transition('open', () => undefined);
