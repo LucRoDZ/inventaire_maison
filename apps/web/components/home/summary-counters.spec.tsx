@@ -16,6 +16,18 @@ describe('SummaryCounters', () => {
     expect(screen.getByRole('button', { name: /Périmés/ })).toHaveTextContent('1');
   });
 
+  it('is one row of four with full accessible names', async () => {
+    render(<SummaryCounters active={null} onSelect={vi.fn()} load={async () => summary} />);
+    await screen.findByText('24');
+    const row = screen.getByRole('region', { name: 'Résumé du stock' });
+    expect(row.className).toContain('grid-cols-4');
+    expect(screen.getByText('En stock')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^2 ?À consommer aujourd’hui, ?Aujourd’hui$/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^1 ?Périmés$/ })).toHaveTextContent('Périmés');
+  });
+
   it('sets the expiry filter, and clears it when the active counter is tapped again', async () => {
     const onSelect = vi.fn();
     const { rerender } = render(

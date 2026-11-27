@@ -30,8 +30,16 @@ export const clearCheckedShopping = (): Promise<ShoppingClearResponse> =>
 export const storeCheckedShopping = (): Promise<ShoppingStoreResponse> =>
   apiFetch<ShoppingStoreResponse>('/shopping/store-checked', { method: 'POST' });
 
-export const fetchRecentProducts = (): Promise<RecentProductDto[]> =>
-  apiFetch<RecentProductDto[]>('/shopping/recent');
+/** Products consumed lately; `limit` and `days` default to the chips of the shopping list. */
+export function fetchRecentProducts(
+  params: { limit?: number; days?: number } = {},
+): Promise<RecentProductDto[]> {
+  const query = new URLSearchParams();
+  if (params.limit !== undefined) query.set('limit', String(params.limit));
+  if (params.days !== undefined) query.set('days', String(params.days));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  return apiFetch<RecentProductDto[]>(`/shopping/recent${suffix}`);
+}
 
 /** « 500 g », « 2 unités »: what a line asks for, besides its name. */
 export function shoppingQuantityText(item: {

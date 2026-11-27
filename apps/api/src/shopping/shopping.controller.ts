@@ -8,10 +8,16 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   QUANTITY_UNITS,
+  RECENT_PRODUCTS_DAYS,
+  RECENT_PRODUCTS_DAYS_MAX,
+  RECENT_PRODUCTS_LIMIT_MAX,
+  RECENT_PRODUCTS_MAX,
   SHOPPING_LABEL_MAX_LENGTH,
   SHOPPING_QUANTITY_MAX,
   type RecentProductDto,
@@ -24,6 +30,22 @@ import type { Request } from 'express';
 import { z } from 'zod';
 import { parseBody, parseId } from '../common/validation';
 import { ShoppingService } from './shopping.service';
+
+const bounded = (max: number, fallback: number) =>
+  z
+    .string()
+    .regex(/^\d{1,4}$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(max))
+    .optional()
+    .transform((v) => v ?? fallback);
+
+const recentQuerySchema = z
+  .object({
+    limit: bounded(RECENT_PRODUCTS_LIMIT_MAX, RECENT_PRODUCTS_MAX),
+    days: bounded(RECENT_PRODUCTS_DAYS_MAX, RECENT_PRODUCTS_DAYS),
+  })
+  .strict();
 
 const quantity = z.number().int().min(1).max(SHOPPING_QUANTITY_MAX);
 
@@ -56,8 +78,10 @@ export class ShoppingController {
   }
 
   @Get('recent')
-  recent(): Promise<RecentProductDto[]> {
-    return this.shopping.recent();
+  recent(@Query() query: Record<string, unknown>): Promise<RecentProductDto[]> {
+    const parsed = recentQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException('Paramètres invalides');
+    return this.shopping.recent(parsed.data.limit, parsed.data.days);
   }
 
   @Post()

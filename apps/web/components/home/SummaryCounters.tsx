@@ -16,17 +16,19 @@ interface SummaryCountersProps {
   load?: () => Promise<StockSummaryDto>;
 }
 
-const COUNTERS: { key: ExpiryFilter; label: string }[] = [
-  { key: 'today', label: EXPIRY_FILTER_LABELS.today },
-  { key: 'soon', label: EXPIRY_FILTER_LABELS.soon },
-  { key: 'expired', label: EXPIRY_FILTER_LABELS.expired },
+const COUNTERS: { key: ExpiryFilter; label: string; short: string }[] = [
+  { key: 'today', label: EXPIRY_FILTER_LABELS.today, short: 'Aujourd’hui' },
+  { key: 'soon', label: EXPIRY_FILTER_LABELS.soon, short: 'Bientôt' },
+  { key: 'expired', label: EXPIRY_FILTER_LABELS.expired, short: 'Périmés' },
 ];
 
 const TILE =
-  'rounded-card border-line bg-surface-raised flex min-h-16 flex-col justify-center border px-3 py-2 text-left';
+  'rounded-card border-line bg-surface-raised flex h-14 min-w-0 flex-col items-center justify-center border px-1 text-center';
+const NUMBER = 'text-body font-semibold tabular-nums leading-5';
+const CAPTION = 'text-help block max-w-full truncate';
 
 /**
- * The four counters at the top of the scroll zone of the inventory: in stock, to eat today,
+ * The four counters in the fixed header of the inventory, on one row: in stock, to eat today,
  * soon, expired. The last three are buttons that set the expiry filter of the URL.
  */
 export function SummaryCounters({
@@ -55,13 +57,14 @@ export function SummaryCounters({
   }, [version]);
 
   return (
-    <section aria-label="Résumé du stock" className="grid grid-cols-2 items-stretch gap-2">
+    <section aria-label="Résumé du stock" className="grid grid-cols-4 items-stretch gap-1.5">
       <div className={TILE}>
-        <span className="text-subtitle tabular-nums">{summary?.inStock ?? '–'}</span>
-        <span className="text-small">En stock</span>
+        <span className={NUMBER}>{summary?.inStock ?? '–'}</span>
+        <span className={CAPTION}>En stock</span>
       </div>
-      {COUNTERS.map(({ key, label }) => {
+      {COUNTERS.map(({ key, label, short }) => {
         const pressed = active === key;
+        const count = summary ? summary[key] : '–';
         return (
           <button
             key={key}
@@ -72,8 +75,13 @@ export function SummaryCounters({
               pressed ? 'border-indigo bg-lavender' : 'hover:bg-surface-group'
             }`}
           >
-            <span className="text-subtitle tabular-nums">{summary ? summary[key] : '–'}</span>
-            <span className="text-small">{label}</span>
+            <span className={NUMBER}>{count}</span>{' '}
+            {/* No aria-label (it would hide the visible text from voice control): the full label
+                is read through a hidden prefix, the visible short label stays in the name. */}
+            <span className={CAPTION}>
+              {label !== short ? <span className="sr-only">{`${label}, `}</span> : null}
+              {short}
+            </span>
           </button>
         );
       })}

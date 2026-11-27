@@ -1,42 +1,16 @@
-import type { RecentProductDto } from '@inventaire/shared';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { addNotice } from '../../lib/add-notice';
 import { AddFab } from './AddFab';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
-const queueOp = vi.fn(async () => ({ seq: 7 }));
-const syncNow = vi.fn(async () => undefined);
-const abandonOp = vi.fn(async () => undefined);
-vi.mock('../../lib/offline/runtime', () => ({
-  queueOp: (op: unknown) => (queueOp as (o: unknown) => Promise<unknown>)(op),
-  syncNow: () => syncNow(),
-  abandonOp: (seq: number) => (abandonOp as (s: number) => Promise<void>)(seq),
-}));
-const getProduct = vi.fn();
-vi.mock('../../lib/products-api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../lib/products-api')>()),
-  getProduct: (id: number) => (getProduct as (i: number) => Promise<unknown>)(id),
-}));
-const adjustStock = vi.fn();
-
-const fetchRecentProducts = vi.fn<() => Promise<RecentProductDto[]>>();
-vi.mock('../../lib/shopping-api', () => ({ fetchRecentProducts: () => fetchRecentProducts() }));
 vi.mock('../../lib/stock-api', () => ({
-  adjustStock: (input: unknown) => (adjustStock as (i: unknown) => Promise<unknown>)(input),
   fetchLocations: async () => [],
   fetchCategories: async () => [],
 }));
-
-const recent = (count: number): RecentProductDto[] =>
-  Array.from({ length: count }, (_, i) => ({
-    productId: i + 1,
-    name: `Produit ${i + 1}`,
-    imageUrl: null,
-    count: 1,
-  }));
 
 const openMenu = async () => {
   const user = userEvent.setup();
@@ -48,7 +22,7 @@ const openMenu = async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  fetchRecentProducts.mockResolvedValue(recent(2));
+  addNotice.clear();
 });
 
 describe('add menu', () => {
@@ -90,80 +64,11 @@ describe('add menu', () => {
     expect(push).toHaveBeenCalledWith('/scanner');
   });
 
-  it('adds one unit again at the usual location, then cancels it with a correction', async () => {
-    getProduct.mockResolvedValue({ id: 2, defaultLocationId: 5 });
-    const line = { locationId: 5, shelfId: 9, expiryDate: '2026-12-24' };
-    adjustStock.mockResolvedValue({ item: line, productTotal: 1, onShoppingList: false });
+  it('closes the sheet and opens the « Ajouter à nouveau » page', async () => {
     const { user } = await openMenu();
     await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
-    await user.click(await screen.findByRole('button', { name: 'Produit 2' }));
-    await waitFor(() =>
-      expect(adjustStock).toHaveBeenCalledWith({
-        productId: 2,
-        locationId: 5,
-        delta: 1,
-        reason: 'manual',
-      }),
-    );
-    expect(queueOp).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith('/ajouter-a-nouveau');
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('status')).toHaveTextContent('Produit 2 : +1');
-
-    await user.click(screen.getByRole('button', { name: 'Annuler' }));
-    await waitFor(() =>
-      expect(adjustStock).toHaveBeenLastCalledWith({
-        productId: 2,
-        ...line,
-        delta: -1,
-        reason: 'correction',
-      }),
-    );
-    expect(screen.queryByRole('status')).toBeNull();
-  });
-
-  it('offline, queues the unit and drops it on Annuler', async () => {
-    getProduct.mockRejectedValue(new Error('offline'));
-    const { user } = await openMenu();
-    await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
-    await user.click(await screen.findByRole('button', { name: 'Produit 2' }));
-    await waitFor(() =>
-      expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 2, quantity: 1 }),
-    );
-    expect(syncNow).toHaveBeenCalled();
-    await user.click(await screen.findByRole('button', { name: 'Annuler' }));
-    await waitFor(() => expect(abandonOp).toHaveBeenCalledWith(7));
-    expect(adjustStock).not.toHaveBeenCalled();
-  });
-
-  it('shows six products, then all with « Voir plus »', async () => {
-    fetchRecentProducts.mockResolvedValue(recent(9));
-    const { user, dialog } = await openMenu();
-    await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
-    await screen.findByRole('button', { name: 'Produit 1' });
-    expect(within(dialog).getAllByRole('button', { name: /^Produit \d/ })).toHaveLength(6);
-    await user.click(screen.getByRole('button', { name: 'Voir plus' }));
-    expect(within(dialog).getAllByRole('button', { name: /^Produit \d/ })).toHaveLength(9);
-    expect(screen.queryByRole('button', { name: 'Voir plus' })).toBeNull();
-  });
-
-  it('says so when nothing was consumed lately', async () => {
-    fetchRecentProducts.mockResolvedValue([]);
-    const { user } = await openMenu();
-    await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
-    expect(
-      await screen.findByText('Aucun produit consommé ces 30 derniers jours'),
-    ).toBeInTheDocument();
-  });
-
-  it('lists only what the household endpoint returns', async () => {
-    fetchRecentProducts.mockResolvedValue([
-      { productId: 9, name: 'Lait du foyer', imageUrl: null, count: 3 },
-    ]);
-    const { user, dialog } = await openMenu();
-    await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
-    await screen.findByRole('button', { name: 'Lait du foyer' });
-    expect(fetchRecentProducts).toHaveBeenCalledTimes(1);
-    expect(within(dialog).getAllByRole('button', { name: /^(?!Ajouter|Scanner)/ })).toHaveLength(1);
   });
 
   it('opens the catalogue search for a manual add', async () => {
@@ -171,5 +76,52 @@ describe('add menu', () => {
     await user.click(screen.getByRole('button', { name: /^Ajouter manuellement/ }));
     expect(screen.getByLabelText('Nom du produit')).toBeInTheDocument();
     await act(async () => undefined);
+  });
+});
+
+describe('add notice shown by the Fab', () => {
+  const announce = () => {
+    const undo = vi.fn(async () => undefined);
+    const commit = vi.fn(async () => undefined);
+    act(() => addNotice.show({ message: '2 produits ajoutés', undo, commit }));
+    return { undo, commit };
+  };
+
+  it('shows the announcement', () => {
+    render(<AddFab />);
+    announce();
+    expect(screen.getByRole('status')).toHaveTextContent('2 produits ajoutés');
+  });
+
+  it('undoes without committing on Annuler', async () => {
+    const user = userEvent.setup();
+    render(<AddFab />);
+    const { undo, commit } = announce();
+    await user.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(undo).toHaveBeenCalled();
+    expect(commit).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('commits when the delay ends', () => {
+    vi.useFakeTimers();
+    try {
+      render(<AddFab />);
+      const { commit } = announce();
+      act(() => {
+        vi.advanceTimersByTime(5100);
+      });
+      expect(commit).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('status')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('commits when the Fab goes away without an undo', () => {
+    const { unmount } = render(<AddFab />);
+    const { commit } = announce();
+    unmount();
+    expect(commit).toHaveBeenCalledTimes(1);
   });
 });

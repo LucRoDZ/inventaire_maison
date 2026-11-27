@@ -22,7 +22,7 @@ import { fetchCategories } from '../../../lib/stock-api';
 
 /**
  * The inventory. A fixed header, the same in both views: the title and the « Filtres » button, the
- * Maison / Liste switch, the search. Every filter is in the panel of the button; a reminder line
+ * Maison / Liste switch, the search, the row of counters. Every filter is in the panel of the button; a reminder line
  * says which ones are on. The search and the filters live in the URL.
  */
 function Inventaire() {
@@ -65,22 +65,22 @@ function Inventaire() {
             value={filters.q} // From the URL itself: typing never erases a filter only hidden for now.
             onChange={(q) => setFilters({ ...urlFilters, q })}
           />
+          <SummaryCounters
+            active={filters.expiry}
+            onSelect={(expiry) => setFilters({ ...urlFilters, expiry })}
+            version={stockVersion}
+          />
+          {/* Fixed with the header: its coming and going moves the zone, which is accepted. */}
+          <FilterReminder
+            summary={reminder}
+            onClear={() => setFilters(clearPanelFilters(filters, view))}
+          />
         </>
       }
       zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}
       memoryKey={`inventaire-${view}`}
       floatingAction
     >
-      <SummaryCounters
-        active={filters.expiry}
-        onSelect={(expiry) => setFilters({ ...urlFilters, expiry })}
-        version={stockVersion}
-      />
-      {/* In the zone that scrolls: its coming and going never moves the zone itself. */}
-      <FilterReminder
-        summary={reminder}
-        onClear={() => setFilters(clearPanelFilters(filters, view))}
-      />
       {view === 'list' ? (
         <ListView
           filters={filters}

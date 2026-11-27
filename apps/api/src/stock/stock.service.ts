@@ -121,7 +121,12 @@ export async function shelfBelongs(
 export class StockService {
   constructor(@Inject(TenantDb) private readonly tenant: TenantDb) {}
 
-  async adjust(input: StockAdjustInput, userId: number): Promise<StockAdjustResponse> {
+  async adjust(
+    input: StockAdjustInput,
+    userId: number,
+    /** When the movement happened (offline queue, « Acheté le »); default: now. */
+    occurredAt?: Date,
+  ): Promise<StockAdjustResponse> {
     const shelfId = input.shelfId ?? null;
     const expiryDate = input.expiryDate ?? null;
     if (input.delta === 0) throw new BadRequestException('La quantité ne peut pas être nulle');
@@ -200,6 +205,7 @@ export class StockService {
           delta: input.delta,
           reason: input.reason,
           userId,
+          ...(occurredAt ? { createdAt: occurredAt } : {}),
         })
         .returning();
       await syncAutoShopping(tx, householdId, input.productId);

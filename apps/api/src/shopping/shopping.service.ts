@@ -15,7 +15,7 @@ import {
 } from '@inventaire/shared';
 import { and, asc, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 import type { Transaction } from '../database/database.module';
-import { products, shoppingItems, stockItems, stockMovements } from '../database/schema';
+import { locations, products, shoppingItems, stockItems, stockMovements } from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
 import { syncAutoShopping } from './auto-shopping';
 import { productStatus } from '../stock/product-status';
@@ -311,16 +311,30 @@ export class ShoppingService {
     });
   }
 
-  /** Products consumed in the last 30 days, most frequent first. */
-  async recent(): Promise<RecentProductDto[]> {
+  /**
+   * Products consumed in the last `days` days, most frequent first, with what « Ajouter à nouveau »
+   * shows: usual location, size, units in stock, date of the last consumption.
+   */
+  async recent(
+    limit: number = RECENT_PRODUCTS_MAX,
+    days: number = RECENT_PRODUCTS_DAYS,
+  ): Promise<RecentProductDto[]> {
     return this.tenant.run(async (tx, householdId) => {
       const count = sql<number>`count(*)::int`;
+      const lastConsumedAt = sql<Date>`max(${stockMovements.createdAt})`;
+      const inStock = sql<number>`coalesce((select sum(${stockItems.quantity}) from ${stockItems}
+        where ${stockItems.productId} = ${products.id}
+          and ${stockItems.householdId} = ${householdId}), 0)::int`;
       const rows = await tx
         .select({
           productId: products.id,
           name: products.name,
           imagePath: products.imagePath,
+          sizeLabel: products.sizeLabel,
+          locationName: locations.name,
           count,
+          lastConsumedAt,
+          inStock,
         })
         .from(stockMovements)
         .innerJoin(
@@ -331,22 +345,30 @@ export class ShoppingService {
             isNull(products.mergedIntoId),
           ),
         )
+        .leftJoin(
+          locations,
+          and(eq(locations.id, products.defaultLocationId), eq(locations.householdId, householdId)),
+        )
         .where(
           and(
             eq(stockMovements.householdId, householdId),
             eq(stockMovements.reason, 'consumed'),
             lt(stockMovements.delta, 0),
-            sql`${stockMovements.createdAt} >= now() - make_interval(days => ${RECENT_PRODUCTS_DAYS})`,
+            sql`${stockMovements.createdAt} >= now() - make_interval(days => ${days})`,
           ),
         )
-        .groupBy(products.id, products.name, products.imagePath)
+        .groupBy(products.id, products.name, products.imagePath, products.sizeLabel, locations.name)
         .orderBy(desc(count), asc(products.name), asc(products.id))
-        .limit(RECENT_PRODUCTS_MAX);
+        .limit(limit);
       return rows.map((r) => ({
         productId: r.productId,
         name: r.name,
         imageUrl: r.imagePath ? `/api/images/${r.imagePath}` : null,
         count: r.count,
+        lastConsumedAt: new Date(r.lastConsumedAt).toISOString(),
+        locationName: r.locationName ?? null,
+        sizeLabel: r.sizeLabel ?? null,
+        inStock: r.inStock,
       }));
     });
   }

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { ensureAccountInOwnHousehold, signIn } from './helpers';
+import { ensureAccountInOwnHousehold, settleAnimations, signIn } from './helpers';
 
 // The « ⋯ » menu of a piece of furniture, from its card of the house and from the header of the
 // open furniture: rename, icon, order, delete with its stock moved. Each browser works in a
@@ -11,6 +11,7 @@ test.use({ viewport: { width: 360, height: 740 } });
 const TAG = { 'chromium-mobile': 'a', 'webkit-mobile': 'b' } as const;
 
 async function axe(page: Page) {
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();

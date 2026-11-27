@@ -1,6 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { ensureAccountInOwnHousehold, openScanner, pushCode, signIn } from './helpers';
+import {
+  burstOff,
+  ensureAccountInOwnHousehold,
+  settleAnimations,
+  openScanner,
+  pushCode,
+  signIn,
+} from './helpers';
 
 const VIEWPORTS = [
   { width: 360, height: 740 },
@@ -77,6 +84,7 @@ async function noPageScroll(page: Page) {
 }
 
 async function axeClean(page: Page, context?: string) {
+  await settleAnimations(page);
   const builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
   const results = await (context ? builder.include(context) : builder).analyze();
   expect(
@@ -217,7 +225,6 @@ for (const viewport of VIEWPORTS) {
       });
 
       await openScanner(page);
-      await page.getByRole('checkbox', { name: 'Scan en rafale' }).check();
       await pushCode(page, code);
       const toast = page.getByRole('status').filter({ hasText: `Ajouté : 1 × ${name}` });
       await expect(toast).toBeVisible();
@@ -232,6 +239,7 @@ for (const viewport of VIEWPORTS) {
     test('fiche d’ajout : date limite « Suggérée » selon la catégorie', async ({
       page,
     }, testInfo) => {
+      await burstOff(page);
       const app = await setup(page, testInfo, viewport.width);
       const name = 'Fromage blanc suggéré';
       const code = ean13(`3760${app.tag === 'w' ? '2' : '1'}1${viewport.width}000`);

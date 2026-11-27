@@ -13,8 +13,8 @@ import type {
   StockAdjustInput,
   StockAdjustResponse,
 } from '@inventaire/shared';
-import { Check, Minus, Plus, Share2, Trash2, Undo2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Check, MoreHorizontal, Minus, Plus, Share2, Trash2, Undo2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import { getProduct } from '../../lib/products-api';
 import {
@@ -34,7 +34,7 @@ import { ProductForm } from '../product/ProductForm';
 import { Button } from '../ui/Button';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { EmptyShoppingIllustration } from '../ui/Illustrations';
-import { ListSkeleton } from '../ui/Skeleton';
+import { FullPageList } from '../ui/FullPageList';
 import { SwipeRow } from '../ui/SwipeRow';
 import { shareText, shoppingShareText } from '../../lib/share';
 import { QuickEntry } from './QuickEntry';
@@ -318,54 +318,89 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
 
   const open = (items ?? []).filter((item) => !item.checked);
 
-  return (
-    <div className="flex flex-col gap-4">
+  const header = (
+    <>
       <QuickEntry onAdd={add} />
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
       {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
-
       {recent.length > 0 ? (
-        <section aria-labelledby="recents" className="flex flex-col gap-2">
+        <section aria-labelledby="recents" className="flex flex-col gap-1">
           <h2 id="recents" className="text-label">
             Récemment consommés
           </h2>
-          <ul className="flex flex-wrap gap-2">
+          <ul className="-mx-4 flex flex-nowrap gap-2 overflow-x-auto px-4">
             {recent.map((product) => (
-              <li key={product.productId}>
+              <li key={product.productId} className="shrink-0">
                 <button
                   type="button"
                   aria-label={`Ajouter ${product.name} à la liste`}
                   onClick={() =>
                     void act(() => add({ productId: product.productId }), 'Ajout impossible')
                   }
-                  className="tap-target border-line text-indigo hover:bg-lavender inline-flex items-center gap-1 rounded-full border bg-white px-4 font-semibold transition-colors duration-150"
+                  className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised inline-flex max-w-[12rem] shrink-0 items-center gap-1 rounded-full border px-4 font-semibold transition-colors duration-150"
                 >
-                  <Plus size={16} aria-hidden="true" />
-                  {product.name}
+                  <Plus size={16} aria-hidden="true" className="shrink-0" />
+                  <span className="truncate">{product.name}</span>
                 </button>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
+    </>
+  );
 
-      {items === null ? (
-        error ? null : (
-          <ListSkeleton rowClassName="h-[60px]" />
-        )
-      ) : items.length === 0 ? (
-        <section className="border-line rounded-card shadow-card flex flex-col items-start gap-2 border bg-white p-4">
-          <EmptyShoppingIllustration />
-          <h2 className="text-card-title">La liste est vide</h2>
-          <p className="text-body">
-            Écrivez ce qu’il faut acheter dans le champ ci-dessus, ou touchez un produit récemment
-            consommé.
-          </p>
-        </section>
-      ) : (
-        <>
+  const footer =
+    items !== null && items.length > 0 ? (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          {checked.length > 0 ? (
+            <Button
+              variant="primary"
+              className="min-w-0 flex-1"
+              disabled={busy}
+              onClick={() => void store()}
+            >
+              Ranger les articles cochés ({checked.length})
+            </Button>
+          ) : (
+            <span className="flex-1" />
+          )}
+          <ActionsMenu
+            canClear={checked.length > 0 && !busy}
+            onClear={() => void clear()}
+            onShare={() => void share()}
+          />
+        </div>
+        <p role="status" className="text-help">
+          {shareNote}
+        </p>
+      </div>
+    ) : null;
+
+  return (
+    <>
+      <FullPageList
+        title="Courses"
+        zoneLabel="Liste de courses"
+        memoryKey="courses"
+        bare
+        header={header}
+        footer={footer}
+        loading={items === null && !error}
+      >
+        {items === null ? null : items.length === 0 ? (
+          <section className="border-line rounded-card shadow-card bg-surface-raised flex flex-col items-start gap-2 border p-4">
+            <EmptyShoppingIllustration />
+            <h2 className="text-card-title">La liste est vide</h2>
+            <p className="text-body">
+              Écrivez ce qu’il faut acheter dans le champ ci-dessus, ou touchez un produit récemment
+              consommé.
+            </p>
+          </section>
+        ) : (
           <ul className="flex flex-col gap-2" aria-label="Articles à acheter">
             {[...open, ...checked].map((item) => (
               <ShoppingLine
@@ -378,57 +413,34 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
               />
             ))}
           </ul>
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="primary"
-              disabled={checked.length === 0 || busy}
-              onClick={() => void store()}
-            >
-              Ranger les articles cochés{checked.length > 0 ? ` (${checked.length})` : ''}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={checked.length === 0 || busy}
-              onClick={() => void clear()}
-            >
-              Vider les lignes cochées
-            </Button>
-            <Button variant="outline" onClick={() => void share()}>
-              <Share2 size={18} aria-hidden="true" />
-              Partager la liste
-            </Button>
-            <p role="status" className="text-help">
-              {shareNote}
-            </p>
-          </div>
-        </>
-      )}
+        )}
 
-      {needsForm.length > 0 ? (
-        <section aria-labelledby="a-completer" className="flex flex-col gap-2">
-          <h2 id="a-completer" className="text-card-title">
-            À ranger à la main
-          </h2>
-          <p className="text-small">
-            Ces articles n’ont pas de lieu habituel : choisissez où les ranger.
-          </p>
-          <ul className="flex flex-col gap-2">
-            {needsForm.map((item) => (
-              <li key={item.id}>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                  disabled={pending.name === 'loading'}
-                  onClick={() => void complete(item)}
-                >
-                  <span className="truncate">{itemName(item)}</span>
-                  <span>Ranger</span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+        {needsForm.length > 0 ? (
+          <section aria-labelledby="a-completer" className="flex flex-col gap-2">
+            <h2 id="a-completer" className="text-card-title">
+              À ranger à la main
+            </h2>
+            <p className="text-small">
+              Ces articles n’ont pas de lieu habituel : choisissez où les ranger.
+            </p>
+            <ul className="flex flex-col gap-2">
+              {needsForm.map((item) => (
+                <li key={item.id}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between"
+                    disabled={pending.name === 'loading'}
+                    onClick={() => void complete(item)}
+                  >
+                    <span className="truncate">{itemName(item)}</span>
+                    <span>Ranger</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </FullPageList>
 
       {pending.name === 'create' && referential ? (
         <ProductForm
@@ -458,6 +470,98 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
           onUndo={() => void undo()}
           onExpire={() => setToast(null)}
         />
+      ) : null}
+    </>
+  );
+}
+
+interface ActionsMenuProps {
+  canClear: boolean;
+  onClear: () => void;
+  onShare: () => void;
+}
+
+/** The ⋯ button of the footer and its menu (Échap closes it, the focus goes back to the button). */
+function ActionsMenu({ canClear, onClear, onShare }: ActionsMenuProps) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    root.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus();
+    const onPointer = (event: PointerEvent) => {
+      if (root.current && !root.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    return () => document.removeEventListener('pointerdown', onPointer);
+  }, [open]);
+
+  const close = () => {
+    setOpen(false);
+    trigger.current?.focus();
+  };
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      close();
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const items = Array.from(
+        root.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [],
+      );
+      const at = items.indexOf(document.activeElement as HTMLElement);
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      items[(at + step + items.length) % items.length]?.focus();
+    }
+  };
+  const itemClass =
+    'tap-target hover:bg-lavender flex w-full items-center gap-2 rounded-xl px-3 text-left disabled:opacity-50';
+
+  return (
+    <div ref={root} className="relative shrink-0" onKeyDown={onKeyDown}>
+      <button
+        ref={trigger}
+        type="button"
+        aria-label="Plus d'actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="tap-target border-line text-indigo bg-surface-raised inline-flex size-11 items-center justify-center rounded-full border"
+      >
+        <MoreHorizontal size={20} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          aria-label="Plus d'actions"
+          className="border-line bg-surface-raised shadow-raised absolute right-0 bottom-full z-30 mb-2 flex w-64 flex-col rounded-xl border p-1"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!canClear}
+            onClick={() => {
+              close();
+              onClear();
+            }}
+            className={itemClass}
+          >
+            Vider les lignes cochées
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              close();
+              onShare();
+            }}
+            className={itemClass}
+          >
+            <Share2 size={18} aria-hidden="true" />
+            Partager la liste
+          </button>
+        </div>
       ) : null}
     </div>
   );
