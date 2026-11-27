@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
@@ -85,17 +85,27 @@ describe('OutOfStockPrompt', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('waits while hovered', () => {
+  it('waits while a mouse hovers it, not after a touch', () => {
     vi.useFakeTimers();
     setup();
     show();
     const toast = screen.getByRole('status');
     act(() => {
-      toast.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      fireEvent.pointerOver(toast, { pointerType: 'mouse' });
     });
-    // React maps mouseenter from mouseover.
     act(() => vi.advanceTimersByTime(20000));
     expect(screen.queryByRole('status')).toBeInTheDocument();
+  });
+
+  it('a touch on the text does not stop the 8 s timer', () => {
+    vi.useFakeTimers();
+    setup();
+    show();
+    act(() => {
+      fireEvent.pointerOver(screen.getByRole('status'), { pointerType: 'touch' });
+    });
+    act(() => vi.advanceTimersByTime(8100));
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('disappears when the removal is undone from its toast', async () => {

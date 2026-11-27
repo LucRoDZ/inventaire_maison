@@ -81,11 +81,12 @@ function Prompt({
   return (
     <div
       role="status"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      // A mouse only: a touch fires mouseenter without any mouseleave, the timer would never end.
+      onPointerEnter={(event) => event.pointerType === 'mouse' && setPaused(true)}
+      onPointerLeave={(event) => event.pointerType === 'mouse' && setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="rounded-card shadow-card bg-indigo fixed inset-x-4 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl flex-col gap-2 p-4 text-white"
+      className="rounded-card shadow-card bg-indigo fixed inset-x-4 top-[calc(1rem+env(safe-area-inset-top))] z-40 mx-auto flex max-w-xl flex-col gap-2 p-4 text-white"
     >
       {result === null ? (
         <>
