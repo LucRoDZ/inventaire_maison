@@ -2,8 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export const APP_NAME = 'Inventaire maison';
 export const APP_SHORT_NAME = 'Inventaire';
-// A manifest needs literal colours: the white of tokens.css (--theme-color), light theme only.
-export const STATUS_BAR_COLOR = '#ffffff'; // check-colors:allow
+// A manifest needs literal colours: the page grey of tokens.css (--theme-color, = --surface) for the
+// status bar, white for the launch screen. Light theme only.
+export const STATUS_BAR_COLOR = '#f5f5f7'; // check-colors:allow
 export const BACKGROUND_COLOR = '#ffffff'; // check-colors:allow
 
 export default function manifest(): MetadataRoute.Manifest {

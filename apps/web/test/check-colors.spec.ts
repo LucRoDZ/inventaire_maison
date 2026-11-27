@@ -60,7 +60,7 @@ describe('check-colors', () => {
   });
 
   it('skips a line marked check-colors:allow', () => {
-    expect(run('m.ts', `export const c = '#1800ad'; // check-colors:allow`).status).toBe(0);
+    expect(run('m.ts', `export const c = '#3f51a8'; // check-colors:allow`).status).toBe(0);
   });
 
   it('ignores node_modules and spec files', () => {

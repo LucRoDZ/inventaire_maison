@@ -18,7 +18,7 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-const OFFLINE_HTML = `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inventaire maison</title><body style="font-family:Carlito,Calibri,Arial,sans-serif;padding:24px"><h1>Pas de connexion</h1><p>Cette page n’a pas encore été ouverte sur cet appareil. Reconnectez-vous puis réessayez.</p></body></html>`;
+const OFFLINE_HTML = `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inventaire maison</title><body style="font-family:system-ui,-apple-system,Roboto,sans-serif;padding:24px"><h1>Pas de connexion</h1><p>Cette page n’a pas encore été ouverte sur cet appareil. Reconnectez-vous puis réessayez.</p></body></html>`;
 
 const serwist = new Serwist({
   // JS, CSS, fonts and icons: precached at install and versioned by revision.

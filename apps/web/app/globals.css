@@ -9,6 +9,7 @@
   --color-indigo-mid: var(--indigo-mid);
   --color-lavender: var(--lavender);
   --color-lavender-line: var(--lavender-line);
+  --color-fill-quiet: var(--fill-quiet);
   --color-amber: var(--amber);
   --color-amber-tint: var(--amber-tint);
   --color-on-amber: var(--on-amber);
@@ -47,19 +48,20 @@
   --shadow-none: var(--shadow-none);
   --shadow-raised: var(--shadow-raised);
   --shadow-sheet: var(--shadow-sheet);
+  --ease-out-soft: var(--ease-out-soft);
 }
 
 @utility text-title {
   font: var(--text-title);
-  color: var(--indigo);
+  color: var(--ink);
 }
 @utility text-subtitle {
   font: var(--text-subtitle);
-  color: var(--indigo);
+  color: var(--ink);
 }
 @utility text-card-title {
   font: var(--text-card-title);
-  color: var(--indigo);
+  color: var(--ink);
 }
 @utility text-body {
   font: var(--text-body);
@@ -77,6 +79,10 @@
   font: var(--text-label);
   letter-spacing: var(--tracking-label);
   color: var(--ink);
+}
+@utility text-number {
+  font: var(--text-number);
+  font-variant-numeric: tabular-nums;
 }
 @utility text-stat {
   font: var(--text-stat);

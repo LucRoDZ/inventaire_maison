@@ -1,5 +1,3 @@
-import '@fontsource/carlito/latin-400.css';
-import '@fontsource/carlito/latin-700.css';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';

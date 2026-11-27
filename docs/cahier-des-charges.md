@@ -141,7 +141,7 @@ L'application s'installe depuis le navigateur sur l'écran d'accueil, s'ouvre en
 | `start_url`, `scope` | `/` |
 | `display`, `orientation` | `standalone`, `portrait` |
 | `lang` | `fr` |
-| `theme_color`, `background_color` | `#1800ad`, `#ffffff` |
+| `theme_color`, `background_color` | `#ffffff`, `#ffffff` (barre d’état blanche) |
 | `icons` | 192 px, 512 px et 512 px `maskable` (fond indigo, motif blanc avec un point ambre), plus une `apple-touch-icon` de 180 px |
 
 **Service worker**
@@ -219,7 +219,7 @@ L'application reprend le design system Indigo Ambre : indigo profond, un seul ac
 
 | Token | Code | Usage dans l'application |
 | --- | --- | --- |
-| `indigo` | `#1800ad` | Couleur de marque : boutons principaux, titres, icônes, onglet actif, traits des meubles. Texte blanc dessus |
+| `indigo` | `#3f51a8` | Couleur de marque, bleu ardoise (refonte HIG, `docs/hig.md`) : bouton principal, élément actif, liens. Titres en `ink`. Texte blanc dessus |
 | `indigo-mid` | `#4a3dd0` | Liens, états pressés ou survolés, étiquettes de section sur fond blanc |
 | `lavender` | `#eae7fb` | Pastille ronde derrière une icône, intérieur des meubles, puces de filtre |
 | `lavender-line` | `#c9c2f0` | États vides, contours pointillés, détails discrets |
