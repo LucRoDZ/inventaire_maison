@@ -30,6 +30,8 @@ export function getQueue(): OfflineQueue {
 export const queueOp = (input: NewSyncOp) => getQueue().queueOp(input);
 export const findCachedProduct = (barcode: string) => getQueue().findCachedProduct(barcode);
 export const keepUnknownBarcode = (code: string) => getQueue().keepUnknownBarcode(code);
+/** Drops a queued operation (an undo before it was sent). */
+export const abandonOp = (seq: number) => getQueue().abandon(seq);
 
 /** Operations and unknown codes waiting on this device. */
 export function usePendingCount(): number {

@@ -7,16 +7,25 @@ import { AddFab } from './AddFab';
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
-const queueOp = vi.fn(async () => ({}));
+const queueOp = vi.fn(async () => ({ seq: 7 }));
 const syncNow = vi.fn(async () => undefined);
+const abandonOp = vi.fn(async () => undefined);
 vi.mock('../../lib/offline/runtime', () => ({
   queueOp: (op: unknown) => (queueOp as (o: unknown) => Promise<unknown>)(op),
   syncNow: () => syncNow(),
+  abandonOp: (seq: number) => (abandonOp as (s: number) => Promise<void>)(seq),
 }));
+const getProduct = vi.fn();
+vi.mock('../../lib/products-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/products-api')>()),
+  getProduct: (id: number) => (getProduct as (i: number) => Promise<unknown>)(id),
+}));
+const adjustStock = vi.fn();
 
 const fetchRecentProducts = vi.fn<() => Promise<RecentProductDto[]>>();
 vi.mock('../../lib/shopping-api', () => ({ fetchRecentProducts: () => fetchRecentProducts() }));
 vi.mock('../../lib/stock-api', () => ({
+  adjustStock: (input: unknown) => (adjustStock as (i: unknown) => Promise<unknown>)(input),
   fetchLocations: async () => [],
   fetchCategories: async () => [],
 }));
@@ -81,25 +90,49 @@ describe('add menu', () => {
     expect(push).toHaveBeenCalledWith('/scanner');
   });
 
-  it('adds one unit again, then cancels it', async () => {
+  it('adds one unit again at the usual location, then cancels it with a correction', async () => {
+    getProduct.mockResolvedValue({ id: 2, defaultLocationId: 5 });
+    const line = { locationId: 5, shelfId: 9, expiryDate: '2026-12-24' };
+    adjustStock.mockResolvedValue({ item: line, productTotal: 1, onShoppingList: false });
     const { user } = await openMenu();
     await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
     await user.click(await screen.findByRole('button', { name: 'Produit 2' }));
-    expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 2, quantity: 1 });
-    expect(syncNow).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(adjustStock).toHaveBeenCalledWith({
+        productId: 2,
+        locationId: 5,
+        delta: 1,
+        reason: 'manual',
+      }),
+    );
+    expect(queueOp).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent('Produit 2 : +1');
 
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
     await waitFor(() =>
-      expect(queueOp).toHaveBeenLastCalledWith({
-        kind: 'remove',
+      expect(adjustStock).toHaveBeenLastCalledWith({
         productId: 2,
-        quantity: 1,
-        reason: 'consumed',
+        ...line,
+        delta: -1,
+        reason: 'correction',
       }),
     );
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('offline, queues the unit and drops it on Annuler', async () => {
+    getProduct.mockRejectedValue(new Error('offline'));
+    const { user } = await openMenu();
+    await user.click(screen.getByRole('button', { name: /^Ajouter à nouveau/ }));
+    await user.click(await screen.findByRole('button', { name: 'Produit 2' }));
+    await waitFor(() =>
+      expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 2, quantity: 1 }),
+    );
+    expect(syncNow).toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: 'Annuler' }));
+    await waitFor(() => expect(abandonOp).toHaveBeenCalledWith(7));
+    expect(adjustStock).not.toHaveBeenCalled();
   });
 
   it('shows six products, then all with « Voir plus »', async () => {

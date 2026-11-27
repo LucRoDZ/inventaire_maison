@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
-import { queueOp, syncNow } from '../../lib/offline/runtime';
+import { abandonOp, queueOp, syncNow } from '../../lib/offline/runtime';
+import { getProduct } from '../../lib/products-api';
 import { fetchRecentProducts } from '../../lib/shopping-api';
-import { fetchCategories, fetchLocations } from '../../lib/stock-api';
+import { adjustStock, fetchCategories, fetchLocations } from '../../lib/stock-api';
 import { ProductForm } from '../product/ProductForm';
 import { BottomSheet } from '../ui/BottomSheet';
 import { ErrorMessage } from '../ui/ErrorMessage';
@@ -115,22 +116,46 @@ export function AddMenuSheet({ onClose, onNotify }: AddMenuSheetProps) {
     recent.state === 'closed' ? loadRecent() : setRecent({ state: 'closed' });
   const toggleRecentAgain = loadRecent;
 
+  /**
+   * +1 at the usual location. Online: a direct add, undone by a `correction` on the very line (as
+   * the scanner does, so statistics never count the undo as consumed). Offline or without a usual
+   * location: the offline queue (the server then picks the usual location, or reports a conflict);
+   * undo drops the queued operation while it waits.
+   */
   const addAgain = async (product: RecentProductDto) => {
-    await queueOp({ kind: 'add', productId: product.productId, quantity: 1 });
-    void syncNow().catch(() => undefined);
-    onNotify({
-      message: `${product.name} : +1`,
-      // A removal of one unit cancels the unit just added (the nearest-expiry line goes first).
-      undo: async () => {
-        await queueOp({
-          kind: 'remove',
-          productId: product.productId,
-          quantity: 1,
-          reason: 'consumed',
-        });
-        await syncNow().catch(() => undefined);
-      },
-    });
+    const message = `${product.name} : +1`;
+    const online = typeof navigator === 'undefined' || navigator.onLine;
+    const detail = online ? await getProduct(product.productId).catch(() => null) : null;
+    const locationId = detail?.defaultLocationId ?? null;
+    const direct =
+      locationId === null
+        ? null
+        : await adjustStock({
+            productId: product.productId,
+            locationId,
+            delta: 1,
+            reason: 'manual',
+          }).catch(() => null);
+    if (direct?.item) {
+      const line = direct.item;
+      onNotify({
+        message,
+        undo: async () => {
+          await adjustStock({
+            productId: product.productId,
+            locationId: line.locationId,
+            shelfId: line.shelfId,
+            expiryDate: line.expiryDate,
+            delta: -1,
+            reason: 'correction',
+          });
+        },
+      });
+    } else {
+      const queued = await queueOp({ kind: 'add', productId: product.productId, quantity: 1 });
+      void syncNow().catch(() => undefined);
+      onNotify({ message, undo: () => abandonOp(queued.seq) });
+    }
     onClose();
   };
 
