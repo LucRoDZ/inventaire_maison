@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
 import type { ScanResult } from '../../lib/scanner/types';
 import { RemoveFlow, type RemoveRequest } from './RemoveFlow';
+import { outOfStockStore } from '../../lib/zero-stock';
 
 const result: ScanResult = { code: '3017620422003', format: 'ean_13' };
 const request = (id = 1): RemoveRequest => ({ id, result });
@@ -157,5 +158,23 @@ describe('RemoveFlow', () => {
   it('renders nothing without a read', () => {
     const { container } = setup({ req: null });
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('RemoveFlow: out-of-stock invitation', () => {
+  afterEach(() => outOfStockStore.clear());
+
+  it('invites when the last unit of the household left, and drops it on Annuler', async () => {
+    setup({ remove: { ...removed, productTotal: 0, onShoppingList: false } as never });
+    await screen.findByRole('status');
+    expect(outOfStockStore.get()).toEqual({ productId: 7, name: 'Lait', quantity: 1 });
+    await userEvent.click(await screen.findByRole('button', { name: 'Annuler' }));
+    expect(outOfStockStore.get()).toBeNull();
+  });
+
+  it('does not invite while stock remains or without a server answer', async () => {
+    setup({ remove: { ...removed, productTotal: 1, onShoppingList: false } as never });
+    await screen.findByRole('status');
+    expect(outOfStockStore.get()).toBeNull();
   });
 });

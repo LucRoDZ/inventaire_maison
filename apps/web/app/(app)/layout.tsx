@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { AuthProvider } from '../../components/auth/AuthProvider';
 import { AppBadge } from '../../components/pwa/AppBadge';
 import { BottomNav } from '../../components/nav/BottomNav';
+import { OutOfStockPrompt } from '../../components/shopping/OutOfStockPrompt';
 import { InstallSheet } from '../../components/pwa/InstallSheet';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <AppBadge />
       <BottomNav />
       <InstallSheet />
+      <OutOfStockPrompt />
     </AuthProvider>
   );
 }

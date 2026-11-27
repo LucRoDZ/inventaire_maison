@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useId, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { adjustStock } from '../../lib/stock-api';
+import { inviteAfterRemoval } from '../../lib/zero-stock';
 import { ExpiryBadge } from '../list/ExpiryBadge';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
@@ -72,7 +73,7 @@ export function ProductSheet({
     // Optimistic: the number changes at once and goes back, with a message, if the server refuses.
     setQuantity(before + delta);
     try {
-      await (api.adjust ?? adjustStock)({
+      const done = await (api.adjust ?? adjustStock)({
         productId: tile.productId,
         locationId: place.locationId,
         shelfId: place.shelfId,
@@ -80,6 +81,7 @@ export function ProductSheet({
         delta,
         reason,
       });
+      if (delta < 0) inviteAfterRemoval(done, { id: tile.productId, name: tile.name });
     } catch (caught) {
       setBusy(false);
       setQuantity(before);
