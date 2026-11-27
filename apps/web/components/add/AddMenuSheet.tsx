@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { abandonOp, queueOp, syncNow } from '../../lib/offline/runtime';
 import { getProduct } from '../../lib/products-api';
 import { fetchRecentProducts } from '../../lib/shopping-api';
@@ -91,20 +91,26 @@ export function AddMenuSheet({ onClose, onNotify }: AddMenuSheetProps) {
   const [refs, setRefs] = useState<{ categories: CategoryDto[]; locations: LocationDto[] } | null>(
     null,
   );
+  const [refsFailed, setRefsFailed] = useState(false);
+  // One « Ajouter à nouveau » at a time: a double tap never adds two units.
+  const adding = useRef(false);
+  const [recentError, setRecentError] = useState(false);
 
   useEffect(() => {
     if (step.name !== 'create' && step.name !== 'add') return;
-    if (refs) return;
+    if (refs || refsFailed) return;
     let cancelled = false;
     Promise.all([fetchLocations(), fetchCategories()])
       .then(([locations, categories]) => {
         if (!cancelled) setRefs({ locations, categories });
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (!cancelled) setRefsFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [step.name, refs]);
+  }, [step.name, refs, refsFailed]);
 
   const loadRecent = () => {
     setRecent({ state: 'loading' });
@@ -123,20 +129,33 @@ export function AddMenuSheet({ onClose, onNotify }: AddMenuSheetProps) {
    * undo drops the queued operation while it waits.
    */
   const addAgain = async (product: RecentProductDto) => {
+    if (adding.current) return;
+    adding.current = true;
+    try {
+      await addAgainOnce(product);
+    } finally {
+      adding.current = false;
+    }
+  };
+
+  const addAgainOnce = async (product: RecentProductDto) => {
+    setRecentError(false);
     const message = `${product.name} : +1`;
     const online = typeof navigator === 'undefined' || navigator.onLine;
     const detail = online ? await getProduct(product.productId).catch(() => null) : null;
     const locationId = detail?.defaultLocationId ?? null;
-    const direct =
-      locationId === null
-        ? null
-        : await adjustStock({
-            productId: product.productId,
-            locationId,
-            delta: 1,
-            reason: 'manual',
-          }).catch(() => null);
-    if (direct?.item) {
+    if (online && locationId !== null) {
+      // A failed request is not queued: its answer may be lost after the server applied it.
+      const direct = await adjustStock({
+        productId: product.productId,
+        locationId,
+        delta: 1,
+        reason: 'manual',
+      }).catch(() => null);
+      if (!direct?.item) {
+        setRecentError(true);
+        return;
+      }
       const line = direct.item;
       onNotify({
         message,
@@ -151,11 +170,12 @@ export function AddMenuSheet({ onClose, onNotify }: AddMenuSheetProps) {
           });
         },
       });
-    } else {
-      const queued = await queueOp({ kind: 'add', productId: product.productId, quantity: 1 });
-      void syncNow().catch(() => undefined);
-      onNotify({ message, undo: () => abandonOp(queued.seq) });
+      onClose();
+      return;
     }
+    const queued = await queueOp({ kind: 'add', productId: product.productId, quantity: 1 });
+    void syncNow().catch(() => undefined);
+    onNotify({ message, undo: () => abandonOp(queued.seq) });
     onClose();
   };
 
@@ -198,7 +218,24 @@ export function AddMenuSheet({ onClose, onNotify }: AddMenuSheetProps) {
       />
     );
   }
-  if (step.name !== 'menu') return null;
+  if (step.name !== 'menu') {
+    // Places and categories still loading, or failed: the sheet stays, never an empty screen.
+    return (
+      <BottomSheet labelledBy={titleId} onClose={onClose}>
+        <h2 id={titleId} className="text-subtitle">
+          Ajouter
+        </h2>
+        {refsFailed ? (
+          <ErrorMessage
+            message="Impossible de charger les lieux"
+            onRetry={() => setRefsFailed(false)}
+          />
+        ) : (
+          <p role="status">Chargement…</p>
+        )}
+      </BottomSheet>
+    );
+  }
 
   const visible =
     recent.state === 'ready'
@@ -223,6 +260,11 @@ export function AddMenuSheet({ onClose, onNotify }: AddMenuSheetProps) {
         {recent.state === 'loading' ? <p className="text-grey px-2">Chargement…</p> : null}
         {recent.state === 'error' ? (
           <ErrorMessage message="Liste indisponible pour le moment." onRetry={toggleRecentAgain} />
+        ) : null}
+        {recentError ? (
+          <p role="alert" className="text-alert px-2">
+            Ajout impossible, réessayez
+          </p>
         ) : null}
         {recent.state === 'ready' && recent.items.length === 0 ? (
           <p className="text-grey px-2">Aucun produit consommé ces 30 derniers jours</p>
