@@ -93,7 +93,7 @@ export function FiltersSheet({
       scrollable={false}
     >
       <div className="flex shrink-0 items-center justify-between gap-2">
-        <h2 id={titleId} className="text-card-title">
+        <h2 id={titleId} className="text-subtitle">
           Filtres
         </h2>
         <button

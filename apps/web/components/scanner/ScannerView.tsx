@@ -342,7 +342,7 @@ export function ScannerView({
           >
             <X size={24} aria-hidden="true" />
           </button>
-          <h1 className="text-scanner-ink text-center text-base font-semibold">Scanner</h1>
+          <h1 className="text-scanner-ink text-card-title text-center">Scanner</h1>
           {running && torchSupported ? (
             <TorchButton torchOn={torchOn} onToggle={() => void toggleTorch()} />
           ) : (

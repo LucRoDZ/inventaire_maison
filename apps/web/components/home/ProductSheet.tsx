@@ -109,7 +109,7 @@ export function ProductSheet({
             <IconBadge icon={Glyph} />
           )}
           <div className="min-w-0">
-            <h2 id={titleId} className="text-card-title">
+            <h2 id={titleId} className="text-subtitle">
               {tile.name}
             </h2>
             <p className="text-small">

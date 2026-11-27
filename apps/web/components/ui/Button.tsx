@@ -1,12 +1,13 @@
 import type { ComponentPropsWithRef } from 'react';
 
-export type ButtonVariant = 'primary' | 'outline' | 'secondary';
+export type ButtonVariant = 'primary' | 'outline' | 'secondary' | 'destructive';
 
 interface ButtonProps extends ComponentPropsWithRef<'button'> {
   /**
    * `primary`: indigo, white text, the one main action of a screen or sheet.
-   * `outline`: white with a hairline, indigo text, a second action that still needs a surface.
+   * `outline`: quiet grey fill, ink text, no border: a second action that still needs a surface.
    * `secondary`: indigo-mid text only.
+   * `destructive`: alert-red text only.
    */
   variant?: ButtonVariant;
 }
@@ -14,10 +15,11 @@ interface ButtonProps extends ComponentPropsWithRef<'button'> {
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
     'bg-indigo text-white hover:bg-indigo-mid disabled:bg-lavender disabled:text-indigo-mid aria-disabled:bg-lavender aria-disabled:text-indigo-mid',
-  outline:
-    'border border-line bg-white text-indigo hover:bg-lavender disabled:opacity-50 aria-disabled:opacity-50',
+  outline: 'bg-fill-quiet text-ink hover:bg-lavender disabled:opacity-50 aria-disabled:opacity-50',
   secondary:
     'bg-transparent text-indigo-mid hover:text-indigo disabled:opacity-50 aria-disabled:opacity-50',
+  destructive:
+    'bg-transparent text-alert hover:bg-lavender disabled:opacity-50 aria-disabled:opacity-50',
 };
 
 export function Button({
