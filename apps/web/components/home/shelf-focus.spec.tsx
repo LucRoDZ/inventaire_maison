@@ -12,7 +12,12 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 let home: HomeResponse;
-vi.mock('../../lib/home-api', () => ({ fetchHome: async () => home }));
+let cached: HomeResponse | null = null;
+let fetchHome = vi.fn(async () => home);
+vi.mock('../../lib/home-api', () => ({
+  fetchHome: () => fetchHome(),
+  cachedHome: () => cached,
+}));
 vi.mock('../../lib/stock-api', () => ({
   fetchCategories: async () => [],
   fetchLocations: async () => [],
@@ -33,6 +38,8 @@ const tile = (id: number, name: string, expiry: HomeTileDto['expiry'] = null): H
 
 beforeEach(() => {
   vi.clearAllMocks();
+  cached = null;
+  fetchHome = vi.fn(async () => home);
   params = { lieu: '2', etagere: '21' };
   home = {
     locations: [
@@ -62,6 +69,18 @@ beforeEach(() => {
 });
 
 describe('ShelfFocusPage', () => {
+  it('draws the house the furniture just read at once, before the refresh answers', () => {
+    cached = home;
+    fetchHome = vi.fn(() => new Promise<HomeResponse>(() => undefined));
+    render(<ShelfFocusPage />);
+    // Synchronous: no wait for the network.
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Frigo · Étagère 1' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Lait, quantité 2/ })).toBeInTheDocument();
+    expect(fetchHome).toHaveBeenCalled();
+  });
+
   it('shows one h1, the grid with rings and spoken expiry, and a + to the scanner', async () => {
     render(<ShelfFocusPage />);
     expect(

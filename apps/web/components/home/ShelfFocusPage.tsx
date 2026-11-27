@@ -11,7 +11,7 @@ import { ChevronLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { fetchHome } from '../../lib/home-api';
+import { cachedHome, fetchHome } from '../../lib/home-api';
 import {
   filtersToQuery,
   isFiltering,
@@ -46,7 +46,8 @@ function ShelfFocus() {
   const { lieu, etagere } = useParams<{ lieu: string; etagere: string }>();
   const router = useRouter();
   const [urlFilters] = useHomeFilters();
-  const [home, setHome] = useState<HomeResponse | null>(null);
+  // The furniture just read the house: drawn at once, refreshed below.
+  const [home, setHome] = useState<HomeResponse | null>(cachedHome);
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);

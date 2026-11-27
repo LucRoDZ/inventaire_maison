@@ -50,6 +50,8 @@ export function FocusLink({
   return (
     <Link
       href={focusHref(locationId, shelfId, query)}
+      // Loaded with the furniture: the page is ready when the shelf is touched.
+      prefetch
       aria-label={label}
       onClick={(event) => openFocus(event, shelfId)}
       className="text-indigo-mid relative -my-4 -mr-2 -ml-1 inline-flex size-11 shrink-0 items-center justify-center"
