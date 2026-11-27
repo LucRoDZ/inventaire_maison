@@ -195,13 +195,12 @@
 
 /* ---------- Étagères ---------- */
 
-/* Hauteur d'une rangée : la même pour toutes les étagères d'un meuble, 56 px au moins (vignette de
-   44 px et ligne du nom de 12 px ; c'est le mode compact : la pile s'aplatit sous 56 px). Hors verrouillage
-   (ordinateur, paysage), 120 px. Sur un téléphone en portrait (plus bas), le partage de l'espace
-   disponible : min(120 px, (espace − plateau vide − écarts) / rangées). */
+/* Hauteur d'une rangée : fixe, 132 px, quel que soit le nombre d'étagères (vignette de 96 px,
+   pile de 12 px, ligne du nom de 20 px et 4 px d'air sous elle). Une étagère de plus allonge la liste, elle ne tasse
+   jamais les autres : au-delà de l'écran, les étagères défilent dans le meuble. */
 .fx-shelves {
   --fx-gap: 3px;
-  --fx-row-h: 120px;
+  --fx-row-h: 132px;
   gap: var(--fx-gap);
 }
 
@@ -267,13 +266,16 @@
   transform: translateY(-50%);
 }
 
-/* Ligne du bas : nom (12 px) puis planche à sa droite. */
+/* Ligne du bas : nom puis planche à sa droite. 20 px, la hauteur du texte du nom (la ligne coupe
+   ce qui dépasse, le bouton d'ouverture compris), et 4 px d'air sous elle. */
 .fx-line {
   flex: none;
-  height: 12px;
+  box-sizing: content-box;
+  height: 20px;
+  padding-bottom: 4px;
 }
 .fx-shelf-name {
-  line-height: 12px;
+  line-height: 20px;
 }
 .fx-line .fx-board {
   flex: 1 1 0;
@@ -399,11 +401,12 @@
   --fx-nav-h: 67px;
 }
 
-/* Téléphone en portrait : la page ne défile pas. Le meuble épouse son contenu ; ses rangées se
-   partagent au plus l'espace disponible sous la barre du haut. Tout ce qui est fixe, en px :
-   cadre 4 + 4, barre du haut 48 + 4, corps 2 × 5 + 6 + 4, plus la barre du bas, les marges de
-   sécurité et la ligne de rappel du filtre (--fx-reminder, posée par la page). En paysage, sous
-   480 px de haut ou sur ordinateur, rien n'est verrouillé. */
+/* Téléphone en portrait : la page ne défile pas. Le meuble épouse son contenu, au plus l'espace
+   disponible sous la barre du haut ; au-delà, ses étagères (de hauteur fixe) défilent dans le
+   meuble, jamais la page. Tout ce qui est fixe, en px : cadre 4 + 4, barre du haut 48 + 4, corps
+   2 × 5 + 6 + 4, plus la barre du bas, les marges de sécurité et la ligne de rappel du filtre
+   (--fx-reminder, posée par la page). En paysage, sous 480 px de haut ou sur ordinateur, rien
+   n'est verrouillé : c'est la zone de la page qui défile. */
 @media (max-width: 767.98px) and (orientation: portrait) and (min-height: 480px) {
   .app-frame:has(.fx-fit) {
     min-height: 0;
@@ -418,20 +421,9 @@
     gap: 4px;
   }
   .fx-fit .fx-shelves {
-    --fx-row-h: max(
-      calc(56px + var(--fx-row-chrome, 0px)),
-      min(
-        120px,
-        calc(
-          (var(--fx-avail) - var(--fx-tray-fixed, 56px) - var(--fx-gap) * var(--n, 1)) /
-            var(--fx-slots, 1)
-        )
-      )
-    );
-    /* Au-delà de ce qui tient même en très compact, les étagères défilent dans le meuble, jamais
-       la page. */
     max-height: var(--fx-avail);
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 

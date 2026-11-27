@@ -27,7 +27,6 @@ interface FurnitureShellProps {
   children: ReactNode;
   className?: string;
   /** Custom properties of the shelves (count, tray), read by furniture.css. */
-  shelvesStyle?: CSSProperties;
 }
 
 /**
@@ -36,12 +35,7 @@ interface FurnitureShellProps {
  * most along its edge, as high as the body. The doors swing open when the shell appears; they are
  * scenery (hidden from assistive technology, never in the way of a tap or a drag).
  */
-export function FurnitureShell({
-  kind,
-  children,
-  className = '',
-  shelvesStyle,
-}: FurnitureShellProps) {
+export function FurnitureShell({ kind, children, className = '' }: FurnitureShellProps) {
   const doors = DOORS[kind];
   return (
     <div className="fx-frame">
@@ -67,9 +61,7 @@ export function FurnitureShell({
         ))}
         <div className="fx-body">
           {kind === 'freezer' ? null : <span className="fx-light" aria-hidden="true" />}
-          <div className="fx-shelves flex flex-col" style={shelvesStyle}>
-            {children}
-          </div>
+          <div className="fx-shelves flex flex-col">{children}</div>
         </div>
       </div>
     </div>

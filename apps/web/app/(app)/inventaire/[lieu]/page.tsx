@@ -140,7 +140,10 @@ function Meuble() {
   const locationId = location?.id;
   useLayoutEffect(() => {
     if (locationId === undefined || !zone.current) return;
-    zone.current.scrollTop = furnitureScrollOf(locationId);
+    const top = furnitureScrollOf(locationId);
+    zone.current.scrollTop = top;
+    const shelves = zone.current.querySelector<HTMLElement>('.fx-shelves');
+    if (shelves) shelves.scrollTop = top;
   }, [locationId]);
   // The sheet follows the line through reloads; it closes when the line is gone.
   const current =
@@ -197,13 +200,15 @@ function Meuble() {
         summary={reminder}
         onClear={() => setFilters({ ...clearPanelFilters(filters, 'home'), q: '' })}
       />
-      {/* Portrait phone: the furniture fits, nothing scrolls. Elsewhere (landscape, computer) it
-          scrolls here, never the page. */}
+      {/* Portrait phone: the furniture fits the screen and its shelves (fixed height) scroll
+          inside it. Elsewhere (landscape, computer) it scrolls here, never the page. */}
       <div
         ref={zone}
-        onScroll={(event) => {
-          if (locationId !== undefined)
-            rememberFurnitureScroll(locationId, event.currentTarget.scrollTop);
+        // Portrait phone: the shelves scroll inside the furniture; elsewhere, this zone. Either way
+        // the position is kept for the return from a shelf.
+        onScrollCapture={(event) => {
+          if (locationId !== undefined && event.target instanceof HTMLElement)
+            rememberFurnitureScroll(locationId, event.target.scrollTop);
         }}
         role="region"
         aria-label={location ? `Étagères de ${location.name}` : 'Meuble'}

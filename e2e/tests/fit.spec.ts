@@ -122,22 +122,38 @@ async function layout(page: Page) {
         clipped: box.top < row.top - 0.5 || box.bottom > row.bottom + 0.5,
       };
     });
+    const shelvesBox = document.querySelector('.fx-shelves')!;
+    const shelvesScroll = shelvesBox.scrollHeight > shelvesBox.clientHeight + 1;
+    const rows = [...document.querySelectorAll('.fx-shelves > .fx-row')].map(
+      (row) => Math.round(rect(row).height * 10) / 10,
+    );
     return {
       scrollHeight: document.documentElement.scrollHeight,
       innerHeight: window.innerHeight,
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       overlaps,
-      // A shelf outside the body (cut by it), or under the bottom bar.
-      outside: sections
-        .filter((s) => s.top < body.top - 0.5 || s.bottom > body.bottom + 0.5)
-        .map((s) => s.name),
-      underNav: sections.filter((s) => s.bottom > nav.top + 0.5).map((s) => s.name),
+      // A shelf outside the body (cut by it), or under the bottom bar; when the shelves scroll
+      // inside the furniture, those below are reached by scrolling, not cut.
+      outside: shelvesScroll
+        ? []
+        : sections
+            .filter((s) => s.top < body.top - 0.5 || s.bottom > body.bottom + 0.5)
+            .map((s) => s.name),
+      underNav: shelvesScroll
+        ? []
+        : sections.filter((s) => s.bottom > nav.top + 0.5).map((s) => s.name),
       bodyUnderNav: body.bottom > nav.top + 0.5,
-      shelvesScroll: (() => {
-        const shelves = document.querySelector('.fx-shelves')!;
-        return shelves.scrollHeight > shelves.clientHeight + 1;
-      })(),
+      shelvesScroll,
+      rows,
+      // Every line of a name shows its text whole (nothing cut at the bottom).
+      namesCut: [...document.querySelectorAll<HTMLElement>('.fx-body .fx-shelf-name')]
+        .filter((name) => {
+          const line = rect(name.parentElement!);
+          const box = rect(name);
+          return box.bottom > line.bottom + 0.5 || name.scrollHeight > name.clientHeight + 1;
+        })
+        .map((name) => name.textContent),
       tiles,
       compact: tiles.some((t) => t.side < 44.5),
     };
@@ -151,7 +167,9 @@ function expectFits(state: Awaited<ReturnType<typeof layout>>, label: string) {
   expect(state.outside, label).toEqual([]);
   expect(state.underNav, label).toEqual([]);
   expect(state.bodyUnderNav, label).toBe(false);
-  expect(state.shelvesScroll, label).toBe(false);
+  // A fixed height for every shelf, whatever their number: more shelves scroll, never shrink.
+  for (const row of state.rows) expect(row, label).toBe(132);
+  expect(state.namesCut, label).toEqual([]);
   for (const tile of state.tiles) {
     expect(tile.side, label).toBeGreaterThanOrEqual(43.5);
     expect(tile.side, label).toBeLessThanOrEqual(96.5);
@@ -163,7 +181,7 @@ function expectFits(state: Awaited<ReturnType<typeof layout>>, label: string) {
 // One worker for this file: the big furniture is built once per project.
 test.describe.configure({ mode: 'default' });
 
-test.describe('meuble ouvert sans défilement vertical', () => {
+test.describe('meuble ouvert : la page ne défile pas, les étagères gardent leur hauteur', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const tag = TAG[testInfo.project.name as keyof typeof TAG];
     // Its own account and household per browser: the furniture of the admin stays untouched.
@@ -188,7 +206,7 @@ test.describe('meuble ouvert sans défilement vertical', () => {
   });
 
   for (const size of SIZES) {
-    test(`${size.width} × ${size.height} : seed par défaut et 8 étagères pleines tiennent dans l’écran`, async ({
+    test(`${size.width} × ${size.height} : seed par défaut et 8 étagères pleines, à hauteur fixe`, async ({
       page,
     }, testInfo) => {
       const tag = TAG[testInfo.project.name as keyof typeof TAG];
