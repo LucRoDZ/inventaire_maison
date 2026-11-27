@@ -181,7 +181,7 @@ describe('ListView', () => {
 
   it('shows the counters as a help line and gives each furniture its count', async () => {
     const { onSummary } = renderList([line(1, 'Lait', 2, 3), line(2, 'Eau', 1, 6)]);
-    expect(await screen.findByText('2 articles · 9 unités')).toHaveClass('text-help');
+    expect(await screen.findByText('2 articles · 9 unités')).toHaveClass('text-small');
     await waitFor(() =>
       expect(onSummary).toHaveBeenLastCalledWith({
         total: 2,

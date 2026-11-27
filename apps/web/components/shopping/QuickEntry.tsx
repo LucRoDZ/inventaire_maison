@@ -140,7 +140,7 @@ export function QuickEntry({ onAdd, search = searchProducts }: QuickEntryProps) 
                 <button
                   type="button"
                   onClick={() => void add({ ...base(entry), productId: product.id })}
-                  className="tap-target border-line text-indigo hover:bg-lavender rounded-full border bg-white px-4 font-semibold transition-colors duration-150"
+                  className="tap-target bg-fill-quiet text-indigo rounded-full px-4 font-semibold transition-colors duration-150"
                 >
                   {product.name}
                 </button>

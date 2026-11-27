@@ -336,7 +336,7 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
       {recent.length > 0 ? (
         <Link
           href="/recemment-consommes"
-          className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised rounded-card flex items-center gap-3 border px-4 font-semibold transition-colors duration-150"
+          className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised flex items-center gap-3 rounded-[14px] border px-4 font-semibold transition-colors duration-150"
         >
           <History size={18} aria-hidden="true" className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">Récemment consommés</span>
@@ -580,19 +580,27 @@ function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: Shoppin
       >
         <div className="bg-surface-raised flex items-center gap-2 py-1 pr-2 pl-1">
           <label className="tap-target flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-2">
-            <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={onToggle}
-              className="accent-indigo h-5 w-5 shrink-0"
-            />
+            <span className="relative flex h-6 w-6 shrink-0">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={onToggle}
+                className="peer absolute inset-0 m-0 h-6 w-6 cursor-pointer opacity-0"
+              />
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none flex h-6 w-6 items-center justify-center rounded-full border-[1.5px] text-white transition-colors duration-150 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo ${item.checked ? 'bg-indigo border-indigo' : 'border-grey bg-transparent'}`}
+              >
+                {item.checked ? <Check size={15} strokeWidth={3} /> : null}
+              </span>
+            </span>
             <span className="min-w-0">
               <span
-                className={`block truncate font-semibold ${item.checked ? 'text-grey line-through' : 'text-ink'}`}
+                className={`text-body block truncate font-semibold ${item.checked ? 'text-grey line-through' : 'text-ink'}`}
               >
                 {name}
               </span>
-              <span className="text-help block tabular-nums">
+              <span className="text-small text-grey block tabular-nums">
                 {shoppingQuantityText(item)}
                 {item.product === null ? ' · ligne libre' : ''}
               </span>
