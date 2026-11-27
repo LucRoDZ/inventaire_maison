@@ -34,7 +34,8 @@ export const openLabel = (name: string): string =>
     ? `Ouvrir l’${name.charAt(0).toLowerCase()}${name.slice(1)}`
     : `Ouvrir ${name}`;
 
-/** Glyph-only link to the focus page: 44 px to hit, no room taken (negative margins). */
+/** Glyph-only link to the focus page: a 44 px box centred on the 12 px line, which clips it
+ * vertically (`overflow-y-clip`): it never covers the tiles nor makes the last shelf scroll. */
 export function FocusLink({
   locationId,
   shelfId,
@@ -136,7 +137,7 @@ export function ShelfRow({
             </ul>
           )}
         </div>
-        <div className="fx-line flex items-center gap-2">
+        <div className="fx-line flex items-center gap-2 overflow-y-clip">
           <h3 className="text-help text-indigo-mid fx-shelf-name font-semibold min-w-0 truncate">
             {shelf.name}
           </h3>

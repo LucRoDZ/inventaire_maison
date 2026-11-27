@@ -81,7 +81,7 @@ export function UnshelvedTray({
               </ul>
               {add}
             </div>
-            <div className="fx-line flex items-center gap-2">
+            <div className="fx-line flex items-center gap-2 overflow-y-clip">
               {name}
               {open}
             </div>
