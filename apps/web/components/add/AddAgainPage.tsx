@@ -7,7 +7,9 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { addNotice } from '../../lib/add-notice';
 import { queueOp, syncNow } from '../../lib/offline/runtime';
-import { fetchRecentProducts } from '../../lib/shopping-api';
+import { ApiError } from '../../lib/api';
+import { addShoppingItem, fetchRecentProducts } from '../../lib/shopping-api';
+import { QuantityStepper } from './QuantityStepper';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { FullPageList } from '../ui/FullPageList';
 import { SelectableRow } from '../ui/SelectableRow';
@@ -29,8 +31,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const localDate = (date: Date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-const detailOf = (product: RecentProductDto) =>
-  [product.locationName ?? 'Aucun meuble habituel', product.sizeLabel]
+const detailOf = (product: RecentProductDto, toStock: boolean) =>
+  [product.locationName ?? (toStock ? 'Aucun meuble habituel' : null), product.sizeLabel]
     .filter((part): part is string => !!part)
     .join(' · ');
 
@@ -41,15 +43,20 @@ const sorted = (items: RecentProductDto[], sort: Sort) => {
   return copy.sort((a, b) => b.lastConsumedAt.localeCompare(a.lastConsumedAt));
 };
 
-/** The « Ajouter à nouveau » page: multi-select of recent products, added through the offline queue. */
-export function AddAgainPage() {
+/**
+ * Multi-select of the products consumed lately, each with its quantity. `stock` (« Ajouter à
+ * nouveau »): added to the stock through the offline queue, dated by « Acheté le ». `shopping`
+ * (« Récemment consommés » of the shopping list): put on the list.
+ */
+export function AddAgainPage({ target = 'stock' }: { target?: 'stock' | 'shopping' }) {
+  const toStock = target === 'stock';
   const router = useRouter();
   const [limit, setLimit] = useState(RECENT_PRODUCTS_PAGE);
   const [items, setItems] = useState<RecentProductDto[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('recent');
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Map<number, number>>(new Map());
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
@@ -80,7 +87,7 @@ export function AddAgainPage() {
 
   const back = () => {
     if (window.history.length > 1) router.back();
-    else router.replace('/inventaire');
+    else router.replace(toStock ? '/inventaire' : '/courses');
   };
 
   const visible = useMemo(() => {
@@ -94,31 +101,38 @@ export function AddAgainPage() {
 
   const toggle = (id: number, checked: boolean) =>
     setSelected((current) => {
-      const next = new Set(current);
-      if (checked) next.add(id);
+      const next = new Map(current);
+      if (checked) next.set(id, current.get(id) ?? 1);
       else next.delete(id);
       return next;
     });
+
+  const setQuantity = (id: number, quantity: number) =>
+    setSelected((current) => new Map(current).set(id, quantity));
 
   const count = selected.size;
   const canMore = items !== null && items.length >= limit && limit < MAX_LIMIT;
 
   const submit = async () => {
-    if (count === 0 || saving || !date) return;
+    if (count === 0 || saving || (toStock && !date)) return;
     setSaving(true);
     setSaveFailed(false);
+    if (!toStock) {
+      await addToList();
+      return;
+    }
     try {
       const [year, month, day] = date.split('-').map(Number);
       const createdAt = new Date(year!, month! - 1, day!, 12, 0, 0).toISOString();
-      const productIds = [...selected];
+      const picks = [...selected];
       // Nothing is queued before the toast ends: the queue may be sent at any moment (a new
       // session check, the app coming back to the front), and « Annuler » must undo everything.
       addNotice.show({
         message: `${count} produit${count > 1 ? 's' : ''} ajouté${count > 1 ? 's' : ''}`,
         undo: async () => undefined,
         commit: async () => {
-          for (const productId of productIds) {
-            await queueOp({ kind: 'add', productId, quantity: 1, createdAt });
+          for (const [productId, quantity] of picks) {
+            await queueOp({ kind: 'add', productId, quantity, createdAt });
           }
           await syncNow();
         },
@@ -130,19 +144,47 @@ export function AddAgainPage() {
     }
   };
 
+  /** Online: one line each (merged by the server into an existing line); offline: the queue. */
+  const addToList = async () => {
+    try {
+      for (const [productId, quantity] of selected) {
+        try {
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            throw new ApiError(0, 'Hors connexion');
+          }
+          await addShoppingItem({ productId, quantity });
+        } catch (error) {
+          if (!(error instanceof ApiError && error.status === 0)) throw error;
+          await queueOp({ kind: 'shop', productId, quantity });
+        }
+      }
+      router.replace('/courses');
+    } catch {
+      setSaveFailed(true);
+      setSaving(false);
+    }
+  };
+
+  const plural = count > 1 ? 's' : '';
+  const submitLabel = toStock
+    ? `Ajouter ${count} produit${plural}`
+    : `Ajouter ${count} produit${plural} à la liste`;
+
   const footer = (
     <div className="flex flex-col gap-3">
-      <label className="flex min-h-11 items-center justify-between gap-3">
-        <span className="font-semibold">Acheté le</span>
-        <input
-          type="date"
-          value={date}
-          min={min}
-          max={max}
-          onChange={(event) => setDate(event.target.value)}
-          className="border-line rounded-card bg-surface-raised min-h-11 border px-3"
-        />
-      </label>
+      {toStock ? (
+        <label className="flex min-h-11 items-center justify-between gap-3">
+          <span className="font-semibold">Acheté le</span>
+          <input
+            type="date"
+            value={date}
+            min={min}
+            max={max}
+            onChange={(event) => setDate(event.target.value)}
+            className="border-line rounded-card bg-surface-raised min-h-11 border px-3"
+          />
+        </label>
+      ) : null}
       {saveFailed ? (
         <p role="alert" className="text-alert">
           Ajout impossible, réessayez
@@ -150,11 +192,11 @@ export function AddAgainPage() {
       ) : null}
       <button
         type="button"
-        disabled={count === 0 || saving || !date}
+        disabled={count === 0 || saving || (toStock && !date)}
         onClick={() => void submit()}
         className="tap-target bg-indigo rounded-card min-h-12 px-5 font-semibold text-white disabled:opacity-50"
       >
-        {`Ajouter ${count} produit${count > 1 ? 's' : ''}`}
+        {submitLabel}
       </button>
     </div>
   );
@@ -203,7 +245,7 @@ export function AddAgainPage() {
 
   return (
     <FullPageList
-      title="Ajouter à nouveau"
+      title={toStock ? 'Ajouter à nouveau' : 'Récemment consommés'}
       onBack={back}
       toolbar={toolbar}
       footer={footer}
@@ -217,12 +259,22 @@ export function AddAgainPage() {
           key={product.productId}
           name={product.name}
           imageUrl={product.imageUrl}
-          detail={detailOf(product) || undefined}
+          detail={detailOf(product, toStock) || undefined}
           meta={`${product.inStock} en stock`}
           // Without a usual place the server could not file it: the add would end in a conflict.
-          disabled={product.locationName === null}
+          disabled={toStock && product.locationName === null}
           checked={selected.has(product.productId)}
           onChange={(checked) => toggle(product.productId, checked)}
+          extra={
+            selected.has(product.productId) ? (
+              <QuantityStepper
+                label={`Quantité de ${product.name}`}
+                value={selected.get(product.productId)!}
+                onChange={(quantity) => setQuantity(product.productId, quantity)}
+                max={99}
+              />
+            ) : undefined
+          }
         />
       ))}
       {canMore ? (

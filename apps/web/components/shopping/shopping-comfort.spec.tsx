@@ -175,16 +175,12 @@ describe('Courses: full page layout', () => {
       inStock: 0,
     }));
 
-  it('shows one single row of chips in the fixed header', async () => {
+  it('opens « Récemment consommés » as a page from one row of the fixed header', async () => {
     setup([line(1)], { fetchRecent: vi.fn(async () => recent(8)) });
-    const first = await screen.findByRole('button', {
-      name: 'Ajouter Produit récent 1 à la liste',
-    });
-    const row = first.closest('ul')!;
-    expect(row).toHaveClass('flex-nowrap', 'overflow-x-auto');
-    expect(first.closest('li')).toHaveClass('shrink-0');
-    expect(first).toHaveClass('max-w-[12rem]');
-    expect(row.closest('header')).not.toBeNull();
+    const link = await screen.findByRole('link', { name: 'Récemment consommés' });
+    expect(link).toHaveAttribute('href', '/recemment-consommes');
+    expect(link.closest('header')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /Produit récent 1/ })).toBeNull();
   });
 
   it('keeps the footer outside of the scroll zone with 30 lines', async () => {

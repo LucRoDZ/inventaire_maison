@@ -19,8 +19,10 @@ vi.mock('../../lib/offline/runtime', () => ({
 
 const fetchRecentProducts =
   vi.fn<(p: { limit?: number; days?: number }) => Promise<RecentProductDto[]>>();
+const addShoppingItem = vi.fn(async (_input: unknown) => ({}));
 vi.mock('../../lib/shopping-api', () => ({
   fetchRecentProducts: (params: { limit?: number; days?: number }) => fetchRecentProducts(params),
+  addShoppingItem: (input: unknown) => addShoppingItem(input),
 }));
 
 const product = (id: number, over: Partial<RecentProductDto> = {}): RecentProductDto => ({
@@ -147,6 +149,54 @@ describe('AddAgainPage', () => {
     expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 1, quantity: 1, createdAt });
     expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 3, quantity: 1, createdAt });
     expect(syncNow).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes a quantity per checked product, sent with its add', async () => {
+    const user = userEvent.setup();
+    render(<AddAgainPage />);
+    await screen.findByText('Produit 1');
+    expect(screen.queryByRole('group', { name: 'Quantité de Produit 1' })).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: 'Produit 1' }));
+    const stepper = screen.getByRole('group', { name: 'Quantité de Produit 1' });
+    await user.click(within(stepper).getByRole('button', { name: 'Augmenter la quantité' }));
+    await user.click(within(stepper).getByRole('button', { name: 'Augmenter la quantité' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter 1 produit' }));
+    await waitFor(() => expect(addNotice.get()).not.toBeNull());
+    await addNotice.get()!.commit();
+    expect(queueOp).toHaveBeenCalledWith(expect.objectContaining({ productId: 1, quantity: 3 }));
+  });
+
+  it('puts the checked products on the shopping list, with their quantity, without a date', async () => {
+    const user = userEvent.setup();
+    fetchRecentProducts.mockResolvedValue([product(1, { locationName: null }), product(2)]);
+    render(<AddAgainPage target="shopping" />);
+    await screen.findByText('Produit 1');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Récemment consommés');
+    expect(screen.queryByLabelText('Acheté le')).toBeNull();
+    // No usual place is no problem for a shopping line.
+    await user.click(screen.getByRole('checkbox', { name: 'Produit 1' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Produit 2' }));
+    const stepper = screen.getByRole('group', { name: 'Quantité de Produit 2' });
+    await user.click(within(stepper).getByRole('button', { name: 'Augmenter la quantité' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter 2 produits à la liste' }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/courses'));
+    expect(addShoppingItem).toHaveBeenCalledWith({ productId: 1, quantity: 1 });
+    expect(addShoppingItem).toHaveBeenCalledWith({ productId: 2, quantity: 2 });
+    expect(queueOp).not.toHaveBeenCalled();
+  });
+
+  it('queues the shopping lines when offline', async () => {
+    const user = userEvent.setup();
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    render(<AddAgainPage target="shopping" />);
+    await screen.findByText('Produit 1');
+    await user.click(screen.getByRole('checkbox', { name: 'Produit 1' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter 1 produit à la liste' }));
+    await waitFor(() =>
+      expect(queueOp).toHaveBeenCalledWith({ kind: 'shop', productId: 1, quantity: 1 }),
+    );
+    expect(addShoppingItem).not.toHaveBeenCalled();
+    onLine.mockRestore();
   });
 
   it('queues nothing and sends nothing on undo', async () => {

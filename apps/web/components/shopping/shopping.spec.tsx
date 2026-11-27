@@ -103,7 +103,7 @@ describe('ShoppingList', () => {
     expect(screen.getByRole('menuitem', { name: 'Vider les lignes cochées' })).toBeDisabled();
   });
 
-  it('adds a recently consumed product with one tap', async () => {
+  it('links to the « Récemment consommés » page', async () => {
     const api = setup([], {
       fetchRecent: vi.fn(async () => [
         {
@@ -118,8 +118,9 @@ describe('ShoppingList', () => {
         },
       ]),
     });
-    await userEvent.click(await screen.findByRole('button', { name: 'Ajouter Lait à la liste' }));
-    expect(api.add).toHaveBeenCalledWith({ productId: 9 });
+    const link = await screen.findByRole('link', { name: 'Récemment consommés' });
+    expect(link).toHaveAttribute('href', '/recemment-consommes');
+    expect(api.add).not.toHaveBeenCalled();
   });
 
   it('stores the checked lines, then undoes with the opposite delta and re-adds the lines', async () => {

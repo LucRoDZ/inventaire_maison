@@ -14,7 +14,7 @@ export default function ScanLayout({ children }: { children: ReactNode }) {
     <AuthProvider>
       <div
         data-testid="scanner-screen"
-        className="bg-scanner-backdrop text-scanner-ink fixed inset-0 z-20 flex h-dvh w-full flex-col overflow-hidden"
+        className="bg-scanner-backdrop text-scanner-ink fixed inset-0 z-20 flex w-full flex-col overflow-hidden"
       >
         {children}
       </div>

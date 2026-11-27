@@ -13,7 +13,18 @@ import type {
   StockAdjustInput,
   StockAdjustResponse,
 } from '@inventaire/shared';
-import { Check, MoreHorizontal, Minus, Plus, Share2, Trash2, Undo2 } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  History,
+  MoreHorizontal,
+  Minus,
+  Plus,
+  Share2,
+  Trash2,
+  Undo2,
+} from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import { getProduct } from '../../lib/products-api';
@@ -326,28 +337,14 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
       </p>
       {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
       {recent.length > 0 ? (
-        <section aria-labelledby="recents" className="flex flex-col gap-1">
-          <h2 id="recents" className="text-label">
-            Récemment consommés
-          </h2>
-          <ul className="-mx-4 flex flex-nowrap gap-2 overflow-x-auto px-4">
-            {recent.map((product) => (
-              <li key={product.productId} className="shrink-0">
-                <button
-                  type="button"
-                  aria-label={`Ajouter ${product.name} à la liste`}
-                  onClick={() =>
-                    void act(() => add({ productId: product.productId }), 'Ajout impossible')
-                  }
-                  className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised inline-flex max-w-[12rem] shrink-0 items-center gap-1 rounded-full border px-4 font-semibold transition-colors duration-150"
-                >
-                  <Plus size={16} aria-hidden="true" className="shrink-0" />
-                  <span className="truncate">{product.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Link
+          href="/recemment-consommes"
+          className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised rounded-card flex items-center gap-3 border px-4 font-semibold transition-colors duration-150"
+        >
+          <History size={18} aria-hidden="true" className="shrink-0" />
+          <span className="min-w-0 flex-1 truncate">Récemment consommés</span>
+          <ChevronRight size={18} aria-hidden="true" className="shrink-0" />
+        </Link>
       ) : null}
     </>
   );

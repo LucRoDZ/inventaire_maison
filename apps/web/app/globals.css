@@ -96,10 +96,14 @@ html {
   background: var(--surface);
 }
 
+/* Pinned to the viewport itself rather than `100dvh`: an installed app on Android may compute
+   `100dvh` before the system bars settle at launch, and the bottom bar then sat below the screen
+   until the next launch. `inset: 0` always follows the visible area (keyboard included). */
 body {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   margin: 0;

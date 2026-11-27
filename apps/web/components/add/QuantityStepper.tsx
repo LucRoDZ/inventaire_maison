@@ -5,11 +5,19 @@ interface QuantityStepperProps {
   onChange: (value: number) => void;
   min?: number;
   max?: number;
+  /** Name of the group when several steppers share a screen (« Quantité de Lait »). */
+  label?: string;
 }
 
-export function QuantityStepper({ value, onChange, min = 1, max = 999 }: QuantityStepperProps) {
+export function QuantityStepper({
+  value,
+  onChange,
+  min = 1,
+  max = 999,
+  label = 'Quantité',
+}: QuantityStepperProps) {
   return (
-    <div role="group" aria-label="Quantité" className="flex items-center gap-3">
+    <div role="group" aria-label={label} className="flex items-center gap-3">
       <button
         type="button"
         aria-label="Diminuer la quantité"

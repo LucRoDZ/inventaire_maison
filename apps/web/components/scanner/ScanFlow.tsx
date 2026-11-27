@@ -351,7 +351,7 @@ export function ScanFlow({
               type="button"
               data-manual-code=""
               onClick={() => setManualOpen(true)}
-              className={`${chipClass} bg-scanner-frame text-scanner-on-frame`}
+              className={`${chipClass} bg-scanner-veil text-scanner-ink`}
             >
               <Keyboard size={18} aria-hidden="true" />
               Saisir un code
