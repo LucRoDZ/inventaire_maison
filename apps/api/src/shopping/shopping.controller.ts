@@ -34,6 +34,7 @@ const createSchema = z
     quantity: quantity.optional(),
     amount: z.number().positive().max(9_999_999).nullable().optional(),
     unit: z.enum(QUANTITY_UNITS).nullable().optional(),
+    ifAbsent: z.boolean().optional(),
   })
   .strict()
   // Exactly one of the two: a catalogue product or a free label.

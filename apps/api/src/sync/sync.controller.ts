@@ -42,6 +42,7 @@ const opSchema = z.discriminatedUnion('kind', [
   z
     .object({ kind: z.literal('remove'), ...common, reason: z.enum(REMOVAL_REASONS).optional() })
     .strict(),
+  z.object({ kind: z.literal('shop'), ...common }).strict(),
 ]);
 
 const requestSchema = z.object({ ops: z.array(opSchema).max(SYNC_MAX_OPS) }).strict();

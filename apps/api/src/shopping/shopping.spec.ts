@@ -114,6 +114,34 @@ describe('shopping list', () => {
     expect((await mine.get('/api/shopping')).body.items).toHaveLength(1);
   });
 
+  it('refuses ifAbsent with 409 when the product is already listed, open or checked', async () => {
+    const pid = await addProduct('Lait', { location: locationId });
+    const first = await mine.post('/api/shopping').send({ productId: pid, ifAbsent: true });
+    expect(first.status).toBe(201);
+    const open = await mine.post('/api/shopping').send({ productId: pid, ifAbsent: true });
+    expect(open.status).toBe(409);
+    expect(open.body.message).toBe('Déjà dans vos courses');
+    await mine.patch(`/api/shopping/${first.body.id}`).send({ checked: true });
+    expect((await mine.post('/api/shopping').send({ productId: pid, ifAbsent: true })).status).toBe(
+      409,
+    );
+    const rows = await q<{ quantity: number }>('SELECT quantity FROM shopping_items');
+    expect(rows).toEqual([{ quantity: 1 }]);
+    // Without the flag, an open line is still incremented.
+    await mine.patch(`/api/shopping/${first.body.id}`).send({ checked: false });
+    expect((await mine.post('/api/shopping').send({ productId: pid })).body.quantity).toBe(2);
+  });
+
+  it('keeps the list of a household intact when another one tries ifAbsent on its product', async () => {
+    const pid = await addProduct('Lait', { location: locationId });
+    await mine.post('/api/shopping').send({ productId: pid });
+    const res = await theirs.post('/api/shopping').send({ productId: pid, ifAbsent: true });
+    expect(res.status).toBe(404);
+    expect((await theirs.post('/api/shopping').send({ productId: pid })).status).toBe(404);
+    const rows = await q<{ quantity: number }>('SELECT quantity FROM shopping_items');
+    expect(rows).toEqual([{ quantity: 1 }]);
+  });
+
   it('adds a free line and validates the input', async () => {
     const res = await mine
       .post('/api/shopping')
