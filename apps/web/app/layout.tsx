@@ -11,7 +11,7 @@ import { APP_NAME, APP_SHORT_NAME, STATUS_BAR_COLOR } from './manifest';
 
 /** iPhone launch screens: one image per common portrait size. */
 const startupLinks = startupImages.map(({ width, height, ratio, cssWidth, cssHeight }) => ({
-  url: `/splash/splash-${width}x${height}.png`,
+  url: `/splash/v3/splash-${width}x${height}.png`,
   media: `(device-width: ${cssWidth}px) and (device-height: ${cssHeight}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: portrait)`,
 }));
 
@@ -19,7 +19,15 @@ export const metadata: Metadata = {
   title: APP_NAME,
   applicationName: APP_NAME,
   robots: { index: false, follow: false },
-  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/v3/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/v3/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/v3/favicon-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/icons/v3/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     title: APP_SHORT_NAME,

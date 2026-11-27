@@ -28,12 +28,14 @@ describe('manifest', () => {
     expect(m.short_name!.length).toBeLessThanOrEqual(12);
   });
 
-  it('declares 192, 512 and 512 maskable icons', () => {
+  it('declares any, maskable and monochrome icons', () => {
     const icons = m.icons ?? [];
     expect(icons.map((i) => `${i.sizes}:${i.purpose}`)).toEqual([
       '192x192:any',
       '512x512:any',
+      '192x192:maskable',
       '512x512:maskable',
+      '512x512:monochrome',
     ]);
   });
 
@@ -52,6 +54,7 @@ describe('manifest', () => {
       ['Scanner', '/scanner'],
       ['Courses', '/courses'],
     ]);
+    for (const s of m.shortcuts ?? []) expect(s.icons?.[0]?.src).toBe('/icons/v3/icon-192.png');
   });
 
   it('ships an iPhone startup image of the declared size for each link', async () => {
@@ -59,7 +62,7 @@ describe('manifest', () => {
     expect(sizes.length).toBeGreaterThanOrEqual(6);
     for (const { width, height } of sizes) {
       const meta = await sharp(
-        path.join(publicDir, `splash/splash-${width}x${height}.png`),
+        path.join(publicDir, `splash/v3/splash-${width}x${height}.png`),
       ).metadata();
       expect([meta.width, meta.height]).toEqual([width, height]);
     }
@@ -67,7 +70,7 @@ describe('manifest', () => {
 
   it('ships a 180 px apple-touch-icon', async () => {
     const { width, height } = await sharp(
-      path.join(publicDir, 'icons/apple-touch-icon.png'),
+      path.join(publicDir, 'icons/v3/apple-touch-icon.png'),
     ).metadata();
     expect([width, height]).toEqual([180, 180]);
   });
