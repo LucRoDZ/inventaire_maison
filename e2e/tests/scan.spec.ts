@@ -61,6 +61,7 @@ test('scan simulé d’un produit Open Food Facts, ajout, second scan reconnu, s
   await expect(sheet).toHaveCount(0);
 
   // Typed code: the same product again.
+  await page.getByRole('button', { name: 'Saisir un code' }).click();
   await page.getByLabel('Code-barres').fill(code);
   await page.getByLabel('Code-barres').press('Enter');
   await expect(sheet.getByRole('heading', { name })).toBeVisible();

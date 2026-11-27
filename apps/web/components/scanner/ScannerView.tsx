@@ -39,11 +39,13 @@ interface ScannerViewProps {
   onModeChange: (mode: ScanMode) => void;
   /** « Fermer le scanner ». */
   onClose: () => void;
-  /** Panel at the bottom, always reachable: typed code, photo, options. */
+  /** Compact row at the bottom, always reachable: typed code, no barcode, burst. */
   fallbacks?: ReactNode;
   /** Free slot at the top of the screen, under the buttons (e.g. « À synchroniser (n) »). */
   topSlot?: ReactNode;
-  /** Free slot over the camera, above the bottom panel (session counter, notices). */
+  /** Opens the typed-code sheet (« Saisir un code » of the permission card). */
+  onManualCode?: () => void;
+  /** Free slot over the camera, above the bottom row (session counter, notices). */
   overlay?: ReactNode;
   /** What was just read (name, else code): announced as « Lu : … ». */
   readLabel?: string | null;
@@ -96,6 +98,7 @@ export function ScannerView({
   onModeChange,
   onClose,
   fallbacks,
+  onManualCode,
   topSlot,
   overlay,
   readLabel = null,
@@ -194,6 +197,24 @@ export function ScannerView({
     }
   }, []);
 
+  // No scrolling and no rubber-band while scanning; restored on leaving.
+  useEffect(() => {
+    const { body, documentElement: root } = document;
+    const previous = {
+      overflow: body.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+      rootOverscroll: root.style.overscrollBehavior,
+    };
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    root.style.overscrollBehavior = 'none';
+    return () => {
+      body.style.overflow = previous.overflow;
+      body.style.overscrollBehavior = previous.bodyOverscroll;
+      root.style.overscrollBehavior = previous.rootOverscroll;
+    };
+  }, []);
+
   // The camera opens with the screen.
   useEffect(() => {
     void start();
@@ -266,137 +287,139 @@ export function ScannerView({
     }
   };
 
+  const useManual = () => {
+    if (onManualCode) onManualCode();
+    else fallbackRef.current?.querySelector<HTMLElement>('input, button')?.focus();
+  };
+
   return (
-    <div className="bg-scanner-backdrop text-scanner-ink flex min-h-0 flex-1 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        <h1 className="sr-only">Scanner</h1>
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          aria-label="Aperçu de la caméra"
-          className={`absolute inset-0 h-full w-full object-cover ${running ? '' : 'invisible'}`}
-        />
+    <div className="bg-scanner-backdrop text-scanner-ink relative min-h-0 flex-1 overflow-hidden">
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        aria-label="Aperçu de la caméra"
+        className={`absolute inset-0 h-full w-full object-cover ${running ? '' : 'invisible'}`}
+      />
 
-        {running ? (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-1/2 h-1/3 w-4/5 max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl shadow-[0_0_0_100vmax_var(--scanner-veil)]"
-          >
-            {CORNERS.map((position) => (
-              <span
-                key={position}
-                className={`border-scanner-frame absolute h-8 w-8 transition-transform duration-150 ${position} ${locked ? 'scale-110' : ''}`}
-              />
-            ))}
-            {locked ? (
-              <>
-                <span className="border-scanner-frame absolute inset-0 rounded-xl border-2" />
-                <span className="bg-scanner-frame text-scanner-on-frame absolute top-1/2 left-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full">
-                  <Check size={28} aria-hidden="true" />
-                </span>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
-        <p aria-live="polite" className="sr-only">
-          {readLabel ? `Lu : ${readLabel}` : ''}
-        </p>
-        {running && locked && readLabel ? (
-          <p
-            aria-hidden="true"
-            className="bg-scanner-veil text-scanner-ink absolute top-[calc(50%+18vh)] left-1/2 max-w-[80%] -translate-x-1/2 truncate rounded-full px-3 py-1 font-semibold"
-          >
-            Lu : {readLabel}
-          </p>
-        ) : null}
-
-        <div className="absolute inset-x-0 top-0 flex flex-col gap-3 p-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              aria-label="Fermer le scanner"
-              onClick={onClose}
-              className="tap-target bg-scanner-veil text-scanner-ink inline-flex items-center justify-center rounded-full"
-            >
-              <X size={24} aria-hidden="true" />
-            </button>
-            <div
-              role="group"
-              aria-label="Mode du scan"
-              className="bg-scanner-veil flex gap-1 rounded-full p-1"
-            >
-              {(
-                [
-                  ['add', 'Ajouter'],
-                  ['remove', 'Retirer'],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={mode === value}
-                  onClick={() => onModeChange(value)}
-                  className={`tap-target rounded-full px-4 font-semibold ${mode === value ? 'bg-scanner-frame text-scanner-on-frame' : 'text-scanner-ink'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          {topSlot}
-          {running ? (
-            <CameraControls
-              torchSupported={torchSupported}
-              torchOn={torchOn}
-              onToggleTorch={() => void toggleTorch()}
-              zoom={zoom}
-              zoomValue={zoomValue}
-              onZoom={(value) => void changeZoom(value)}
-              cameras={cameras}
-              cameraId={cameraId}
-              onSelectCamera={(id) => void start(id)}
+      {running ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-1/2 h-1/3 w-4/5 max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl shadow-[0_0_0_100vmax_var(--scanner-veil)]"
+        >
+          {CORNERS.map((position) => (
+            <span
+              key={position}
+              className={`border-scanner-frame absolute h-8 w-8 transition-transform duration-150 ${position} ${locked ? 'scale-110' : ''}`}
             />
+          ))}
+          {locked ? (
+            <>
+              <span className="border-scanner-frame absolute inset-0 rounded-xl border-2" />
+              <span className="bg-scanner-frame text-scanner-on-frame absolute top-1/2 left-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full">
+                <Check size={28} aria-hidden="true" />
+              </span>
+            </>
           ) : null}
         </div>
+      ) : null}
 
-        {phase.name === 'error' ? (
-          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 rounded-card bg-white p-4 text-ink">
-            <PermissionHelp
-              reason={phase.reason}
-              onRetry={() => void start()}
-              onUseFallback={() =>
-                fallbackRef.current?.querySelector<HTMLElement>('input, button')?.focus()
-              }
-            />
-          </div>
-        ) : null}
-        {phase.name === 'idle' || phase.name === 'starting' ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              variant="outline"
-              disabled={phase.name === 'starting'}
-              onClick={() => void start()}
-            >
-              <ScanBarcode size={20} aria-hidden="true" />
-              {phase.name === 'starting' ? 'Démarrage…' : 'Activer la caméra'}
-            </Button>
-          </div>
-        ) : null}
+      <p aria-live="polite" className="sr-only">
+        {readLabel ? `Lu : ${readLabel}` : ''}
+      </p>
+      {running && locked && readLabel ? (
+        <p
+          aria-hidden="true"
+          className="bg-scanner-veil text-scanner-ink absolute top-[calc(50%+18vh)] left-1/2 max-w-[80%] -translate-x-1/2 truncate rounded-full px-3 py-1 font-semibold"
+        >
+          Lu : {readLabel}
+        </p>
+      ) : null}
 
-        {overlay ? (
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 p-3">
-            {overlay}
+      <div className="absolute inset-x-0 top-0 flex flex-col gap-3 px-[calc(0.75rem+env(safe-area-inset-left))] pt-[calc(0.75rem+env(safe-area-inset-top))]">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <button
+            type="button"
+            aria-label="Fermer le scanner"
+            onClick={onClose}
+            className="tap-target bg-scanner-veil text-scanner-ink inline-flex items-center justify-center justify-self-start rounded-full"
+          >
+            <X size={24} aria-hidden="true" />
+          </button>
+          <h1 className="bg-scanner-veil text-scanner-ink rounded-full px-4 py-1 text-base font-semibold">
+            Scanner
+          </h1>
+          <div
+            role="group"
+            aria-label="Mode du scan"
+            className="bg-scanner-veil flex gap-1 justify-self-end rounded-full p-1"
+          >
+            {(
+              [
+                ['add', 'Ajouter'],
+                ['remove', 'Retirer'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={mode === value}
+                onClick={() => onModeChange(value)}
+                className={`tap-target rounded-full px-3 font-semibold ${mode === value ? 'bg-scanner-frame text-scanner-on-frame' : 'text-scanner-ink'}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-        ) : null}
+        </div>
+        {topSlot}
       </div>
 
-      <div
-        ref={fallbackRef}
-        className="rounded-t-card text-ink max-h-[45dvh] shrink-0 overflow-y-auto bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-      >
-        {fallbacks}
+      {phase.name === 'error' ? (
+        <div className="absolute inset-x-4 top-1/2 mx-auto max-w-sm -translate-y-1/2">
+          <PermissionHelp
+            reason={phase.reason}
+            onRetry={() => void start()}
+            onUseFallback={useManual}
+          />
+        </div>
+      ) : null}
+      {phase.name === 'idle' || phase.name === 'starting' ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Button
+            variant="outline"
+            disabled={phase.name === 'starting'}
+            onClick={() => void start()}
+          >
+            <ScanBarcode size={20} aria-hidden="true" />
+            {phase.name === 'starting' ? 'Démarrage…' : 'Activer la caméra'}
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 px-[calc(0.75rem+env(safe-area-inset-left))] pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        {overlay}
+        {running ? (
+          <p className="bg-scanner-veil text-scanner-ink text-small rounded-full px-3 py-1">
+            Placez le code-barres dans le cadre
+          </p>
+        ) : null}
+        {running ? (
+          <CameraControls
+            torchSupported={torchSupported}
+            torchOn={torchOn}
+            onToggleTorch={() => void toggleTorch()}
+            zoom={zoom}
+            zoomValue={zoomValue}
+            onZoom={(value) => void changeZoom(value)}
+            cameras={cameras}
+            cameraId={cameraId}
+            onSelectCamera={(id) => void start(id)}
+          />
+        ) : null}
+        <div ref={fallbackRef} className="w-full max-w-xl">
+          {fallbacks}
+        </div>
       </div>
     </div>
   );

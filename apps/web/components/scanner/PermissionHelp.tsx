@@ -2,7 +2,6 @@ import { CameraOff } from 'lucide-react';
 import { detectPlatform, type Platform } from '../../lib/platform';
 import type { CameraErrorKind } from '../../lib/scanner/camera';
 import { Button } from '../ui/Button';
-import { Callout } from '../ui/Callout';
 
 const STEPS: Record<Platform, string> = {
   ios: 'Ouvrez Réglages, puis Safari, puis Caméra, choisissez « Demander » ou « Autoriser », et revenez ici en rechargeant la page.',
@@ -21,7 +20,7 @@ const TITLES: Record<CameraErrorKind, string> = {
 
 interface PermissionHelpProps {
   reason: CameraErrorKind;
-  /** Scrolls to or focuses the fallbacks (typed code, photo). */
+  /** Opens the typed-code entry. */
   onUseFallback: () => void;
   onRetry: () => void;
   /** Overridable for tests. */
@@ -35,30 +34,36 @@ export function PermissionHelp({
   platform = detectPlatform(),
 }: PermissionHelpProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <Callout role="alert" icon={CameraOff} title={TITLES[reason]}>
-        {reason === 'denied' ? <p>{STEPS[platform]}</p> : null}
+    <div className="bg-scanner-backdrop text-scanner-ink border-scanner-veil flex flex-col items-center gap-3 rounded-card border p-4 text-center">
+      <div role="alert" className="flex flex-col items-center gap-2">
+        <CameraOff size={32} aria-hidden="true" />
+        <p className="text-card-title">{TITLES[reason]}</p>
+        {reason === 'denied' ? <p className="text-small">{STEPS[platform]}</p> : null}
         {reason === 'absent' ? (
-          <p>Cet appareil n’a pas de caméra que le navigateur peut utiliser.</p>
+          <p className="text-small">
+            Cet appareil n’a pas de caméra que le navigateur peut utiliser.
+          </p>
         ) : null}
         {reason === 'insecure' ? (
-          <p>
+          <p className="text-small">
             La caméra ne marche que sur une page sécurisée. Ouvrez l’application à son adresse en
             https.
           </p>
         ) : null}
         {reason === 'failed' ? (
-          <p>Fermez les autres applications qui utilisent la caméra, puis réessayez.</p>
-        ) : null}
-      </Callout>
-      <div className="flex flex-wrap gap-3">
-        <Button onClick={onUseFallback}>Saisir le code à la main</Button>
-        {reason !== 'insecure' ? (
-          <Button variant="secondary" onClick={onRetry}>
-            Réessayer
-          </Button>
+          <p className="text-small">
+            Fermez les autres applications qui utilisent la caméra, puis réessayez.
+          </p>
         ) : null}
       </div>
+      {reason !== 'insecure' ? <Button onClick={onRetry}>Réessayer</Button> : null}
+      <button
+        type="button"
+        onClick={onUseFallback}
+        className="tap-target text-scanner-ink font-semibold underline"
+      >
+        Saisir un code
+      </button>
     </div>
   );
 }

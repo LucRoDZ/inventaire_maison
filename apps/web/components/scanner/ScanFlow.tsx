@@ -8,6 +8,7 @@ import type {
   ScanResponse,
   ScanUnknownReason,
 } from '@inventaire/shared';
+import { Keyboard, PackagePlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../../lib/api';
 import { handleOfflineScan, OFFLINE_SCAN_MESSAGE } from '../../lib/offline';
@@ -19,13 +20,11 @@ import type { ScanResult } from '../../lib/scanner/types';
 import { AddSheet, type AddedInfo } from '../add/AddSheet';
 import { CatalogSearch } from '../add/CatalogSearch';
 import { UndoToast } from '../add/UndoToast';
-import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { ProductForm } from '../product/ProductForm';
 import { ProductPicker } from '../product/ProductPicker';
 import { InAppBrowserNotice } from './InAppBrowserNotice';
-import { ManualCodeInput } from './ManualCodeInput';
-import { PhotoCodeButton } from './PhotoCodeButton';
+import { ManualCodeSheet } from './ManualCodeSheet';
 import { RemoveFlow, type RemoveRequest } from './RemoveFlow';
 import { ScanSheet } from './ScanSheet';
 import { ScannerView, type ScanMode, type ScannerControls } from './ScannerView';
@@ -76,6 +75,8 @@ interface References {
 
 const NOTICE_MS = 4000;
 
+const chipClass = 'tap-target inline-flex items-center gap-2 rounded-full px-4 font-semibold';
+
 export function ScanFlow({
   origin = null,
   onClose = () => undefined,
@@ -87,6 +88,7 @@ export function ScanFlow({
   const online = useOnline();
   const [mode, setMode] = useState<ScanMode>('add');
   const [step, setStep] = useState<Step>({ name: 'scanning' });
+  const [manualOpen, setManualOpen] = useState(false);
   const [notice, setNotice] = useState<{ title: string; text: string } | null>(null);
   const showNotice = (text: string, title = 'Scan impossible') => setNotice({ title, text });
   const [toast, setToast] = useState<AddedInfo | null>(null);
@@ -326,6 +328,7 @@ export function ScanFlow({
         topSlot={statusSlot}
         overlay={
           <>
+            <InAppBrowserNotice />
             {notice ? (
               <Callout role="alert" title={notice.title} className="w-full max-w-xl">
                 {notice.text}
@@ -359,37 +362,59 @@ export function ScanFlow({
             ) : null}
           </>
         }
+        onManualCode={() => setManualOpen(true)}
         fallbacks={
-          <div className="flex flex-col gap-3">
-            <InAppBrowserNotice />
-            <ManualCodeInput onCode={(result) => onCode(result, mode)} />
-            <div className="flex flex-wrap items-center gap-x-4">
-              <Button variant="secondary" onClick={() => void openSearch()}>
-                Ajouter sans code-barres
-              </Button>
-              {mode === 'add' ? (
-                <label className="tap-target text-indigo flex cursor-pointer items-center gap-2 font-semibold">
-                  <input
-                    type="checkbox"
-                    checked={burst}
-                    onChange={(event) => setBurst(event.target.checked)}
-                    aria-describedby="burst-help"
-                    className="accent-indigo h-5 w-5"
-                  />
-                  Scan en rafale
-                </label>
-              ) : null}
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              data-manual-code=""
+              onClick={() => setManualOpen(true)}
+              className={`${chipClass} bg-scanner-frame text-scanner-on-frame`}
+            >
+              <Keyboard size={18} aria-hidden="true" />
+              Saisir un code
+            </button>
+            <button
+              type="button"
+              aria-label="Ajouter sans code-barres"
+              onClick={() => void openSearch()}
+              className={`${chipClass} bg-scanner-veil text-scanner-ink`}
+            >
+              <PackagePlus size={18} aria-hidden="true" />
+              Sans code-barres
+            </button>
             {mode === 'add' ? (
-              <p id="burst-help" className="text-help -mt-2">
+              <label className={`${chipClass} bg-scanner-veil text-scanner-ink cursor-pointer`}>
+                <input
+                  type="checkbox"
+                  aria-label="Scan en rafale"
+                  checked={burst}
+                  onChange={(event) => setBurst(event.target.checked)}
+                  aria-describedby="burst-help"
+                  className="accent-amber h-5 w-5"
+                />
+                Rafale
+              </label>
+            ) : null}
+            {mode === 'add' ? (
+              <p id="burst-help" className="sr-only">
                 Un produit connu avec un lieu habituel est ajouté d’un geste, sans formulaire. Les
                 autres ouvrent le formulaire.
               </p>
             ) : null}
-            <PhotoCodeButton onCode={(result) => onCode(result, mode)} />
           </div>
         }
       />
+
+      {manualOpen ? (
+        <ManualCodeSheet
+          onClose={() => setManualOpen(false)}
+          onCode={(result) => {
+            setManualOpen(false);
+            onCode(result, mode);
+          }}
+        />
+      ) : null}
 
       {step.name === 'resolving' ? (
         <p role="status" className="text-small text-scanner-ink!">
