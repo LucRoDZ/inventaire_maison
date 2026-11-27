@@ -1,10 +1,9 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   INSTALL_STORAGE_KEY,
   listenForInstallPrompt,
-  requestInstallSheet,
   resetInstallStateForTests,
 } from '../../lib/install';
 import { InstallEntry } from '../plus/InstallEntry';
@@ -104,37 +103,82 @@ describe('InstallSheet', () => {
 });
 
 describe('InstallEntry in Plus', () => {
-  it('reopens a snoozed sheet', async () => {
-    setBrowser(IPHONE);
-    window.localStorage.setItem(
-      INSTALL_STORAGE_KEY,
-      JSON.stringify({ kind: 'until', until: Date.now() + 1e9 }),
-    );
-    render(
-      <>
-        <ul>
-          <InstallEntry />
-        </ul>
-        <InstallSheet />
-      </>,
-    );
-    await act(async () => undefined);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await userEvent.click(await screen.findByRole('button', { name: 'Installer l’application' }));
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('is hidden in standalone mode', async () => {
-    setBrowser(IPHONE, true);
+  const CHROME_IOS = `${IPHONE} CriOS/120.0`;
+  const CHROME_DESKTOP = 'Mozilla/5.0 (X11; Linux x86_64) Chrome/120.0 Safari/537.36';
+  const renderEntry = () =>
     render(
       <ul>
         <InstallEntry />
       </ul>,
     );
-    await act(async () => undefined);
+  const row = () => screen.findByRole('button', { name: /Installer l’application/ });
+
+  it('shows a non clickable installed line in standalone mode', async () => {
+    setBrowser(IPHONE, true);
+    renderEntry();
+    expect(await screen.findByText('Application installée')).toBeInTheDocument();
+    expect(screen.getByText('Disponible sur l’écran d’accueil')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('calls the native prompt once, then falls back to the help sheet', async () => {
+    setBrowser(CHROME_DESKTOP);
+    renderEntry();
+    const event = fireInstallPrompt();
+    (event['userChoice'] as unknown) = Promise.resolve({ outcome: 'dismissed' });
+    await userEvent.click(await row());
+    expect(event['prompt']).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await userEvent.click(await row());
+    expect(event['prompt']).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('dialog', { name: 'Installer l’application' })).toBeVisible();
+  });
+
+  it('turns into the installed line after an accepted prompt', async () => {
+    setBrowser(CHROME_DESKTOP);
+    renderEntry();
+    fireInstallPrompt();
+    await userEvent.click(await row());
+    expect(await screen.findByText('Application installée')).toBeInTheDocument();
+  });
+
+  it('explains the three steps on Safari for iOS', async () => {
+    setBrowser(IPHONE);
+    renderEntry();
+    await userEvent.click(await row());
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('asks to open Safari on another iOS browser', async () => {
+    setBrowser(CHROME_IOS);
+    renderEntry();
+    await userEvent.click(await row());
     expect(
-      screen.queryByRole('button', { name: 'Installer l’application' }),
-    ).not.toBeInTheDocument();
-    requestInstallSheet();
+      await screen.findByText('Ouvrez l’application dans Safari pour l’installer.'),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Copier le lien' })).toBeInTheDocument();
+  });
+
+  it('gives the menu instruction without any event, and copies the link', async () => {
+    setBrowser(FIREFOX_ANDROID);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderEntry();
+    await userEvent.click(await row());
+    expect(await screen.findByText(/Ouvrez le menu ⋮ du navigateur/)).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Copier le lien' }));
+    expect(writeText).toHaveBeenCalledWith(window.location.origin);
+    expect(await screen.findByRole('status')).toHaveTextContent('Lien copié');
+  });
+
+  it('stays silent when copying fails', async () => {
+    setBrowser(FIREFOX_ANDROID);
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderEntry();
+    await userEvent.click(await row());
+    await userEvent.click(screen.getByRole('button', { name: 'Copier le lien' }));
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 });

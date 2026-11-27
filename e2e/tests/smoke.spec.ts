@@ -16,7 +16,9 @@ test('le manifeste et les icônes sont servis sans session', async ({ request })
     expect(response.status(), icon.src).toBe(200);
     expect(response.headers()['content-type']).toContain('image/png');
   }
-  expect((await request.get('/icons/apple-touch-icon.png')).status()).toBe(200);
+  for (const path of ['/icons/v3/apple-touch-icon.png', '/favicon.ico', '/icons/v3/icon.svg']) {
+    expect((await request.get(path)).status(), path).toBe(200);
+  }
 });
 
 test('robots.txt interdit tout et les en-têtes de confidentialité et de sécurité sont présents', async ({

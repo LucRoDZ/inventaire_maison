@@ -89,6 +89,8 @@ Chaque compte appartient à un **foyer** (une famille) ; les comptes d'un même 
 
 ## Tests et qualité
 
+`npm run icons` régénère toutes les icônes depuis `design/icon/`.
+
 ```bash
 npm run lint
 npm run format:check

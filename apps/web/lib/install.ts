@@ -7,7 +7,7 @@ export interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-export type InstallMode = 'prompt' | 'ios' | 'firefox-android' | 'none';
+export type InstallMode = 'prompt' | 'ios' | 'ios-other' | 'firefox-android' | 'none';
 
 export interface InstallEnv {
   userAgent: string;
@@ -20,10 +20,17 @@ export interface InstallEnv {
 
 /** How the app can be installed here; `none` when it is installed already or cannot be. */
 export function installMode(env: InstallEnv): InstallMode {
-  if (env.standalone || isInAppBrowser(env.userAgent)) return 'none';
-  if (env.hasPrompt) return 'prompt';
+  if (env.standalone) return 'none';
   const platform = detectPlatform(env.userAgent, env.maxTouchPoints);
-  if (platform === 'ios') return 'ios';
+  // In an app's own browser (Instagram, Facebook…) on iOS, the way out is Safari.
+  if (isInAppBrowser(env.userAgent)) return platform === 'ios' ? 'ios-other' : 'none';
+  if (env.hasPrompt) return 'prompt';
+  if (platform === 'ios') {
+    // Only Safari can add a site to the home screen on iOS; other browsers are shells around it.
+    return /CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|DuckDuckGo|GSA\//i.test(env.userAgent)
+      ? 'ios-other'
+      : 'ios';
+  }
   if (platform === 'android' && /Firefox|Fennec/i.test(env.userAgent)) return 'firefox-android';
   return 'none';
 }

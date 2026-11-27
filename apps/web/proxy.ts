@@ -13,5 +13,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except the login page, the API, Next internals and public PWA files.
-  matcher: ['/((?!connexion|api|_next|icons|manifest.webmanifest|robots.txt|sw.js|favicon.ico).*)'],
+  matcher: [
+    '/((?!connexion|api|_next|icons|splash|manifest.webmanifest|robots.txt|sw.js|favicon.ico).*)',
+  ],
 };

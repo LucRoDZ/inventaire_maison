@@ -61,6 +61,7 @@ export function InstallSheet() {
             </p>
           ) : null}
           {mode === 'ios' ? <IosInstallSteps /> : null}
+          {mode === 'ios-other' ? <p>Ouvrez l’application dans Safari pour l’installer.</p> : null}
           {mode === 'firefox-android' ? <BrowserInstallHelp /> : null}
           <div className="mt-3 flex flex-wrap gap-2">
             {mode === 'prompt' ? (
