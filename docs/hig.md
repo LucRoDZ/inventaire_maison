@@ -17,13 +17,13 @@ Branche `hig`. Règle absolue : aucune logique métier, aucun endpoint, aucune m
 
 | Tâche | Qui | Statut | Commit |
 | --- | --- | --- | --- |
-| Étape 1 : tokens, police, échelle | pilote | fait | (ce commit) |
-| W1 : `QuantityControl`, boutons-icônes sans fond (T2) | worker | à faire | |
-| W2 : contrôle segmenté et transition Maison ↔ Liste (T3) | worker | à faire | |
-| W3 : barre du bas, titres, compteurs, bouton Ajouter (T4) | worker | à faire | |
-| W4 : liste d'inventaire et Courses (T5) | worker | à faire | |
-| W5 : vue Maison et meubles (T6) | worker | à faire | |
-| W6 : feuilles, filtres, scanner, documentation (T7) | worker | à faire | |
+| Étape 1 : tokens, police, échelle | pilote | fait | 1392575 |
+| W1 : `QuantityControl`, boutons-icônes sans fond (T2) | worker | fait | 214530a, 9e1ded1, 945e9dc, 1610df3 |
+| W2 : contrôle segmenté et transition Maison ↔ Liste (T3) | worker | fait | f985973, 6333ed8 |
+| W3 : barre du bas, titres, compteurs, bouton Ajouter (T4) | worker | fait | 9708d4e, 029da1a |
+| W4 : liste d'inventaire et Courses (T5) | worker | en cours | |
+| W5 : vue Maison et meubles (T6) | worker | en cours | |
+| W6 : feuilles, filtres, scanner, documentation (T7) | worker | en cours | |
 | Suite complète, revue, PR | pilote | à faire | |
 
 ## Décisions prises
@@ -36,3 +36,5 @@ Branche `hig`. Règle absolue : aucune logique métier, aucun endpoint, aucune m
 - H6 : le logo (`design/icon/`, icônes générées) garde son indigo `#1800ad` : c'est une image validée par l'utilisateur ; `icons.spec.ts` mesure donc toujours ce bleu-là. Plus aucune trace de `#1800ad` dans le code applicatif ni dans les tokens.
 - H7 : le titre d'écran est en graisse 700 (Large Title HIG) ; toutes les autres graisses restent 400 et 600.
 - H8 : test e2e « police Carlito chargée » remplacé par « police du système, sans police téléchargée ».
+- H9 : transition Maison ↔ Liste par l'API View Transitions : seule la zone de défilement est nommée, et seulement pendant la bascule ; sans l'API (ou mouvement réduit), changement instantané. La vue locale est mise à jour dans `flushSync`, l'URL suit comme avant.
+- H10 : dans Courses, la quantité figure déjà dans le texte de la ligne : `QuantityControl` y est utilisé sans valeur entre − et + (`hideValue`).
