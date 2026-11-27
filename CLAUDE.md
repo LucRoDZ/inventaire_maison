@@ -29,6 +29,7 @@ Cherche le titre avec `grep -n "^## \|^### " <fichier>`, puis lis la plage de li
 | Déploiement, sauvegardes | `README.md` | `## Déploiement sur le VPS`, `## Sauvegardes` |
 | Tests manuels sur appareils | `README.md` | `## Test manuel sur vrais appareils` |
 | Phase 3 : vagues, avancement | `docs/phase-3.md` | tableau en tête |
+| Phase 5 : contrat, avancement, décisions | `docs/phase-5.md` | tableau en tête |
 
 ## Stack (imposée)
 - Front : Next.js (App Router), TypeScript, Tailwind, PWA.
@@ -41,7 +42,7 @@ Cherche le titre avec `grep -n "^## \|^### " <fichier>`, puis lis la plage de li
 
 ## Langue et style
 - Interface 100 % en français. Code, commits et noms de variables en anglais.
-- Design Indigo Ambre : utilise `tokens.css` du dépôt, ne recopie jamais une couleur en dur. Thème clair uniquement en V1. Un seul accent ambre, pas de couleur par catégorie, pas d'emoji.
+- Design Indigo Ambre : utilise `tokens.css` du dépôt, ne recopie jamais une couleur en dur. Thème clair uniquement (décision Phase 5 : aucun thème sombre). Un seul accent ambre, pas de couleur par catégorie, pas d'emoji.
 - Police Carlito. Cartes : rayon 16 px, ombre `0 4px 8px rgba(0,0,0,.12)`.
 
 ## Méthode de travail
