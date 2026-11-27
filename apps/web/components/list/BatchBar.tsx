@@ -21,7 +21,7 @@ export function BatchBar({ count, busy, onMove, onConsumed, onWasted, onDone }: 
     <div
       role="region"
       aria-label="Actions sur la sélection"
-      className="border-line rounded-card shadow-card sticky bottom-0 z-10 flex flex-col gap-2 border bg-white p-3"
+      className="border-line rounded-card shadow-raised sticky bottom-0 z-10 flex flex-col gap-2 border bg-white p-3"
     >
       <p role="status" className="text-small">
         {count === 0

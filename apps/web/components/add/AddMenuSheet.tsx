@@ -42,7 +42,7 @@ function Row({ icon: Icon, label, hint, onClick }: RowProps) {
       onClick={onClick}
       className="tap-target text-indigo hover:bg-lavender flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left"
     >
-      <span className="bg-lavender flex size-11 shrink-0 items-center justify-center rounded-full">
+      <span className="flex w-8 shrink-0 items-center justify-center">
         <Icon size={22} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">

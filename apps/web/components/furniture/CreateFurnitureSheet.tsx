@@ -146,7 +146,7 @@ export function CreateFurnitureSheet({
                   />
                   <span
                     aria-hidden="true"
-                    className="bg-lavender text-indigo inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    className="text-indigo inline-flex h-8 w-8 shrink-0 items-center justify-center"
                   >
                     <Icon size={18} />
                   </span>
@@ -198,7 +198,7 @@ export function CreateFurnitureSheet({
                 setShelfCount((n) => Math.max(1, n - 1));
                 setCountEdited(true);
               }}
-              className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full aria-disabled:opacity-50"
+              className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150 aria-disabled:opacity-50"
             >
               <Minus size={20} aria-hidden="true" />
             </button>
@@ -214,7 +214,7 @@ export function CreateFurnitureSheet({
                 setShelfCount((n) => Math.min(MAX_SHELVES_PER_LOCATION, n + 1));
                 setCountEdited(true);
               }}
-              className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line aria-disabled:opacity-50"
+              className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150 aria-disabled:opacity-50"
             >
               <Plus size={20} aria-hidden="true" />
             </button>

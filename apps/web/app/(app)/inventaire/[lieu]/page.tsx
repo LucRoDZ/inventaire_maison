@@ -213,12 +213,12 @@ function Meuble() {
         // Above the bottom bar, over the furniture: a message never takes height from the shelves.
         <div className="absolute inset-x-0 bottom-2 z-20 flex flex-col gap-2 px-4">
           {notice ? (
-            <Callout role="status" title="C’est fait" className="shadow-card">
+            <Callout role="status" title="C’est fait" className="shadow-raised">
               {notice}
             </Callout>
           ) : null}
           {problem ? (
-            <Callout role="alert" title="Déplacement impossible" className="shadow-card">
+            <Callout role="alert" title="Déplacement impossible" className="shadow-raised">
               {problem}
             </Callout>
           ) : null}

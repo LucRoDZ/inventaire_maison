@@ -104,7 +104,7 @@ export function QuickEntry({ onAdd, search = searchProducts }: QuickEntryProps) 
     <form onSubmit={submit} noValidate className="flex flex-col gap-2">
       <div className="flex items-end gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <label htmlFor={inputId} className="text-label">
+          <label htmlFor={inputId} className="sr-only">
             Ajouter un article
           </label>
           <input

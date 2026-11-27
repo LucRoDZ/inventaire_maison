@@ -203,7 +203,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
             >
               <span
                 aria-hidden="true"
-                className="bg-lavender text-indigo inline-flex h-11 w-11 items-center justify-center rounded-full"
+                className="text-indigo inline-flex h-11 w-11 items-center justify-center"
               >
                 <Plus size={22} />
               </span>

@@ -37,7 +37,7 @@ export function UndoToast({
   return (
     <div
       role="status"
-      className="rounded-card shadow-card bg-indigo fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-center justify-between gap-3 p-4 text-white"
+      className="rounded-card shadow-raised bg-indigo fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-center justify-between gap-3 p-4 text-white"
     >
       <span className="min-w-0 flex-1">{message}</span>
       {secondary ? (

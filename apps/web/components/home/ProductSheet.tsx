@@ -123,7 +123,7 @@ export function ProductSheet({
             aria-label="Retirer une unité"
             disabled={busy}
             onClick={() => void change(-1, 'consumed')}
-            className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full"
+            className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
           >
             <Minus size={20} aria-hidden="true" />
           </button>
@@ -138,7 +138,7 @@ export function ProductSheet({
             aria-label="Ajouter une unité"
             disabled={busy}
             onClick={() => void change(1)}
-            className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line"
+            className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
           >
             <Plus size={20} aria-hidden="true" />
           </button>

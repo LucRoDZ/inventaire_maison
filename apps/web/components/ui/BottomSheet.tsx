@@ -124,7 +124,7 @@ export function BottomSheet({
 
   return (
     <div
-      className={`sheet-backdrop bg-indigo/40 fixed inset-0 flex items-end ${layer === 'top' ? 'z-50' : 'z-40'}`}
+      className={`sheet-backdrop bg-ink/30 fixed inset-0 flex items-end ${layer === 'top' ? 'z-50' : 'z-40'}`}
       onClick={closeOnBackdrop ? () => close.current() : undefined}
     >
       <div

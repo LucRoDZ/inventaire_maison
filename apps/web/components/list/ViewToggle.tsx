@@ -24,7 +24,7 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
           onClick={() => onChange(view)}
           className={`tap-target flex-1 rounded-lg font-semibold ${
             value === view
-              ? 'bg-white text-indigo shadow-card'
+              ? 'bg-white text-indigo shadow-raised'
               : 'text-indigo-mid hover:text-indigo'
           }`}
         >

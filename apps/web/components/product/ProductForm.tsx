@@ -151,7 +151,7 @@ export function ProductForm({
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-indigo/40">
+    <div className="fixed inset-0 z-30 flex items-end bg-ink/30">
       <form
         role="dialog"
         aria-modal="true"

@@ -86,7 +86,7 @@ function Prompt({
       onPointerLeave={(event) => event.pointerType === 'mouse' && setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="rounded-card shadow-card bg-indigo fixed inset-x-4 top-[calc(1rem+env(safe-area-inset-top))] z-40 mx-auto flex max-w-xl flex-col gap-2 p-4 text-white"
+      className="rounded-card shadow-raised bg-indigo fixed inset-x-4 top-[calc(1rem+env(safe-area-inset-top))] z-40 mx-auto flex max-w-xl flex-col gap-2 p-4 text-white"
     >
       {result === null ? (
         <>

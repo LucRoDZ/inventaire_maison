@@ -44,7 +44,7 @@ Cherche le titre avec `grep -n "^## \|^### " <fichier>`, puis lis la plage de li
 ## Langue et style
 - Interface 100 % en français. Code, commits et noms de variables en anglais.
 - Design Indigo Ambre : utilise `tokens.css` du dépôt, ne recopie jamais une couleur en dur. Thème clair uniquement (décision Phase 5 : aucun thème sombre). Un seul accent ambre, pas de couleur par catégorie, pas d'emoji.
-- Police Carlito. Cartes : rayon 16 px, filet `line` ; ombres par les jetons `shadow-raised` et `shadow-sheet` (Phase 5).
+- Police Carlito. Cartes : rayon 16 px, filet `line`, sans ombre (`shadow-card` = aucune) ; `shadow-raised` et `shadow-sheet` seulement pour ce qui flotte (bouton Ajouter, toasts, menus, feuilles). Icônes sans pastille ronde, boutons d'icône sans fond (survol `lavender`). Voile des feuilles : `bg-ink/30`.
 - Défilement interne (Phase 6) : `body` ne défile jamais. Tout écran a un en-tête `shrink-0`, une seule zone `min-h-0 flex-1 overflow-y-auto overscroll-contain` et un pied `shrink-0`. Écran simple : `Screen` ; écran à liste avec barre d'outils ou pied fixe : `FullPageList` (`components/ui/FullPageList.tsx`, variante onglet dans `(app)`, variante pleine page dans le groupe `(page)` sans barre du bas). Feuille à liste : `max-h-[85dvh] flex flex-col`, seule la liste défile.
 
 ## Méthode de travail

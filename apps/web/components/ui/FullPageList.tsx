@@ -10,6 +10,8 @@ interface FullPageListProps {
   title: string;
   /** Back button (arrow, 44 px, left of the title). Without it: tab variant, title as in `Screen`. */
   onBack?: () => void;
+  /** Buttons at the right of the title (44 px each). */
+  actions?: ReactNode;
   /** Fixed row under the title (search, sort). */
   toolbar?: ReactNode;
   /** Fixed row under the toolbar. */
@@ -37,6 +39,7 @@ interface FullPageListProps {
 export function FullPageList({
   title,
   onBack,
+  actions,
   toolbar,
   header,
   children,
@@ -68,7 +71,11 @@ export function FullPageList({
           >
             {title}
           </h1>
-          {onBack ? <span aria-hidden="true" className="size-11 -mr-3 shrink-0" /> : null}
+          {actions ? (
+            <div className="-mr-3 flex shrink-0 items-center">{actions}</div>
+          ) : onBack ? (
+            <span aria-hidden="true" className="size-11 -mr-3 shrink-0" />
+          ) : null}
         </div>
         {toolbar}
         {header}

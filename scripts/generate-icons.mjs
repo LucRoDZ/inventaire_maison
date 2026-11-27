@@ -11,7 +11,7 @@ const read = (name) => readFileSync(src(name));
 const web = path.join(root, 'apps/web');
 const iconsDir = path.join(web, 'public/icons/v3');
 const splashDir = path.join(web, 'public/splash/v3');
-const INDIGO = '#1800AD';
+const LAVENDER = '#EAE7FB';
 const WHITE = '#ffffff';
 const SAFE_RADIUS = 0.4; // maskable safe zone: circle of 80 % of the diameter
 
@@ -29,14 +29,14 @@ mkdirSync(splashDir, { recursive: true });
 
 const render = (name, size) => sharp(read(name), { density: 72 }).resize(size, size).png();
 
-// Largest distance from the centre of the light motif pixels, as a fraction of the size.
+// Largest distance from the centre of the indigo motif pixels, as a fraction of the size.
 async function motifRadius(png, size) {
   const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
   let max = 0;
   for (let y = 0; y < info.height; y++) {
     for (let x = 0; x < info.width; x++) {
       const i = (y * info.width + x) * info.channels;
-      if (data[i] > 150) {
+      if (data[i] < 120) {
         max = Math.max(max, Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2));
       }
     }
@@ -44,16 +44,17 @@ async function motifRadius(png, size) {
   return max / size;
 }
 
-// Maskable: full indigo square; the drawing is shrunk at render time if it leaves the safe zone.
+// Maskable: `principale` (indigo drawing on lavender, the colour chosen for the home screen), full
+// lavender square; the drawing is shrunk at render time if it leaves the safe zone.
 async function maskable(size) {
-  const full = await render('fond_indigo', size).toBuffer();
+  const full = await render('principale', size).toBuffer();
   const radius = await motifRadius(full, size);
   const limit = SAFE_RADIUS * 0.97;
   if (radius <= limit) return full;
   const inner = Math.floor(size * (limit / radius));
   console.log(`icons : maskable ${size} reduced to ${Math.round((inner / size) * 100)} %`);
-  const small = await render('fond_indigo', inner).toBuffer();
-  return sharp({ create: { width: size, height: size, channels: 3, background: INDIGO } })
+  const small = await render('principale', inner).toBuffer();
+  return sharp({ create: { width: size, height: size, channels: 3, background: LAVENDER } })
     .composite([{ input: small, gravity: 'center' }])
     .png()
     .toBuffer();
@@ -104,7 +105,7 @@ for (const size of [192, 512]) {
 await write('icon-monochrome-512.png', await monochromeAlpha(512));
 await write(
   'apple-touch-icon.png',
-  await render('fond_indigo', 180).flatten({ background: INDIGO }).toBuffer(),
+  await render('principale', 180).flatten({ background: LAVENDER }).toBuffer(),
 );
 copyFileSync(src('principale'), path.join(iconsDir, 'icon.svg'));
 console.log('icons : icon.svg');

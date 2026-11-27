@@ -16,9 +16,9 @@ Branche `logo`. Sources validées par l'utilisateur dans `design/icon/` (SVG et 
 | Fichier (sous `apps/web/public/icons/v3/`) | Source | Usage |
 | --- | --- | --- |
 | `icon-192.png`, `icon-512.png` | `principale` | manifest, `purpose: any` |
-| `icon-192-maskable.png`, `icon-512-maskable.png` | `fond_indigo` | manifest, `purpose: maskable` |
+| `icon-192-maskable.png`, `icon-512-maskable.png` | `principale` | manifest, `purpose: maskable` |
 | `icon-monochrome-512.png` | `monochrome`, fond retiré | manifest, `purpose: monochrome` |
-| `apple-touch-icon.png` (180) | `fond_indigo` | `<head>` iOS |
+| `apple-touch-icon.png` (180) | `principale` | `<head>` iOS |
 | `icon.svg` | `principale` (copie) | favicon vectoriel |
 | `favicon-16.png`, `favicon-32.png` | `simplifiee` | favicons PNG |
 | `apps/web/public/favicon.ico` (16, 32, 48) | `simplifiee` 16 et 32, `principale` 48 | navigateurs |
@@ -33,8 +33,9 @@ Branche `logo`. Sources validées par l'utilisateur dans `design/icon/` (SVG et 
 - L5 : icônes `any` et `apple-touch-icon` carrées, sans coins arrondis ajoutés : le système applique son masque.
 - L6 : l'interface n'affichait aucun logo (connexion, en-têtes et états vides sont textuels) : rien à remplacer, rien ajouté.
 - L7 : fond des écrans de lancement : blanc, comme `background_color` du manifest (inchangé), logo centré à 28 % de la largeur comme avant.
-- L8 : le dessin de `fond_indigo` dépasse le cercle de sécurité de 80 % : le script le réduit (environ 97 %) et le centre sur un carré indigo plein ; mesuré par `app/icons.spec.ts`.
+- L8 : le dessin dépasse le cercle de sécurité de 80 % : le script le réduit (environ 97 %) et le centre sur un carré plein de la couleur du fond ; mesuré par `app/icons.spec.ts`.
 - L9 : « Installer l'application » est toujours visible dans Plus ; « Application installée » (non cliquable) une fois installée. Navigateur intégré à une app sur iPhone (Instagram, Facebook) : même consigne que les autres navigateurs iOS, ouvrir dans Safari.
 - L10 : `/splash/` est exclu du contrôle de session (`proxy.ts`), comme `/icons/` : sinon un iPhone sans session reçoit la page de connexion à la place de l'écran de lancement.
 - L11 : `sharp` déclaré aussi à la racine (dépendance de dev), puisque `npm run icons` tourne depuis la racine.
 - L12 : au tout premier rendu d'une app installée, la ligne « Installer » peut apparaître un instant avant « Application installée » (le mode autonome n'est connu qu'après le montage, pour éviter un écart de rendu serveur) : accepté.
+- L13 : à la demande de l'utilisateur, l'icône de l'écran d'accueil (maskable et `apple-touch-icon`) est `principale` (dessin indigo sur lavande) et non plus `fond_indigo` ; `fond_indigo` reste dans `design/icon/` sans être utilisé.

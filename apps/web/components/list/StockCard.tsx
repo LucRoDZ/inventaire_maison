@@ -52,7 +52,7 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
             type="button"
             aria-label={`Retirer une unité de ${product.name}`}
             onClick={() => onChange(item, -1)}
-            className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line"
+            className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
           >
             <Minus size={18} aria-hidden="true" />
           </button>
@@ -66,7 +66,7 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
             type="button"
             aria-label={`Ajouter une unité de ${product.name}`}
             onClick={() => onChange(item, 1)}
-            className="tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line"
+            className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
           >
             <Plus size={18} aria-hidden="true" />
           </button>

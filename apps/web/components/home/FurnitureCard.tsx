@@ -78,7 +78,7 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
       onPointerUp={release}
       onPointerCancel={release}
       onPointerLeave={release}
-      className={`fx-card border-line rounded-card bg-surface-raised shadow-raised relative flex min-h-52 w-full flex-col items-center gap-2 border p-3 ${
+      className={`fx-card border-line rounded-card bg-surface-raised relative flex min-h-52 w-full flex-col items-center gap-2 border p-3 ${
         highlighted ? 'ring-amber ring-4' : ''
       }`}
     >

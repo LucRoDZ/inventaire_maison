@@ -61,7 +61,7 @@ export function CatalogSearch({
   }, [query]);
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-indigo/40" onClick={onClose}>
+    <div className="fixed inset-0 z-30 flex items-end bg-ink/30" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"

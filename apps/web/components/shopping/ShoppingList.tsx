@@ -116,6 +116,8 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
   const [busy, setBusy] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const [shareNote, setShareNote] = useState('');
+  /** Checks sent to the server and not answered yet. */
+  const inflight = useRef(new Set<Promise<unknown>>());
 
   const load = useCallback(async () => {
     try {
@@ -190,10 +192,13 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
         line.id === item.id ? { ...line, checked: !line.checked } : line,
       ),
     );
-    void act(
+    // Kept until the server has it: « Ranger » must never run before the check reached it.
+    const sent = act(
       () => apiRef.current.patch(item.id, { checked: !item.checked }),
       'Modification impossible',
     );
+    inflight.current.add(sent);
+    void sent.finally(() => inflight.current.delete(sent));
   };
 
   const setQuantity = (item: ShoppingItemDto, quantity: number) => {
@@ -254,6 +259,7 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
   const store = async () => {
     setBusy(true);
     setError(null);
+    await Promise.allSettled([...inflight.current]);
     let result: ShoppingStoreResponse;
     try {
       result = await apiRef.current.storeChecked();
@@ -346,35 +352,27 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
           <ChevronRight size={18} aria-hidden="true" className="shrink-0" />
         </Link>
       ) : null}
+      <p role="status" className="text-help empty:hidden">
+        {shareNote}
+      </p>
     </>
   );
 
+  // The footer exists only while something is checked: nothing else weighs on the list.
   const footer =
+    checked.length > 0 ? (
+      <Button variant="primary" className="w-full" disabled={busy} onClick={() => void store()}>
+        Ranger les articles cochés ({checked.length})
+      </Button>
+    ) : null;
+
+  const actions =
     items !== null && items.length > 0 ? (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          {checked.length > 0 ? (
-            <Button
-              variant="primary"
-              className="min-w-0 flex-1"
-              disabled={busy}
-              onClick={() => void store()}
-            >
-              Ranger les articles cochés ({checked.length})
-            </Button>
-          ) : (
-            <span className="flex-1" />
-          )}
-          <ActionsMenu
-            canClear={checked.length > 0 && !busy}
-            onClear={() => void clear()}
-            onShare={() => void share()}
-          />
-        </div>
-        <p role="status" className="text-help">
-          {shareNote}
-        </p>
-      </div>
+      <ActionsMenu
+        canClear={checked.length > 0 && !busy}
+        onClear={() => void clear()}
+        onShare={() => void share()}
+      />
     ) : null;
 
   return (
@@ -384,6 +382,7 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
         zoneLabel="Liste de courses"
         memoryKey="courses"
         bare
+        actions={actions}
         header={header}
         footer={footer}
         loading={items === null && !error}
@@ -398,7 +397,10 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
             </p>
           </section>
         ) : (
-          <ul className="flex flex-col gap-2" aria-label="Articles à acheter">
+          <ul
+            className="border-line rounded-card bg-surface-raised divide-line flex flex-col divide-y overflow-hidden border"
+            aria-label="Articles à acheter"
+          >
             {[...open, ...checked].map((item) => (
               <ShoppingLine
                 key={item.id}
@@ -524,7 +526,7 @@ function ActionsMenu({ canClear, onClear, onShare }: ActionsMenuProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="tap-target border-line text-indigo bg-surface-raised inline-flex size-11 items-center justify-center rounded-full border"
+        className="tap-target text-indigo hover:bg-lavender inline-flex size-11 items-center justify-center rounded-full transition-colors duration-150"
       >
         <MoreHorizontal size={20} aria-hidden="true" />
       </button>
@@ -532,7 +534,7 @@ function ActionsMenu({ canClear, onClear, onShare }: ActionsMenuProps) {
         <div
           role="menu"
           aria-label="Plus d'actions"
-          className="border-line bg-surface-raised shadow-raised absolute right-0 bottom-full z-30 mb-2 flex w-64 flex-col rounded-xl border p-1"
+          className="border-line bg-surface-raised shadow-raised absolute top-full right-0 z-30 mt-2 flex w-64 flex-col rounded-xl border p-1"
         >
           <button
             type="button"
@@ -575,7 +577,7 @@ interface ShoppingLineProps {
 function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: ShoppingLineProps) {
   const name = itemName(item);
   const round =
-    'tap-target bg-lavender text-indigo inline-flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-lavender-line disabled:opacity-50';
+    'tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150 disabled:opacity-50';
   return (
     <li>
       <SwipeRow
@@ -587,7 +589,7 @@ function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: Shoppin
         }}
         left={{ label: 'Supprimer', icon: Trash2, tone: 'wasted', run: onRemove }}
       >
-        <div className="border-line rounded-card shadow-card flex items-center gap-2 border bg-white py-1 pr-2 pl-1">
+        <div className="bg-surface-raised flex items-center gap-2 py-1 pr-2 pl-1">
           <label className="tap-target flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-2">
             <input
               type="checkbox"
@@ -629,7 +631,7 @@ function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: Shoppin
               type="button"
               aria-label={`Supprimer ${name}`}
               onClick={onRemove}
-              className="tap-target text-indigo-mid inline-flex items-center justify-center rounded-full"
+              className="tap-target text-grey hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
             >
               <Trash2 size={18} aria-hidden="true" />
             </button>

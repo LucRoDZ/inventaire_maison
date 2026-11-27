@@ -33,7 +33,7 @@
   --shadow-none: none; /* Cartes de liste : bordure d'1 px seulement. */
   --shadow-raised: 0 1px 3px rgba(24, 0, 173, 0.08), 0 2px 6px rgba(24, 0, 173, 0.06); /* Élément posé. */
   --shadow-sheet: 0 8px 24px rgba(24, 0, 173, 0.16); /* Feuille, modale. */
-  --shadow-card: var(--shadow-raised);
+  --shadow-card: var(--shadow-none); /* Cartes : filet seul, l'ombre est réservée à ce qui flotte (bouton Ajouter, menus, feuilles). */
   --radius-card: 16px; /* Cartes, encadrés, feuilles modales. */
   --radius-round: 50%; /* Pastilles d'icônes. */
 

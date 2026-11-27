@@ -14,7 +14,7 @@ export function IosInstallSteps() {
         <li key={text} className="flex items-center gap-3">
           <span
             aria-hidden="true"
-            className="bg-lavender text-indigo inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            className="text-indigo inline-flex h-9 w-9 shrink-0 items-center justify-center"
           >
             <Icon size={18} />
           </span>

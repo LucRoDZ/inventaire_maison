@@ -41,7 +41,7 @@ export function ProductTile({
         <FadeImage src={tile.imageUrl} className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center">
-          <span className="fx-tile-badge bg-lavender text-indigo flex items-center justify-center rounded-full">
+          <span className="fx-tile-badge text-indigo flex items-center justify-center">
             <Glyph size={28} aria-hidden="true" className="fx-tile-glyph" />
           </span>
         </span>

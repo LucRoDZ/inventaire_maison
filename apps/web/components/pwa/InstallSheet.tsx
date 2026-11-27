@@ -53,7 +53,7 @@ export function InstallSheet() {
       aria-label="Installer l’application"
       className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 mx-auto max-w-xl px-4"
     >
-      <div className="shadow-card rounded-card">
+      <div className="shadow-raised rounded-card">
         <Callout icon={Download} title="Installer l’application">
           {mode === 'prompt' ? (
             <p>

@@ -18,15 +18,15 @@ async function pixels(p: string) {
 describe.each([192, 512])('maskable icon %i', (size) => {
   const name = `icons/v3/icon-${size}-maskable.png`;
 
-  it('keeps the light motif inside the safe zone', async () => {
+  it('keeps the indigo motif inside the safe zone', async () => {
     const { data, width, height } = await pixels(name);
     let max = 0;
     let count = 0;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4;
-        // Close to the lavender #eae7fb.
-        if (Math.abs(data[i]! - 234) < 20 && Math.abs(data[i + 1]! - 231) < 20) {
+        // Close to the indigo #1800ad.
+        if (data[i]! < 60 && data[i + 1]! < 40 && data[i + 2]! > 140) {
           count++;
           max = Math.max(max, Math.hypot(x + 0.5 - width / 2, y + 0.5 - height / 2));
         }
@@ -36,7 +36,7 @@ describe.each([192, 512])('maskable icon %i', (size) => {
     expect(max).toBeLessThanOrEqual(0.4 * size);
   });
 
-  it('has indigo corners', async () => {
+  it('has lavender corners', async () => {
     const { data, width, height } = await pixels(name);
     for (const [x, y] of [
       [0, 0],
@@ -45,7 +45,7 @@ describe.each([192, 512])('maskable icon %i', (size) => {
       [width - 1, height - 1],
     ] as const) {
       const i = (y * width + x) * 4;
-      expect([data[i], data[i + 1], data[i + 2], data[i + 3]]).toEqual([24, 0, 173, 255]);
+      expect([data[i], data[i + 1], data[i + 2], data[i + 3]]).toEqual([234, 231, 251, 255]);
     }
   });
 });
