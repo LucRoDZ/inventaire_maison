@@ -10,9 +10,9 @@
 
 > Plan, contrat, tableau d'avancement et décisions P5.x : `docs/phase-5.md`.
 
-- [ ] **Vague 1** : thème clair unique, polish, bouton Ajouter et barre à 3 onglets.
-- [ ] **Vague 2** : scanner plein écran, rupture → courses (API et web), documentation.
-- [ ] **Clôture** : suite complète, revue, PR, CI verte, fusion.
+- [x] **Vague 1** : thème clair unique, polish, bouton Ajouter et barre à 3 onglets (8feceb0, e8e6261, 546ebab).
+- [x] **Vague 2** : scanner plein écran, rupture → courses (API et web), documentation (2c7b10e, 876d108, b442a01).
+- [x] **Clôture** : suite complète, revue corrigée, PR #29, CI verte, fusion.
 
 ## Décisions prises
 
@@ -73,3 +73,5 @@
 <!-- Claude : note ici ce qui t'empêche d'avancer, avec la commande et l'erreur exacte. -->
 
 - (note) Node 24 obligatoire (`nvm use`) : sous Node 20, `argon2` plante dans les tests API. Le conteneur local `inv-test-pg` occupe `127.0.0.1:5432`.
+
+STOP: validation requise

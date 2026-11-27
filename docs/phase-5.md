@@ -16,7 +16,7 @@ Branche `phase-5`. Pour reprendre : lire ce tableau, puis `git log main..phase-5
 | W5a · rupture → courses, API | worker | fait | 410d082, b2a985b, 6123834, 876d108 |
 | W5b · rupture → courses, web | worker | fait | 120ebb7, b04a94c, 83c6d75, 71b0aa5, b442a01 |
 | W6 · documentation, manifeste, service worker | pilote | fait | 793c0a5 |
-| Clôture : suite complète, revue (corrigée), PR #29 | pilote | en cours | |
+| Clôture : suite complète, revue (corrigée), PR #29 | pilote | fait | CI verte |
 
 ## Contrat (figé)
 
