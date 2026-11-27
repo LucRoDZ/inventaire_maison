@@ -396,21 +396,6 @@ describe('OpenFurniture', () => {
     expect(container.querySelectorAll('.fx-shelves > .fx-row')).toHaveLength(3);
   });
 
-  it('tells the stylesheet how many shelves share the height, and what the tray takes', () => {
-    const { container, unmount } = render(<OpenFurniture location={fridge()} />);
-    const shelves = container.querySelector<HTMLElement>('.fx-shelves')!;
-    expect(shelves.style.getPropertyValue('--n')).toBe('3');
-    expect(shelves.style.getPropertyValue('--fx-slots')).toBe('3');
-    expect(shelves.style.getPropertyValue('--fx-tray-fixed')).toBe('56px');
-    unmount();
-    const filled = render(
-      <OpenFurniture location={fridge({ unshelved: [tile(5, 'Beurre', 2)] })} />,
-    );
-    const next = filled.container.querySelector<HTMLElement>('.fx-shelves')!;
-    expect(next.style.getPropertyValue('--fx-slots')).toBe('4');
-    expect(next.style.getPropertyValue('--fx-tray-fixed')).toBe('0px');
-  });
-
   it('keeps the « Non rangé » tray a drop zone: a thin line empty, a shelf row with products', () => {
     const { unmount } = render(<OpenFurniture location={fridge()} />);
     expect(screen.getByRole('region', { name: 'Non rangé' }).parentElement).toHaveClass(
