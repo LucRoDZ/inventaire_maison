@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { AuthProvider } from '../../components/auth/AuthProvider';
 import { AppBadge } from '../../components/pwa/AppBadge';
+import { OutOfStockPrompt } from '../../components/shopping/OutOfStockPrompt';
 import { InstallSheet } from '../../components/pwa/InstallSheet';
 
 /**
@@ -14,6 +15,7 @@ export default function ScanLayout({ children }: { children: ReactNode }) {
         {children}
       </div>
       <InstallSheet />
+      <OutOfStockPrompt />
       <AppBadge />
     </AuthProvider>
   );
