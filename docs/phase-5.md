@@ -11,12 +11,12 @@ Branche `phase-5`. Pour reprendre : lire ce tableau, puis `git log main..phase-5
 | W1 · T1.4 purge de l'ancien réglage | pilote | fait | d56a94d |
 | W3 · bouton Ajouter, feuille, barre à 3 onglets | worker | fait | e99528a, be8a8f5, 05b5d30, 546ebab, fe1a7d6 |
 | W2 · polish du thème clair | worker | fait | e8e6261 |
-| W4 · scanner plein écran | worker | à faire | |
+| W4 · scanner plein écran | worker | fait | 66cfe02, 2c7b10e |
 | Contrat vague 2 : types partagés (`productTotal`, `onShoppingList`, `ifAbsent`, opération `shop`) | pilote | fait | 6566e3f |
-| W5a · rupture → courses, API | worker | à faire | |
-| W5b · rupture → courses, web | worker | à faire | |
-| W6 · documentation, manifeste, service worker | pilote | à faire | |
-| Clôture : suite complète, revue, PR | pilote | à faire | |
+| W5a · rupture → courses, API | worker | fait | 410d082, b2a985b, 6123834, 876d108 |
+| W5b · rupture → courses, web | worker | fait | 120ebb7, b04a94c, 83c6d75, 71b0aa5, b442a01 |
+| W6 · documentation, manifeste, service worker | pilote | fait | 793c0a5 |
+| Clôture : suite complète, revue (corrigée), PR #29 | pilote | en cours | |
 
 ## Contrat (figé)
 
@@ -38,3 +38,14 @@ Branche `phase-5`. Pour reprendre : lire ce tableau, puis `git log main..phase-5
 - P5.4 : pas d'invitation quand le produit est déjà sur la liste (ligne automatique du seuil minimum comprise) ; hors ligne, le total n'est pas connu, donc pas d'invitation après un retrait mis en file ; « Ajouter » hors connexion passe par l'opération `shop` de la file.
 - P5.2 : W1 fait par le pilote (surtout des suppressions) avant les workers, pour que W2 parte d'un `tokens.css` sans bloc sombre.
 - P5.5 : « Ajouter à nouveau » en ligne ajoute au lieu habituel et s'annule par une `correction` sur la même ligne (comme le scanner) ; hors ligne, l'opération passe par la file et l'annulation la retire tant qu'elle attend.
+- P5.6 : identité révisée à la demande de la phase (W2) : fond de page `--surface`, cartes de liste à filet sans ombre, ombres teintées indigo à trois niveaux ; cahier des charges et `CLAUDE.md` mis à jour.
+- P5.7 : le scanner assombrit la `theme-color` tant qu'il est ouvert (barre d'état d'Android) ; sur iPhone, le style de la barre d'état vaut pour toute l'application (`black-translucent` rendrait illisible l'heure sur les écrans clairs) : la barre reste claire au-dessus du viseur.
+- P5.8 : l'invitation rupture s'affiche en haut de l'écran, jamais sur le toast de retrait du bas ; le minuteur ne se met en pause qu'au survol d'une souris ou au focus clavier.
+- P5.9 : « Ajouter à nouveau » ne met jamais en file un ajout en ligne qui a échoué (la réponse a pu se perdre après application) : message d'erreur à la place ; verrou contre le double appui.
+- P5.10 : insertions de courses concurrentes (`shop`, `ifAbsent`, ligne automatique) en `ON CONFLICT DO NOTHING` : jamais de 500 ni de doublon.
+- P5.11 : e2e complets et axe lancés par la CI (chromium-mobile et webkit-mobile, 360×740 et 390×844), pas en local (règle de `CLAUDE.md`) ; pas de captures jointes, le rendu réel est à vérifier sur téléphone.
+
+## Reste (mineur, non corrigé)
+
+- Quantité proposée par l'invitation : toujours 1 (`ProductDto` n'a pas de quantité habituelle).
+- Sur iPhone installé, barre d'état claire au-dessus du scanner (P5.7).
