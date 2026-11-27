@@ -65,27 +65,44 @@ const quantity = async (page: Page, name: string) => {
 const cameraActive = (page: Page) =>
   page.evaluate(() => (window as unknown as CameraWindow).__e2eCameraActive);
 
-test('le scanner occupe tout l’écran, sans barre du bas', async ({ page }) => {
-  await signIn(page);
-  await openScanner(page);
-  await expect(page).toHaveURL(/\/scanner$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Scanner' })).toBeAttached();
-  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
+for (const size of [
+  { width: 360, height: 740 },
+  { width: 390, height: 844 },
+]) {
+  test(`le scanner couvre toute la fenêtre en ${size.width}×${size.height}, sans barre du bas`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await signIn(page);
+    await openScanner(page);
+    await expect(page).toHaveURL(/\/scanner$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Scanner' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
 
-  const close = page.getByRole('button', { name: 'Fermer le scanner' });
-  const box = (await close.boundingBox())!;
-  expect(box.width).toBeGreaterThanOrEqual(44);
-  expect(box.height).toBeGreaterThanOrEqual(44);
+    // The container is the whole window; the video fills it, under any notch.
+    const screen = (await page.getByTestId('scanner-screen').boundingBox())!;
+    expect(screen).toMatchObject({ x: 0, y: 0, width: size.width, height: size.height });
+    const video = (await page.getByLabel('Aperçu de la caméra').boundingBox())!;
+    expect(video).toMatchObject({ x: 0, y: 0, width: size.width, height: size.height });
 
-  const size = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollHeight,
-    client: document.documentElement.clientHeight,
-  }));
-  expect(size.scroll).toBeLessThanOrEqual(size.client);
-  // The camera is on and the manual entry is at the bottom of the screen.
-  expect(await cameraActive(page)).toBe(true);
-  await expect(page.getByLabel('Code-barres')).toBeVisible();
-});
+    const close = page.getByRole('button', { name: 'Fermer le scanner' });
+    const box = (await close.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+
+    // No scroll, and the page is locked while scanning.
+    const state = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollHeight,
+      client: document.documentElement.clientHeight,
+      overflow: getComputedStyle(document.body).overflow,
+    }));
+    expect(state.scroll).toBeLessThanOrEqual(state.client);
+    expect(state.overflow).toBe('hidden');
+    // The camera is on and the typed-code entry is in the bottom row.
+    expect(await cameraActive(page)).toBe(true);
+    await expect(page.getByRole('button', { name: 'Saisir un code' })).toBeVisible();
+  });
+}
 
 test('fermer le scanner revient à l’écran précédent et coupe la caméra', async ({ page }) => {
   await signIn(page);
@@ -123,6 +140,8 @@ test('saisie manuelle d’un code connu : fiche en bas, compteur, « Annuler le 
   await page.goto('/scanner');
   await startScanner(page);
   const before = await quantity(page, name);
+
+  await page.getByRole('button', { name: 'Saisir un code' }).click();
 
   await page.getByLabel('Code-barres').fill(code);
   await page.getByLabel('Code-barres').press('Enter');
@@ -171,6 +190,7 @@ test('caméra refusée : aide pas à pas et saisie manuelle toujours là', async
   await expect(page.getByRole('button', { name: 'Réessayer' })).toBeVisible();
   expect(await cameraActive(page)).toBeFalsy();
 
+  await page.getByRole('button', { name: 'Saisir un code' }).first().click();
   await page.getByLabel('Code-barres').fill(code);
   await page.getByLabel('Code-barres').press('Enter');
   await expect(page.getByRole('dialog', { name })).toBeVisible();
