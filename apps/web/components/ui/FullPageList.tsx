@@ -26,6 +26,8 @@ interface FullPageListProps {
   memoryKey?: string;
   /** Name of the scroll region; the title by default. */
   zoneLabel?: string;
+  /** The children draw their own cards: no frame around them. */
+  bare?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export function FullPageList({
   loading = false,
   memoryKey,
   zoneLabel,
+  bare = false,
 }: FullPageListProps) {
   const showEmpty = !loading && isEmpty && emptyState !== undefined;
   return (
@@ -76,7 +79,13 @@ export function FullPageList({
         ) : showEmpty ? (
           emptyState
         ) : (
-          <div className="border-line rounded-card bg-surface-raised flex flex-col overflow-hidden border">
+          <div
+            className={
+              bare
+                ? 'flex flex-col gap-4'
+                : 'border-line rounded-card bg-surface-raised flex flex-col overflow-hidden border'
+            }
+          >
             {children}
           </div>
         )}

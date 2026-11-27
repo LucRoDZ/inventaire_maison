@@ -94,11 +94,13 @@ describe('ShoppingList', () => {
   it('empties the checked lines only', async () => {
     const api = setup([line(1, { checked: true }), line(2)]);
     await screen.findByText('Ligne 1');
-    await userEvent.click(screen.getByRole('button', { name: 'Vider les lignes cochées' }));
+    await userEvent.click(screen.getByRole('button', { name: "Plus d'actions" }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Vider les lignes cochées' }));
     expect(api.clearChecked).toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByText('Ligne 1')).toBeNull());
     expect(screen.getByText('Ligne 2')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Vider les lignes cochées' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: "Plus d'actions" }));
+    expect(screen.getByRole('menuitem', { name: 'Vider les lignes cochées' })).toBeDisabled();
   });
 
   it('adds a recently consumed product with one tap', async () => {

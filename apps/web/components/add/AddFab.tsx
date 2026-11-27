@@ -1,7 +1,8 @@
 'use client';
 
 import { Plus } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { addNotice } from '../../lib/add-notice';
 import { AddMenuSheet, type AddNotice } from './AddMenuSheet';
 import { useKeyboardOpen } from '../../lib/use-keyboard-open';
 import { UndoToast } from './UndoToast';
@@ -15,6 +16,22 @@ export function AddFab() {
   const [notice, setNotice] = useState<AddNotice | null>(null);
   const keyboardOpen = useKeyboardOpen();
   const button = useRef<HTMLButtonElement>(null);
+  const announced = useSyncExternalStore(addNotice.subscribe, addNotice.get, () => null);
+  // Leaving without an undo (unmount) sends what the page queued.
+  const pending = useRef(announced);
+  useEffect(() => {
+    pending.current = announced;
+  });
+  useEffect(
+    () => () => {
+      const left = pending.current;
+      if (left) {
+        addNotice.clear();
+        left.commit();
+      }
+    },
+    [],
+  );
 
   return (
     <>
@@ -33,6 +50,19 @@ export function AddFab() {
       )}
       {open ? (
         <AddMenuSheet onClose={() => setOpen(false)} onNotify={(next) => setNotice(next)} />
+      ) : null}
+      {announced ? (
+        <UndoToast
+          message={announced.message}
+          onExpire={() => {
+            addNotice.clear();
+            announced.commit();
+          }}
+          onUndo={() => {
+            addNotice.clear();
+            void announced.undo().catch(() => undefined);
+          }}
+        />
       ) : null}
       {notice ? (
         <UndoToast
