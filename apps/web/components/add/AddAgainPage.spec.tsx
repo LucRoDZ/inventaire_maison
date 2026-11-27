@@ -19,7 +19,7 @@ vi.mock('../../lib/offline/runtime', () => ({
 
 const fetchRecentProducts =
   vi.fn<(p: { limit?: number; days?: number }) => Promise<RecentProductDto[]>>();
-const addShoppingItem = vi.fn(async (_input: unknown) => ({}));
+const addShoppingItem = vi.fn<(input: unknown) => Promise<object>>(async () => ({}));
 vi.mock('../../lib/shopping-api', () => ({
   fetchRecentProducts: (params: { limit?: number; days?: number }) => fetchRecentProducts(params),
   addShoppingItem: (input: unknown) => addShoppingItem(input),
