@@ -198,11 +198,11 @@ export function CreateFurnitureSheet({
                 setShelfCount((n) => Math.max(1, n - 1));
                 setCountEdited(true);
               }}
-              className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150 aria-disabled:opacity-50"
+              className="tap-target text-ink inline-flex items-center justify-center transition-[opacity,transform] duration-100 active:scale-[0.92] active:opacity-50 aria-disabled:opacity-35 motion-reduce:active:scale-100"
             >
-              <Minus size={20} aria-hidden="true" />
+              <Minus size={20} strokeWidth={2} aria-hidden="true" />
             </button>
-            <output aria-live="polite" className="text-stat text-indigo min-w-[2ch] text-center">
+            <output aria-live="polite" className="text-subtitle w-[3ch] text-center tabular-nums">
               {shelfCount}
             </output>
             <button
@@ -214,9 +214,9 @@ export function CreateFurnitureSheet({
                 setShelfCount((n) => Math.min(MAX_SHELVES_PER_LOCATION, n + 1));
                 setCountEdited(true);
               }}
-              className="tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150 aria-disabled:opacity-50"
+              className="tap-target text-ink inline-flex items-center justify-center transition-[opacity,transform] duration-100 active:scale-[0.92] active:opacity-50 aria-disabled:opacity-35 motion-reduce:active:scale-100"
             >
-              <Plus size={20} aria-hidden="true" />
+              <Plus size={20} strokeWidth={2} aria-hidden="true" />
             </button>
             <span className="text-small">{MAX_SHELVES_PER_LOCATION} au plus</span>
           </div>
