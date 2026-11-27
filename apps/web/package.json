@@ -14,29 +14,29 @@
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@inventaire/shared": "*",
-    "@serwist/window": "^9.5.13",
-    "lucide-react": "^1.73.0",
+    "@serwist/window": "^9.5.15",
+    "lucide-react": "^1.79.0",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zxing-wasm": "^3.1.6"
+    "zxing-wasm": "^3.1.7"
   },
   "devDependencies": {
-    "@serwist/next": "^9.5.13",
+    "@serwist/next": "^9.5.15",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.10",
+    "@testing-library/user-event": "^14.6.13",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.3.0",
     "jsdom": "^31.0.1",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.33",
     "serwist": "^9.5.13",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.5",
     "typescript": "^5.6.0",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }
