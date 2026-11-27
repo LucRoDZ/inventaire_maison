@@ -6,7 +6,7 @@ import { Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { addNotice } from '../../lib/add-notice';
-import { abandonOp, queueOp, syncNow } from '../../lib/offline/runtime';
+import { queueOp, syncNow } from '../../lib/offline/runtime';
 import { fetchRecentProducts } from '../../lib/shopping-api';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { FullPageList } from '../ui/FullPageList';
@@ -30,7 +30,9 @@ const localDate = (date: Date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
 const detailOf = (product: RecentProductDto) =>
-  [product.locationName, product.sizeLabel].filter((part): part is string => !!part).join(' · ');
+  [product.locationName ?? 'Aucun meuble habituel', product.sizeLabel]
+    .filter((part): part is string => !!part)
+    .join(' · ');
 
 const sorted = (items: RecentProductDto[], sort: Sort) => {
   const copy = [...items];
@@ -108,17 +110,18 @@ export function AddAgainPage() {
     try {
       const [year, month, day] = date.split('-').map(Number);
       const createdAt = new Date(year!, month! - 1, day!, 12, 0, 0).toISOString();
-      const seqs: number[] = [];
-      for (const productId of selected) {
-        const queued = await queueOp({ kind: 'add', productId, quantity: 1, createdAt });
-        seqs.push(queued.seq);
-      }
+      const productIds = [...selected];
+      // Nothing is queued before the toast ends: the queue may be sent at any moment (a new
+      // session check, the app coming back to the front), and « Annuler » must undo everything.
       addNotice.show({
         message: `${count} produit${count > 1 ? 's' : ''} ajouté${count > 1 ? 's' : ''}`,
-        undo: async () => {
-          await Promise.all(seqs.map((seq) => abandonOp(seq)));
+        undo: async () => undefined,
+        commit: async () => {
+          for (const productId of productIds) {
+            await queueOp({ kind: 'add', productId, quantity: 1, createdAt });
+          }
+          await syncNow();
         },
-        commit: () => void syncNow().catch(() => undefined),
       });
       router.replace('/inventaire');
     } catch {
@@ -216,6 +219,8 @@ export function AddAgainPage() {
           imageUrl={product.imageUrl}
           detail={detailOf(product) || undefined}
           meta={`${product.inStock} en stock`}
+          // Without a usual place the server could not file it: the add would end in a conflict.
+          disabled={product.locationName === null}
           checked={selected.has(product.productId)}
           onChange={(checked) => toggle(product.productId, checked)}
         />

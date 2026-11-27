@@ -82,7 +82,7 @@ describe('add menu', () => {
 describe('add notice shown by the Fab', () => {
   const announce = () => {
     const undo = vi.fn(async () => undefined);
-    const commit = vi.fn();
+    const commit = vi.fn(async () => undefined);
     act(() => addNotice.show({ message: '2 produits ajoutés', undo, commit }));
     return { undo, commit };
   };

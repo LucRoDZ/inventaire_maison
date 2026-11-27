@@ -11,11 +11,9 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ back, replace }) }));
 
 let seq = 10;
 const queueOp = vi.fn<(op: unknown) => Promise<{ seq: number }>>(async () => ({ seq: seq++ }));
-const abandonOp = vi.fn<(n: number) => Promise<void>>(async () => undefined);
 const syncNow = vi.fn(async () => undefined);
 vi.mock('../../lib/offline/runtime', () => ({
   queueOp: (op: unknown) => queueOp(op),
-  abandonOp: (n: number) => abandonOp(n),
   syncNow: () => syncNow(),
 }));
 
@@ -31,7 +29,7 @@ const product = (id: number, over: Partial<RecentProductDto> = {}): RecentProduc
   imageUrl: null,
   count: 1,
   lastConsumedAt: `2026-11-${String(10 + id).padStart(2, '0')}T10:00:00.000Z`,
-  locationName: null,
+  locationName: 'Frigo',
   sizeLabel: null,
   inStock: 0,
   ...over,
@@ -129,7 +127,7 @@ describe('AddAgainPage', () => {
     expect(input.min).toBe(iso(past));
   });
 
-  it('queues one dated add per product, announces, then goes to the inventory', async () => {
+  it('announces, goes to the inventory, and queues one dated add per product only at commit', async () => {
     const user = userEvent.setup();
     render(<AddAgainPage />);
     await screen.findByText('Produit 1');
@@ -140,17 +138,18 @@ describe('AddAgainPage', () => {
     await user.clear(date);
     await user.type(date, input);
     await user.click(screen.getByRole('button', { name: 'Ajouter 2 produits' }));
-    await waitFor(() => expect(queueOp).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(addNotice.get()?.message).toBe('2 produits ajoutés'));
+    expect(replace).toHaveBeenCalledWith('/inventaire');
+    expect(queueOp).not.toHaveBeenCalled();
+    await addNotice.get()!.commit();
     const [y, m, d] = input.split('-').map(Number);
     const createdAt = new Date(y!, m! - 1, d!, 12, 0, 0).toISOString();
     expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 1, quantity: 1, createdAt });
     expect(queueOp).toHaveBeenCalledWith({ kind: 'add', productId: 3, quantity: 1, createdAt });
-    expect(syncNow).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledWith('/inventaire');
-    expect(addNotice.get()?.message).toBe('2 produits ajoutés');
+    expect(syncNow).toHaveBeenCalledTimes(1);
   });
 
-  it('abandons every queued op on undo, without any sync', async () => {
+  it('queues nothing and sends nothing on undo', async () => {
     const user = userEvent.setup();
     render(<AddAgainPage />);
     await screen.findByText('Produit 1');
@@ -159,21 +158,16 @@ describe('AddAgainPage', () => {
     await user.click(screen.getByRole('button', { name: 'Ajouter 2 produits' }));
     await waitFor(() => expect(addNotice.get()).not.toBeNull());
     await addNotice.get()!.undo();
-    expect(abandonOp).toHaveBeenCalledTimes(2);
-    expect(abandonOp).toHaveBeenCalledWith(10);
-    expect(abandonOp).toHaveBeenCalledWith(11);
+    expect(queueOp).not.toHaveBeenCalled();
     expect(syncNow).not.toHaveBeenCalled();
   });
 
-  it('syncs when the announcement is committed', async () => {
-    const user = userEvent.setup();
+  it('shows a product without usual place, but it cannot be selected', async () => {
+    fetchRecentProducts.mockResolvedValue([product(1, { locationName: null })]);
     render(<AddAgainPage />);
     await screen.findByText('Produit 1');
-    await user.click(screen.getByRole('checkbox', { name: 'Produit 1' }));
-    await user.click(screen.getByRole('button', { name: 'Ajouter 1 produit' }));
-    await waitFor(() => expect(addNotice.get()).not.toBeNull());
-    addNotice.get()!.commit();
-    expect(syncNow).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('checkbox', { name: 'Produit 1' })).toBeDisabled();
+    expect(screen.getByText('Aucun meuble habituel')).toBeInTheDocument();
   });
 
   it('asks for 50 more with « Voir plus », hidden when the answer is short', async () => {

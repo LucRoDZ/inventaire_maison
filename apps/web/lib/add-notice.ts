@@ -4,7 +4,7 @@ export interface AddAnnouncement {
   /** Annuler. */
   undo: () => Promise<void>;
   /** The delay ended (or the toast went away) without an undo. */
-  commit: () => void;
+  commit: () => Promise<void>;
 }
 
 let current: AddAnnouncement | null = null;

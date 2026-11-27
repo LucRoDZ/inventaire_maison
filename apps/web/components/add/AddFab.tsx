@@ -27,7 +27,7 @@ export function AddFab() {
       const left = pending.current;
       if (left) {
         addNotice.clear();
-        left.commit();
+        void left.commit().catch(() => undefined);
       }
     },
     [],
@@ -56,7 +56,7 @@ export function AddFab() {
           message={announced.message}
           onExpire={() => {
             addNotice.clear();
-            announced.commit();
+            void announced.commit().catch(() => undefined);
           }}
           onUndo={() => {
             addNotice.clear();

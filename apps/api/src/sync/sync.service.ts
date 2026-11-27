@@ -185,8 +185,11 @@ export class SyncService {
   }
 }
 
-/** Oldest date a queued add may give its movement (« Acheté le », a scan kept offline). */
-export const MOVEMENT_DATE_MAX_AGE_DAYS = 30;
+/**
+ * Oldest date a queued add may give its movement (« Acheté le », a scan kept offline): the device
+ * offers 30 calendar days back and sends noon local time, so one more day absorbs time zones.
+ */
+export const MOVEMENT_DATE_MAX_AGE_DAYS = 31;
 
 /**
  * The date of the movement of a queued add: the date of the device when it is a real date within

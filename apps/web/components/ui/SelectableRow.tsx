@@ -12,6 +12,8 @@ interface SelectableRowProps {
   /** Right side (« 2 en stock »). */
   meta?: ReactNode;
   imageUrl?: string | null;
+  /** Shown but not selectable (the detail says why). */
+  disabled?: boolean;
 }
 
 /** A row of a selection list: the whole row is the label of a native 44 px checkbox. */
@@ -22,12 +24,16 @@ export function SelectableRow({
   detail,
   meta,
   imageUrl,
+  disabled = false,
 }: SelectableRowProps) {
   return (
-    <label className="border-line flex min-h-14 cursor-pointer items-center gap-3 border-b px-3 py-2 last:border-b-0">
+    <label
+      className={`border-line flex min-h-14 items-center ${disabled ? 'text-grey' : 'cursor-pointer'} gap-3 border-b px-3 py-2 last:border-b-0`}
+    >
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
         aria-label={name}
         className="tap-target accent-indigo size-11 shrink-0"
@@ -44,9 +50,9 @@ export function SelectableRow({
       )}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="line-clamp-2 break-words">{name}</span>
-        {detail ? <span className="text-small text-ink-soft truncate">{detail}</span> : null}
+        {detail ? <span className="text-small truncate">{detail}</span> : null}
       </span>
-      {meta ? <span className="text-small text-ink-soft shrink-0">{meta}</span> : null}
+      {meta ? <span className="text-small shrink-0">{meta}</span> : null}
     </label>
   );
 }
