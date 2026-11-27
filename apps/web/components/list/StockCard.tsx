@@ -17,7 +17,14 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
   const { product } = item;
   const place = [item.location.name, item.shelf?.name].filter(Boolean).join(', ');
   return (
-    <article className="bg-surface-raised border-line flex items-center gap-3 rounded-[14px] border p-3 shadow-none">
+    <article
+      data-expiry={item.expiry?.status}
+      className={`bg-surface-raised border-line flex items-center gap-3 rounded-[14px] border p-3 shadow-none ${
+        item.expiry
+          ? `ring-2 ring-inset ${item.expiry.status === 'expired' ? 'ring-alert' : 'ring-expiry-soon-ring'}`
+          : ''
+      }`}
+    >
       {product.imageUrl ? (
         <FadeImage
           src={product.imageUrl}

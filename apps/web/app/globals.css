@@ -22,6 +22,7 @@
   --color-surface-group: var(--surface-group);
   --color-expiry-soon: var(--expiry-soon);
   --color-expiry-soon-tint: var(--expiry-soon-tint);
+  --color-expiry-soon-ring: var(--expiry-soon-ring);
   --color-out-of-stock: var(--out-of-stock);
   --color-ok: var(--ok);
   --color-ok-tint: var(--ok-tint);

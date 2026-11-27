@@ -429,4 +429,34 @@ describe('OpenFurniture', () => {
     expect(scanHref(2)).toBe('/scanner?lieu=2');
     expect(scanHref(2, 21)).toBe('/scanner?lieu=2&etagere=21');
   });
+
+  describe('expiry rings', () => {
+    const withExpiry = (id: number, name: string, expiry: HomeTileDto['expiry']) => ({
+      ...tile(id, name, 2),
+      expiry,
+    });
+    const ringOf = (name: RegExp) =>
+      screen.getByRole('button', { name }).querySelector('[data-expiry]');
+
+    it('rings an expired tile in red and names it', () => {
+      render(
+        <OpenFurniture
+          location={fridge({
+            shelves: [
+              shelf(21, 'Étagère 1', 'plain', [
+                withExpiry(1, 'Lait', { status: 'expired' }),
+                withExpiry(2, 'Eau', { status: 'soon', days: 0 }),
+                withExpiry(3, 'Riz', { status: 'soon', days: 3 }),
+                tile(4, 'Thé', 1),
+              ]),
+            ],
+          })}
+        />,
+      );
+      expect(ringOf(/^Lait, quantité 2, périmé$/)).toHaveClass('ring-alert');
+      expect(ringOf(/^Eau, quantité 2, périme aujourd’hui$/)).toHaveClass('ring-expiry-soon-ring');
+      expect(ringOf(/^Riz, quantité 2, périme dans 3 jours$/)).toHaveClass('ring-expiry-soon-ring');
+      expect(ringOf(/^Thé, quantité 1$/)).toBeNull();
+    });
+  });
 });
