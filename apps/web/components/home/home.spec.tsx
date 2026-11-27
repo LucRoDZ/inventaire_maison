@@ -17,12 +17,13 @@ const place = (
   kind: HomeLocationDto['kind'],
   products: number,
   soon = 0,
+  expired = 0,
 ): HomeLocationDto => ({
   id,
   name,
   kind,
   icon: 'x',
-  counts: { products, units: products * 2, expired: 0, soon },
+  counts: { products, units: products * 2, expired, soon },
   shelves: [],
   unshelved: [],
 });
@@ -102,13 +103,23 @@ describe('FurnitureCard', () => {
     expect(screen.getByText('2 articles')).toHaveClass('mt-auto');
   });
 
-  it('shows the amber « bientôt périmés » badge only when there are some', () => {
-    const { rerender } = render(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4, 0)} />);
-    expect(screen.queryByText(/bientôt périmé/)).toBeNull();
-    rerender(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4, 1)} />);
-    expect(screen.getByText('1 bientôt périmé')).toBeInTheDocument();
-    rerender(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4, 3)} />);
-    expect(screen.getByText('3 bientôt périmés')).toBeInTheDocument();
+  it('shows the red and orange pills only for what is there, with or without the highlight', () => {
+    const pills = () => ({
+      expired: document.querySelector('[data-pill="expired"]')?.textContent ?? null,
+      soon: document.querySelector('[data-pill="soon"]')?.textContent ?? null,
+    });
+    const { rerender } = render(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4)} />);
+    expect(pills()).toEqual({ expired: null, soon: null });
+    rerender(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4, 0, 1)} />);
+    expect(pills()).toEqual({ expired: ', 1 périmé', soon: null });
+    rerender(<FurnitureCard location={place(1, 'Frigo', 'fridge', 4, 3, 0)} />);
+    expect(pills()).toEqual({ expired: null, soon: ', 3 bientôt périmés' });
+    for (const highlighted of [false, true]) {
+      rerender(
+        <FurnitureCard location={place(1, 'Frigo', 'fridge', 4, 2, 2)} highlighted={highlighted} />,
+      );
+      expect(pills()).toEqual({ expired: ', 2 périmés', soon: ', 2 bientôt périmés' });
+    }
   });
 
   it('is surrounded in amber when highlighted', () => {
@@ -129,9 +140,9 @@ describe('FurnitureCard', () => {
     expect(screen.getByRole('link', { name: /^Frigo/ })).toHaveAccessibleName(
       /^Frigo\s*4 articles$/,
     );
-    rerender(<FurnitureCard location={place(2, 'Frigo', 'fridge', 4, 2)} />);
+    rerender(<FurnitureCard location={place(2, 'Frigo', 'fridge', 4, 2, 1)} />);
     expect(screen.getByRole('link', { name: /^Frigo/ })).toHaveAccessibleName(
-      /^Frigo\s*4 articles\s*2 bientôt périmés$/,
+      /^Frigo\s*4 articles\s*,\s*1 périmé\s*,\s*2 bientôt périmés$/,
     );
   });
 

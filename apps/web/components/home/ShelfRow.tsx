@@ -1,8 +1,9 @@
 import type { HomeShelfDto, HomeTileDto } from '@inventaire/shared';
-import { Plus } from 'lucide-react';
+import { Maximize2, Plus } from 'lucide-react';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { shelfDropId } from '../../lib/drop';
+import { focusHref, nameReturnShelf, openFocus } from '../../lib/shelf-focus';
 import { DraggableTile } from './dnd/DraggableTile';
 import { DroppableShelf } from './dnd/DroppableShelf';
 
@@ -23,6 +24,38 @@ interface ShelfRowProps {
   look?: ShelfLook;
   /** Rank of the shelf in its furniture: the drawers slide in one after the other. */
   index?: number;
+  /** `?q=…`: the furniture filters follow into the focus page. */
+  focusQuery?: string;
+}
+
+/** « Ouvrir l’étagère 1 », « Ouvrir Bac à légumes »: the name as the person wrote it. */
+export const openLabel = (name: string): string =>
+  /^étagère/i.test(name)
+    ? `Ouvrir l’${name.charAt(0).toLowerCase()}${name.slice(1)}`
+    : `Ouvrir ${name}`;
+
+/** Glyph-only link to the focus page: 44 px to hit, no room taken (negative margins). */
+export function FocusLink({
+  locationId,
+  shelfId,
+  label,
+  query,
+}: {
+  locationId: number;
+  shelfId: number | null;
+  label: string;
+  query?: string;
+}) {
+  return (
+    <Link
+      href={focusHref(locationId, shelfId, query)}
+      aria-label={label}
+      onClick={(event) => openFocus(event, shelfId)}
+      className="text-indigo-mid relative -my-4 -mr-2 -ml-1 inline-flex size-11 shrink-0 items-center justify-center"
+    >
+      <Maximize2 size={14} aria-hidden="true" />
+    </Link>
+  );
 }
 
 /** Where the scanner opens from: the furniture and the shelf are chosen in advance. */
@@ -59,7 +92,12 @@ export function ShelfRow({
   isDimmed,
   look = 'board',
   index = 0,
+  focusQuery,
 }: ShelfRowProps) {
+  const section = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (section.current) nameReturnShelf(section.current, shelf.id);
+  }, [shelf.id]);
   const drawer = look === 'drawer';
   const empty = shelf.tiles.length === 0;
   const articles = new Set(shelf.tiles.map((tile) => tile.productId)).size;
@@ -67,6 +105,8 @@ export function ShelfRow({
   return (
     <DroppableShelf id={shelfDropId(locationId, shelf.id)} className="fx-row">
       <section
+        ref={section}
+        data-shelf-key={shelf.id}
         aria-label={shelf.name}
         className={`fx-shelf ${drawer ? 'fx-drawer' : ''}`}
         data-shelf-kind={drawer ? shelf.kind : undefined}
@@ -100,6 +140,12 @@ export function ShelfRow({
           <h3 className="text-help text-indigo-mid fx-shelf-name font-semibold min-w-0 truncate">
             {shelf.name}
           </h3>
+          <FocusLink
+            locationId={locationId}
+            shelfId={shelf.id}
+            label={openLabel(shelf.name)}
+            query={focusQuery}
+          />
           {drawer ? (
             articles > 0 ? (
               <span className="fx-count text-help ml-auto shrink-0">

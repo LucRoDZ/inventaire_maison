@@ -64,7 +64,7 @@ interface FurnitureCardProps {
 export function FurnitureCard({ location, highlighted = false, query = '' }: FurnitureCardProps) {
   const Drawing = DRAWINGS[location.kind];
   const { products } = location.counts;
-  const expiringSoon = location.counts.expired + location.counts.soon;
+  const { expired, soon } = location.counts;
   // `:active` is not applied to a touch by every browser (Safari on iOS): the pressed state is
   // also kept here, from the pointer.
   const [pressed, setPressed] = useState(false);
@@ -110,9 +110,26 @@ export function FurnitureCard({ location, highlighted = false, query = '' }: Fur
       </span>
       {/* After the name in the document, so that the link is always read « Frigo… » first. On
           screen, the same place on every card: across the foot of the drawing, out of the flow. */}
-      {expiringSoon > 0 ? (
-        <span className="text-help bg-expiry-soon-tint text-expiry-soon absolute top-[6.25rem] left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 font-semibold tabular-nums whitespace-nowrap">
-          {expiringSoon} {expiringSoon > 1 ? 'bientôt périmés' : 'bientôt périmé'}
+      {expired > 0 || soon > 0 ? (
+        <span className="absolute top-[6.25rem] right-2 left-2 flex justify-center gap-1">
+          {expired > 0 ? (
+            <span
+              data-pill="expired"
+              className="text-help bg-alert-tint text-alert min-w-0 truncate rounded-full px-2 py-0.5 font-semibold tabular-nums"
+            >
+              <span className="sr-only">, </span>
+              {expired} {expired > 1 ? 'périmés' : 'périmé'}
+            </span>
+          ) : null}
+          {soon > 0 ? (
+            <span
+              data-pill="soon"
+              className="text-help bg-expiry-soon-tint text-expiry-soon min-w-0 truncate rounded-full px-2 py-0.5 font-semibold tabular-nums"
+            >
+              <span className="sr-only">, </span>
+              {soon} bientôt <span className="sr-only">{soon > 1 ? 'périmés' : 'périmé'}</span>
+            </span>
+          ) : null}
         </span>
       ) : null}
     </Link>

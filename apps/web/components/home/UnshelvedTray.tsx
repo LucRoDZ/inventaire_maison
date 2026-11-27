@@ -1,7 +1,9 @@
 import type { HomeTileDto } from '@inventaire/shared';
 import { Plus } from 'lucide-react';
+import { useLayoutEffect, useRef } from 'react';
+import { nameReturnShelf } from '../../lib/shelf-focus';
 import Link from 'next/link';
-import { scanHref } from './ShelfRow';
+import { FocusLink, scanHref } from './ShelfRow';
 import { trayDropId } from '../../lib/drop';
 import { DraggableTile } from './dnd/DraggableTile';
 import { DroppableShelf } from './dnd/DroppableShelf';
@@ -12,6 +14,7 @@ interface UnshelvedTrayProps {
   onSelect?: (tile: HomeTileDto) => void;
   /** True for a tile that does not pass the current filter. */
   isDimmed?: (tile: HomeTileDto) => boolean;
+  focusQuery?: string;
 }
 
 /**
@@ -19,7 +22,17 @@ interface UnshelvedTrayProps {
  * empty, a thin line of 56 px; with products, exactly the height of a shelf, never more. It
  * stays a drop target either way.
  */
-export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: UnshelvedTrayProps) {
+export function UnshelvedTray({
+  locationId,
+  tiles,
+  onSelect,
+  isDimmed,
+  focusQuery,
+}: UnshelvedTrayProps) {
+  const section = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (section.current) nameReturnShelf(section.current, null);
+  }, []);
   const empty = tiles.length === 0;
   const add = (
     <Link
@@ -35,15 +48,24 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
   const name = (
     <h3 className="text-help text-indigo-mid fx-shelf-name font-semibold shrink-0">Non rangé</h3>
   );
+  const open = (
+    <FocusLink locationId={locationId} shelfId={null} label="Ouvrir Non rangé" query={focusQuery} />
+  );
   return (
     <DroppableShelf
       id={trayDropId(locationId)}
       className={`fx-tray-row ${empty ? 'fx-tray-empty' : ''}`}
     >
-      <section aria-label="Non rangé" className="fx-tray bg-white">
+      <section
+        ref={section}
+        data-shelf-key="non-range"
+        aria-label="Non rangé"
+        className="fx-tray bg-white"
+      >
         {empty ? (
           <div className="flex h-full items-center gap-2">
             {name}
+            {open}
             <p className="text-help min-w-0 flex-1 truncate">Rien de non rangé</p>
             {add}
           </div>
@@ -59,7 +81,10 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
               </ul>
               {add}
             </div>
-            <div className="fx-line flex items-center gap-2">{name}</div>
+            <div className="fx-line flex items-center gap-2">
+              {name}
+              {open}
+            </div>
           </>
         )}
       </section>

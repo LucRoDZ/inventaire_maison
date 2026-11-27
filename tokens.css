@@ -27,6 +27,7 @@
   --out-of-stock: var(--alert); /* Rupture de stock : même rouge que l'alerte. */
   --expiry-soon: #7a4f00; /* Texte d'une péremption proche, sur --expiry-soon-tint (6,6:1). */
   --expiry-soon-tint: var(--amber-tint); /* Fond d'une péremption proche. */
+  --expiry-soon-ring: #e8890c; /* Contour orange d'une péremption proche, lisible sur blanc et sur photo. */
 
   /* Ombre et formes */
   /* Élévation : trois niveaux, ombres douces teintées indigo. */

@@ -10,27 +10,54 @@ interface StockCardProps {
   onChange: (item: StockListItemDto, delta: 1 | -1) => void;
   /** Batch mode: a checkbox replaces the quantity buttons. */
   selection?: { selected: boolean; onToggle: () => void };
+  /** Tapping the card (not the − and +) opens the product: an invisible button under the controls. */
+  onOpen?: (item: StockListItemDto) => void;
+  /** A line « Garde-manger · Étagère 3 » (or « Non rangé ») under the name. */
+  placeLine?: boolean;
 }
 
 /** One stock line (product, shelf, date): − and + act on this very line. */
-export function StockCard({ item, onChange, selection }: StockCardProps) {
+export function StockCard({
+  item,
+  onChange,
+  selection,
+  onOpen,
+  placeLine = false,
+}: StockCardProps) {
   const { product } = item;
   const place = [item.location.name, item.shelf?.name].filter(Boolean).join(', ');
+  const where = `${item.location.name} · ${item.shelf?.name ?? 'Non rangé'}`;
   return (
-    <article className="bg-surface-raised border-line flex items-center gap-3 rounded-[14px] border p-3 shadow-none">
+    <article
+      data-expiry={item.expiry?.status}
+      className={`bg-surface-raised border-line relative flex items-center gap-3 rounded-[14px] border p-3 shadow-none ${
+        item.expiry
+          ? `ring-2 ring-inset ${item.expiry.status === 'expired' ? 'ring-alert' : 'ring-expiry-soon-ring'}`
+          : ''
+      }`}
+    >
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={() => onOpen(item)}
+          aria-label={`Ouvrir ${product.name}`}
+          className="absolute inset-0 rounded-[inherit]"
+        />
+      ) : null}
       {product.imageUrl ? (
         <FadeImage
           src={product.imageUrl}
-          className="h-14 w-14 shrink-0 rounded-[10px] object-cover"
+          className={`h-14 w-14 shrink-0 rounded-[10px] object-cover ${onOpen ? 'pointer-events-none relative' : ''}`}
         />
       ) : (
         <IconBadge icon={categoryIcon(item.category.icon)} />
       )}
-      <div className="min-w-0 flex-1">
+      <div className={`min-w-0 flex-1 ${onOpen ? 'pointer-events-none relative' : ''}`}>
         <h3 className="text-body text-ink truncate font-semibold">{product.name}</h3>
         <p className="text-small text-grey truncate">
-          {[product.brand, place].filter(Boolean).join(' · ')}
+          {placeLine ? (product.brand ?? '') : [product.brand, place].filter(Boolean).join(' · ')}
         </p>
+        {placeLine ? <p className="text-small text-grey truncate">{where}</p> : null}
         <ExpiryBadge expiry={item.expiry} />
       </div>
       {selection ? (
@@ -47,15 +74,17 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
           </label>
         </>
       ) : (
-        <QuantityControl
-          value={item.quantity}
-          min={Number.NEGATIVE_INFINITY}
-          label={`Quantité de ${product.name}`}
-          valueLabel="Quantité"
-          decreaseLabel={`Retirer une unité de ${product.name}`}
-          increaseLabel={`Ajouter une unité de ${product.name}`}
-          onStep={(delta) => onChange(item, delta)}
-        />
+        <div className="relative">
+          <QuantityControl
+            value={item.quantity}
+            min={Number.NEGATIVE_INFINITY}
+            label={`Quantité de ${product.name}`}
+            valueLabel="Quantité"
+            decreaseLabel={`Retirer une unité de ${product.name}`}
+            increaseLabel={`Ajouter une unité de ${product.name}`}
+            onStep={(delta) => onChange(item, delta)}
+          />
+        </div>
       )}
     </article>
   );
