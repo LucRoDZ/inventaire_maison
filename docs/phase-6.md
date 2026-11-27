@@ -12,7 +12,7 @@ Branche `phase-6`. Pour reprendre : lire ce tableau, puis `git log main..phase-6
 | W4 · ligne « Créer », feuille sans code-barres qui défile, bouton Ajouter centré | worker | fait | 888ffaf, 9c3ae1e |
 | W2 · page « Ajouter à nouveau », Courses sur `FullPageList` | worker | fait | 4bb71df, 39b3db6 |
 | W5 · Inventaire › Liste à défilement interne, compteurs compacts | worker | fait | ba4bdc4 |
-| Clôture : suite complète, revue (corrigée : 171c61c), e2e corrigés, PR | pilote | en cours | |
+| Clôture : suite complète, revue (corrigée : 171c61c), e2e corrigés, PR #30 | pilote | fait | CI verte |
 
 ## Contrat (figé à l'étape 0)
 
