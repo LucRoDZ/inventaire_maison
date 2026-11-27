@@ -34,20 +34,27 @@ test('un mauvais mot de passe affiche une erreur', async ({ page }) => {
 
 test('connexion, rechargement toujours connecté, onglets, déconnexion', async ({ page }) => {
   await signIn(page);
-  await expect(page).toHaveURL(/\/scanner$/);
-  await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
+  await expect(page).toHaveURL(/\/inventaire$/);
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
 
   await page.reload();
-  await expect(page).toHaveURL(/\/scanner$/);
-  await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
+  await expect(page).toHaveURL(/\/inventaire$/);
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
 
-  // The scanner is full screen: no bottom bar. « Fermer le scanner » leaves it.
+  // The scanner is no tab: it opens from Ajouter, full screen, without the bottom bar.
   const nav = page.getByRole('navigation', { name: 'Navigation principale' });
-  await expect(nav).toHaveCount(0);
-  await page.goto('/inventaire');
-  await expect(nav.getByRole('link', { name: 'Scanner' })).toHaveAttribute('href', '/scanner');
-  await nav.getByRole('link', { name: 'Scanner' }).click();
+  await expect(nav.getByRole('link')).toHaveText(['Inventaire', 'Courses', 'Plus']);
+  await page.getByRole('button', { name: 'Ajouter un produit' }).click();
+  await page
+    .getByRole('dialog', { name: 'Ajouter' })
+    .getByRole('button', { name: /^Scanner/ })
+    .click();
   await expect(page).toHaveURL(/\/scanner$/);
+  await expect(nav).toHaveCount(0);
   await page.getByRole('button', { name: 'Fermer le scanner' }).click();
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(page).toHaveURL(/\/inventaire$/);

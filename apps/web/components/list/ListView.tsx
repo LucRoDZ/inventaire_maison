@@ -25,6 +25,7 @@ import {
 import type { LocationChoice } from '../home/FiltersControl';
 import { RemovalToast, type RemovalPlan, removalKey } from '../add/RemovalToast';
 import { UndoToast } from '../add/UndoToast';
+import { outOfStockInvite, outOfStockStore, inviteAfterRemoval } from '../../lib/zero-stock';
 import { Callout } from '../ui/Callout';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { EmptyFurnitureIllustration } from '../ui/Illustrations';
@@ -188,7 +189,7 @@ export function ListView({
       ),
     );
     try {
-      await (apiRef.current.adjust ?? adjustStock)({
+      const done = await (apiRef.current.adjust ?? adjustStock)({
         productId: item.product.id,
         locationId: item.location.id,
         shelfId: item.shelf?.id ?? null,
@@ -197,6 +198,7 @@ export function ListView({
         reason: delta < 0 ? reason : 'manual',
       });
       if (delta < 0) {
+        inviteAfterRemoval(done, item.product);
         // One toast at a time: a new removal replaces the batch toast.
         setBatchToast(null);
         setRemoval({
@@ -253,13 +255,16 @@ export function ListView({
     setBatchBusy(true);
     setError(null);
     const done: StockListItemDto[] = [];
+    // The last product that fell to zero (and is not on the list) gets the one invitation.
+    let invite: ReturnType<typeof outOfStockInvite> = null;
     try {
       for (const item of lines) {
-        await (apiRef.current.adjust ?? adjustStock)({
+        const response = await (apiRef.current.adjust ?? adjustStock)({
           ...lineKey(item),
           delta: -item.quantity,
           reason,
         });
+        invite = outOfStockInvite(response, item.product) ?? invite;
         done.push(item);
       }
     } catch (caught) {
@@ -273,6 +278,7 @@ export function ListView({
     }
     setBatchBusy(false);
     if (done.length > 0) {
+      if (invite) outOfStockStore.show(invite);
       setRemoval(null);
       setBatchToast({
         message: `${reason === 'consumed' ? 'Consommé' : 'Jeté'} : ${done.length} ${
@@ -280,6 +286,7 @@ export function ListView({
         }`,
         undo: async () => {
           for (const item of done) {
+            outOfStockStore.dismissFor(item.product.id);
             await (apiRef.current.adjust ?? adjustStock)({
               ...lineKey(item),
               delta: item.quantity,

@@ -248,13 +248,13 @@ Contrastes calculés : blanc sur indigo 12,8 pour 1 ; indigo sur ambre 8,6 pour 
 
 **Formes et composants**
 
-- Deux fonds seulement : `white` pour l'application, `indigo` pour les cartes de chiffres et l'en-tête de la vue Maison. Pas de dégradé, pas de bandeau de couleur, pas de soulignement sous les titres.
-- Cartes : fond blanc, filet `line`, ombre `0 4px 8px rgba(0,0,0,0.12)`, rayon 16 px. Pas de bordure épaisse. Pastilles d'icône rondes (rayon 50 %).
+- Fonds (révisés en Phase 5, décision P5.6) : `surface` (neutre très clair, légèrement chaud) pour la page, `surface-raised` (blanc) pour les cartes, `surface-group` pour les regroupements ; `indigo` pour `indigo` les cartes de chiffres et l'en-tête de la vue Maison. Pas de dégradé, pas de bandeau de couleur, pas de soulignement sous les titres.
+- Cartes : fond blanc, filet `line`, rayon 16 px ; cartes de liste sans ombre, ombre douce teintée indigo (`shadow-raised`) pour les éléments posés, `shadow-sheet` pour les feuilles (Phase 5). Pas de bordure épaisse. Pastilles d'icône rondes (rayon 50 %).
 - Espacements : 8, 16, 24 et 40 px. Zones tactiles de 44 px minimum.
 - Boutons : principal indigo avec texte blanc ; d'ajout ambre avec texte indigo ; secondaire en texte `indigo-mid`.
 - Trois composants repris du système : `Card` (carte blanche à icône, ex. un produit), `StatCard` (carte indigo avec chiffre ambre, ex. compteur d'un meuble), `Callout` (encadré `amber-tint`, ex. installation, hors connexion).
 - Icônes : jeu Lucide, glyphe indigo dans une pastille lavande (blanc sur fond indigo). Pas d'emoji. Chaque catégorie et chaque lieu a une icône.
-- Thème clair uniquement en V1 : le système n'a pas de variante sombre.
+- Thème clair uniquement (confirmé en Phase 5) : aucune variante sombre, quel que soit le réglage du téléphone.
 - Statuts : toujours un mot en plus de la couleur (« périmé », « J-2 »), jamais la couleur seule.
 - Ton : libellés en français, titres qui affirment, phrases courtes.
 

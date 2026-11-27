@@ -44,7 +44,7 @@ export function UnshelvedTray({ locationId, tiles, onSelect, isDimmed }: Unshelv
         {empty ? (
           <div className="flex h-full items-center gap-2">
             {name}
-            <p className="text-help min-w-0 flex-1 truncate">Rien de non rangé.</p>
+            <p className="text-help min-w-0 flex-1 truncate">Rien de non rangé</p>
             {add}
           </div>
         ) : (

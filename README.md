@@ -222,6 +222,10 @@ Ces étapes sont faites par Lucas sur le VPS, jamais par Claude.
 
 Après un déploiement, les téléphones passent à la nouvelle version **sans rien demander** : le service worker prend la main tout seul, et une page déjà ouverte change de version à la navigation suivante (jamais pendant un scan, une saisie, un glisser-déposer ou avec un panneau ouvert), ou au prochain lancement. Aucun message « Nouvelle version disponible ».
 
+### Mise à jour vers la Phase 5 (une seule fois)
+
+`./deploy.sh`. Aucune migration, aucune nouvelle variable d'environnement. Un téléphone réglé en « Sombre » en Phase 4 repasse en clair tout seul (le réglage est effacé au premier lancement).
+
 ### Mise à jour vers la Phase 4 (finition, une seule fois)
 
 1. **Sauvegarde d'abord** : `./scripts/backup-db.sh` (ou `./deploy.sh` sans `--no-backup`). La migration `0005_phase4_sync` ajoute la table `idempotency_keys` (clés des scans faits hors ligne, sous sécurité par ligne, une clé unique par foyer). Elle ne modifie aucune donnée existante.
@@ -229,7 +233,7 @@ Après un déploiement, les téléphones passent à la nouvelle version **sans r
 
 La tâche planifiée de 8 h (dans l'API) purge aussi les clés de plus de 14 jours : un appareil resté hors ligne plus longtemps renvoie ses scans comme nouveaux, ce qui reste sans danger (chaque opération est revérifiée).
 
-Nouveaux réglages dans Plus › Compte, propres à l'appareil : « Apparence » (Automatique, Clair, Sombre), « Retour tactile » (vibration à la lecture d'un code), et l'écran « À synchroniser » (scans gardés hors ligne, conflits, codes à identifier).
+Nouveaux réglages dans Plus › Compte, propres à l'appareil : « Retour tactile » (vibration à la lecture d'un code), et l'écran « À synchroniser » (scans gardés hors ligne, conflits, codes à identifier).
 
 ### Mise à jour vers la Phase 3 (confort, une seule fois)
 
@@ -373,7 +377,7 @@ Après un déploiement, sur un téléphone où l'application est déjà ouverte 
 
 Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécurisé) puis sur l'adresse HTTPS réelle :
 
-1. Ouvrir l'onglet Scanner, toucher « Scanner » : la caméra arrière s'allume, un cadre ambre apparaît (le voyant de la caméra est allumé).
+1. Inventaire › bouton « Ajouter » › « Scanner », toucher « Scanner » : la caméra arrière s'allume, un cadre ambre apparaît (le voyant de la caméra est allumé).
 2. Passer à un autre onglet du navigateur : le voyant s'éteint. Revenir : le bouton « Scanner » est de nouveau proposé.
 3. Changer d'onglet de l'application (Inventaire) : le voyant s'éteint aussi.
 4. Si l'appareil a une lampe, « Allumer la lampe » l'allume ; sinon le bouton est absent. S'il y a plusieurs caméras, le sélecteur « Caméra » en change.
@@ -392,7 +396,7 @@ Sur `http://localhost:3000` (Chrome, `localhost` compte comme contexte sécuris�
 
 Ce que les tests automatiques ne peuvent pas prouver, à vérifier sur Android (Chrome) et iPhone (Safari, application installée) :
 
-1. **Scanner** : l'onglet Scanner ouvre la caméra en plein écran ; un code lu verrouille les coins et affiche la coche ; la fiche monte du bas ; « Fermer le scanner » ramène à l'écran précédent et la caméra s'éteint (témoin de la caméra du téléphone éteint). Passer en arrière-plan éteint aussi la caméra.
+1. **Scanner** : Inventaire › « Ajouter » › « Scanner » ouvre la caméra en plein écran, sous l'encoche et sans barre du bas ; un code lu verrouille les coins et affiche la coche ; la fiche monte du bas ; « Fermer le scanner » ramène à l'écran précédent et la caméra s'éteint (témoin de la caméra du téléphone éteint). Passer en arrière-plan éteint aussi la caméra.
 2. **Lampe et zoom** : boutons visibles seulement si le téléphone les propose (souvent Android) ; absents sur iPhone dans la plupart des cas, sans message d'erreur.
 3. **Vibration** : courte vibration à la lecture sur Android si « Retour tactile » est activé ; rien sur iPhone (Safari ne la permet pas).
 4. **Hors ligne** : mode avion, scanner un produit connu : « Hors ligne : le scan est gardé sur cet appareil », pastille « À synchroniser (1) » ; retour du réseau : la pastille disparaît et le stock est à jour. Un code inconnu attend dans « À synchroniser » et passe par la fiche avant tout enregistrement.
@@ -400,7 +404,9 @@ Ce que les tests automatiques ne peuvent pas prouver, à vérifier sur Android (
 6. **Glissement** : en vue Liste et dans Courses, glisser une ligne vers la droite (Consommé) ou la gauche (Jeté), « Annuler » dans les 5 s.
 7. **Icône** : pastille du nombre de produits périmés ou sous le seuil sur l'icône (Android Chrome, iPhone 16.4+ installé, macOS) ; raccourcis Scanner et Courses par appui long sur l'icône (Android) ; écran de lancement aux couleurs de l'application sur iPhone.
 8. **Partage** : « Partager la liste » ouvre la feuille de partage du téléphone ; sur ordinateur, la liste est copiée.
-9. **Thème** : Compte › Apparence › Automatique suit le réglage du téléphone ; aucun éclair blanc au lancement en sombre.
+9. **Thème** : l'application reste claire même quand le téléphone est en mode sombre (thème clair uniquement, décision Phase 5).
+10. **Ajouter** (Phase 5) : le bouton rond « Ajouter » de l'Inventaire ouvre la feuille Ajouter à nouveau · Scanner · Ajouter manuellement ; « Ajouter à nouveau » met +1 au lieu habituel, « Annuler » le retire.
+11. **Rupture → courses** (Phase 5) : retirer le dernier exemplaire d'un produit (scanner en mode Retirer, « − », glissement, « Jeté ») propose « l'ajouter aux courses ? » pendant 8 s ; « Ajouter » deux fois de suite ne crée qu'une ligne ; en mode avion, l'ajout part à la reconnexion.
 
 Replis sans erreur visible : vibration, lampe, zoom, pastille d'icône, partage et View Transitions sont détectés avant usage ; sans IndexedDB, les scans hors ligne restent en mémoire jusqu'à la fermeture de l'onglet.
 

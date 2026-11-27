@@ -9,7 +9,8 @@ import type { OfflineStore, QueuedOp, UnknownBarcode } from './types';
 /** What the screens give to `queueOp`: the key, device and date are added here. */
 export type NewSyncOp =
   | Omit<Extract<SyncOp, { kind: 'add' }>, 'key' | 'deviceId' | 'createdAt'>
-  | Omit<Extract<SyncOp, { kind: 'remove' }>, 'key' | 'deviceId' | 'createdAt'>;
+  | Omit<Extract<SyncOp, { kind: 'remove' }>, 'key' | 'deviceId' | 'createdAt'>
+  | Omit<Extract<SyncOp, { kind: 'shop' }>, 'key' | 'deviceId' | 'createdAt'>;
 
 /** The two server calls the queue needs, injected so that tests never touch the network. */
 export interface SyncApi {

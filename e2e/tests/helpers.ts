@@ -38,7 +38,27 @@ export async function signIn(
   await page.getByLabel('Pseudo').fill(username);
   await page.getByLabel('Mot de passe').fill(password);
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
+  // Exact: the login page itself is titled « Inventaire maison ».
+  await page.waitForURL(/\/inventaire(\?|$)/);
+  await expect(
+    page.getByRole('heading', { name: 'Inventaire', level: 1, exact: true }),
+  ).toBeVisible();
+}
+
+/**
+ * Opens the full-screen scanner (a route of its own, no longer a tab) and waits until it accepts
+ * codes. Straight to the route; the Ajouter › Scanner path has its own test.
+ */
+export async function openScanner(page: Page) {
+  if (!/\/scanner$/.test(page.url())) {
+    // The screen left behind may still replace its own URL (filters of the inventory): that
+    // navigation can abort this one, so it is tried once more.
+    await page.goto('/scanner').catch(async (error: Error) => {
+      if (!/ERR_ABORTED|interrupted/.test(error.message)) throw error;
+      await page.goto('/scanner');
+    });
+  }
+  await startScanner(page);
 }
 
 /** The scanner opens its camera by itself (fake engine in end-to-end builds): waits until it accepts codes. */

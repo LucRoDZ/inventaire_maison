@@ -12,6 +12,7 @@ import { useOnline } from '../../lib/online';
 import { fetchScan, OFFLINE_MESSAGE, resolveScan } from '../../lib/scan-flow';
 import type { ScanResult } from '../../lib/scanner/types';
 import { removeOne } from '../../lib/stock-api';
+import { inviteAfterRemoval } from '../../lib/zero-stock';
 import { RemovalToast, type RemovalPlan, removalKey } from '../add/RemovalToast';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
@@ -92,6 +93,7 @@ export function RemoveFlow({ request, onSwitchToAdd, api = {} }: RemoveFlowProps
       try {
         const done = await remove(outcome.product.id);
         const { movement } = done;
+        inviteAfterRemoval(done, done.product);
         setFeedback({
           kind: 'removed',
           plan: {

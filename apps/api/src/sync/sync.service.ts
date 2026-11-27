@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   DEFAULT_REMOVAL_REASON,
   IDEMPOTENCY_TTL_DAYS,
+  SHOPPING_QUANTITY_MAX,
   type CatalogCacheEntry,
   type SyncOp,
   type SyncResult,
@@ -9,8 +10,15 @@ import {
 import { and, asc, eq, isNull, lt, sql } from 'drizzle-orm';
 import { CLOCK, type Clock } from '../common/clock';
 import type { Transaction } from '../database/database.module';
-import { idempotencyKeys, locations, products, stockItems } from '../database/schema';
+import {
+  idempotencyKeys,
+  locations,
+  products,
+  shoppingItems,
+  stockItems,
+} from '../database/schema';
 import { TenantDb } from '../database/tenant-db';
+import { productStatus } from '../stock/product-status';
 import { StockRemoveService } from '../stock/stock-remove.service';
 import { StockService, shelfBelongs } from '../stock/stock.service';
 
@@ -115,6 +123,23 @@ export class SyncService {
         },
         userId,
       );
+      return;
+    }
+
+    if (op.kind === 'shop') {
+      const { onShoppingList } = await productStatus(tx, householdId, op.productId);
+      if (!onShoppingList) {
+        await tx
+          .insert(shoppingItems)
+          .values({
+            householdId,
+            productId: op.productId,
+            quantity: Math.min(SHOPPING_QUANTITY_MAX, op.quantity),
+            createdBy: userId,
+          })
+          // Another device sent the same product at the same time: its line is enough.
+          .onConflictDoNothing();
+      }
       return;
     }
 

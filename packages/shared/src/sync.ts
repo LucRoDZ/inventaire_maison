@@ -38,6 +38,18 @@ export type SyncOp =
       quantity: number;
       /** Omitted: `consumed`. Lines are chosen like `POST /stock/remove` (nearest expiry first). */
       reason?: RemovalReason;
+    }
+  | {
+      /**
+       * Phase 5: put the product on the shopping list, only if it has no line yet (open or
+       * checked). Already there: `applied` without any change, never a second line.
+       */
+      kind: 'shop';
+      key: string;
+      deviceId: string;
+      createdAt: string;
+      productId: number;
+      quantity: number;
     };
 
 export type SyncOpKind = SyncOp['kind'];

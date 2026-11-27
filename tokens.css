@@ -5,6 +5,8 @@
    conviennent pas à une interface mobile). */
 
 :root {
+  color-scheme: light; /* Contrôles natifs toujours clairs, même si le téléphone est en sombre. */
+
   /* Couleurs de marque */
   --indigo: #1800ad; /* Marque : en-têtes, boutons principaux, titres, icônes. Texte blanc dessus. */
   --indigo-mid: #4a3dd0; /* Liens et états survolés. Rare. */
@@ -15,17 +17,28 @@
   --white: #ffffff; /* Fond de l'application et des cartes. */
   --ink: #1a1a1a; /* Texte très sombre. */
   --grey: #595959; /* Texte courant sur blanc (contraste AA). */
-  --line: #e2e8f0; /* Filet fin autour des cartes. */
+  --line: #e6e4ec; /* Filet fin autour des cartes, discret. */
+  --surface: #faf9f7; /* Fond de page : neutre très clair, légèrement chaud. Gris 6,7:1, indigo 12:1 dessus. */
+  --surface-raised: #ffffff; /* Cartes et feuilles : blanc, au-dessus du fond. */
+  --surface-group: #efedf3; /* Indigo à 5 % sur le fond : regroupe des éléments. Gris 6,0:1 dessus. */
   --ok: #2c8a4a; /* Statut positif, toujours accompagné d'un mot. */
   --ok-tint: #eaf5ee; /* Fond d'un bloc de statut positif. */
-  --alert: #c0392b; /* Statut négatif ou risque, toujours accompagné d'un mot. */
+  --alert: #c0392b; /* Statut négatif ou risque, toujours accompagné d'un mot. 5,4:1 sur blanc. */
+  --out-of-stock: var(--alert); /* Rupture de stock : même rouge que l'alerte. */
+  --expiry-soon: #7a4f00; /* Texte d'une péremption proche, sur --expiry-soon-tint (6,6:1). */
+  --expiry-soon-tint: var(--amber-tint); /* Fond d'une péremption proche. */
 
   /* Ombre et formes */
-  --shadow-card: 0 4px 8px rgba(0, 0, 0, 0.12); /* L'ombre remplace toute bordure épaisse. */
+  /* Élévation : trois niveaux, ombres douces teintées indigo. */
+  --shadow-none: none; /* Cartes de liste : bordure d'1 px seulement. */
+  --shadow-raised: 0 1px 3px rgba(24, 0, 173, 0.08), 0 2px 6px rgba(24, 0, 173, 0.06); /* Élément posé. */
+  --shadow-sheet: 0 8px 24px rgba(24, 0, 173, 0.16); /* Feuille, modale. */
+  --shadow-card: var(--shadow-raised);
   --radius-card: 16px; /* Cartes, encadrés, feuilles modales. */
   --radius-round: 50%; /* Pastilles d'icônes. */
 
   /* Espacements */
+  --space-0: 4px;
   --space-1: 8px;
   --space-2: 16px;
   --space-3: 24px;
@@ -50,8 +63,8 @@
   --scanner-veil: rgba(10, 6, 40, 0.62); /* Voile autour du cadre de visée, sur la caméra. */
   --scanner-frame: #ffffff; /* Coins du cadre de visée et coche de lecture. */
   --scanner-ink: #ffffff; /* Texte et icônes posés sur la caméra. */
-  --scanner-backdrop: #1a1a1a; /* Fond du scanner plein écran, sombre dans les deux thèmes. */
-  --scanner-on-frame: #1800ad; /* Texte posé sur un aplat blanc du scanner (même valeur dans les deux thèmes). */
+  --scanner-backdrop: #1a1a1a; /* Fond du scanner plein écran : seule zone sombre, c'est un viseur. */
+  --scanner-on-frame: #1800ad; /* Texte posé sur un aplat blanc du scanner. */
   --alert-tint: #fbeceb; /* Fond d'un bloc de statut négatif (glissement « Jeté »). */
   --swipe-consumed-bg: var(--ok-tint); /* Fond révélé en glissant vers « Consommé ». */
   --swipe-consumed-ink: var(--ok);
@@ -62,62 +75,30 @@
   --illustration-line: var(--indigo); /* Traits des illustrations. */
   --illustration-accent: var(--amber); /* Seule touche d'accent d'une illustration. */
   --theme-color: #ffffff; /* Barre d'état et écran de lancement. */
-  --on-amber: #1800ad; /* Texte et icône posés sur un aplat ambre (indigo en clair). */
-}
-
-/* Thème sombre : fonds indigo profond, aucune couleur nouvelle, un seul accent ambre.
-   Appliqué par `data-theme="dark"` sur <html>, posé avant le premier rendu (réglage « Apparence »).
-   Les jetons clairs sont employés par sens : --white est le fond (et les cartes), --indigo le texte
-   de marque et le fond des boutons principaux (le texte « white » dessus devient donc le fond sombre),
-   --lavender les pastilles. Chaque couple texte/fond est au moins AA (4.5:1). */
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --indigo: #cfc8ff;
-  --indigo-mid: #e6e2ff;
-  --lavender: #2a2370;
-  --lavender-line: #4a42a0;
-  --amber: #ffcc65;
-  --amber-tint: #2f2650;
-  --white: #151040;
-  --ink: #f5f3ff;
-  --grey: #c9c4ec;
-  --line: #3b3480;
-  --ok: #7fd99a;
-  --ok-tint: #123a2a;
-  --alert: #ff9a8c;
-  --alert-tint: #3a1f2a;
-  --shadow-card: 0 4px 8px rgba(0, 0, 0, 0.5);
-  --scanner-veil: rgba(4, 2, 20, 0.7);
-  --scanner-frame: #ffffff;
-  --scanner-ink: #ffffff;
-  --scanner-backdrop: #07051a;
-  --scanner-on-frame: #1800ad;
-  --skeleton: #24204a;
-  --on-amber: #151040;
-  --theme-color: #151040;
+  --on-amber: #1800ad; /* Texte et icône posés sur un aplat ambre. */
 }
 
 /* Règles d'usage :
-   - Thème clair par défaut ; thème sombre par `data-theme="dark"` (Phase 4).
+   - Thème clair uniquement (décision Phase 5) : aucune variante sombre, quel que soit le réglage du téléphone.
    - Un seul accent (ambre) : pas de couleur par catégorie.
    - L'ambre sur fond blanc a un contraste faible : jamais pour du texte courant,
      seulement pour un fond (badge, bouton) avec texte indigo ou ink dessus.
    - Aucun emoji : icônes Lucide, glyphe indigo sur pastille lavande.
-   - Graisses 400, 500 et 600 seulement ; étiquettes en casse normale, jamais en capitales.
-   - Bouton principal indigo partout. L'ambre marque l'état actif et les pastilles de quantité.
+   - Graisses 400 et 600 seulement ; étiquettes en casse normale, jamais en capitales.
+   - Bouton principal indigo partout. L'ambre marque seulement l'élément actif ou principal.
    - Ne recopie jamais une couleur en dur dans un composant : utilise ces variables. */
 
 body {
   font: var(--text-body);
   color: var(--grey);
-  background: var(--white);
+  background: var(--surface);
 }
 
 .card {
-  background: var(--white);
+  background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-raised);
   padding: var(--space-2);
 }
 

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
 import { MoveDialog, type MoveSource } from './MoveDialog';
+import { outOfStockStore } from '../../lib/zero-stock';
 import { ProductSheet } from './ProductSheet';
 
 const locations: LocationDto[] = [
@@ -188,6 +189,16 @@ describe('ProductSheet', () => {
     });
     await waitFor(() => expect(screen.getByLabelText('Quantité en stock')).toHaveTextContent('3'));
     expect(onChanged).toHaveBeenCalled();
+  });
+
+  it('invites to shop when the last unit of the household was removed', async () => {
+    const adjust = vi.fn(
+      async () => ({ productTotal: 0, onShoppingList: false, item: null }) as never,
+    );
+    sheet({ api: { adjust } });
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer une unité' }));
+    expect(outOfStockStore.get()).toEqual({ productId: 50, name: 'Lait', quantity: 1 });
+    outOfStockStore.clear();
   });
 
   it('removes a unit as consumed with « − » and as wasted with « Jeté »', async () => {

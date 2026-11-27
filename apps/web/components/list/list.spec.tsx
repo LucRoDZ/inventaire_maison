@@ -7,11 +7,12 @@ import type {
 } from '@inventaire/shared';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../lib/api';
 import { NO_FILTER, type HomeFilters } from '../../lib/home-filters';
 import { ExpiryBadge, expiryLabel } from './ExpiryBadge';
 import { ListView } from './ListView';
+import { outOfStockStore } from '../../lib/zero-stock';
 
 const categories: CategoryDto[] = [
   {
@@ -408,5 +409,43 @@ describe('ListView batch edit', () => {
     await userEvent.selectOptions(within(dialog).getByLabelText('Meuble'), '11');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Déplacer' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('1 sur 2 déplacés');
+  });
+});
+
+describe('ListView: out-of-stock invitation', () => {
+  afterEach(() => outOfStockStore.clear());
+  const answer = (productTotal: number, onShoppingList = false) =>
+    ({ item: null, movement: {}, productTotal, onShoppingList }) as never;
+
+  it('invites after « − » took the last unit, and drops it on Annuler', async () => {
+    const adjust = vi.fn(async () => answer(0));
+    renderList([line(1, 'Lait', 1, 3)], { adjust });
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer une unité de Lait' }));
+    await waitFor(() => expect(outOfStockStore.get()?.name).toBe('Lait'));
+    const toast = (await screen.findByText(/Consommé : 1 × Lait/)).closest('[role="status"]')!;
+    await userEvent.click(within(toast as HTMLElement).getByRole('button', { name: 'Annuler' }));
+    expect(outOfStockStore.get()).toBeNull();
+  });
+
+  it('does not invite when the product is already on the list', async () => {
+    renderList([line(1, 'Lait', 1, 3)], { adjust: vi.fn(async () => answer(0, true)) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer une unité de Lait' }));
+    await screen.findByText(/Consommé : 1 × Lait/);
+    expect(outOfStockStore.get()).toBeNull();
+  });
+
+  it('batch removal: one invitation, for the last product fallen to zero', async () => {
+    const adjust = vi.fn(async (input: { productId: number }) =>
+      input.productId === 30 ? answer(4) : answer(0),
+    );
+    renderList([line(1, 'Lait', 2, 3), line(2, 'Eau', 1, 2), line(3, 'Thé', 1, 1)], {
+      adjust: adjust as never,
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Sélectionner' }));
+    for (const name of ['Lait', 'Eau', 'Thé']) {
+      await userEvent.click(screen.getByRole('checkbox', { name: `Sélectionner ${name}` }));
+    }
+    await userEvent.click(screen.getByRole('button', { name: 'Consommé' }));
+    await waitFor(() => expect(outOfStockStore.get()?.name).toBe('Eau'));
   });
 });

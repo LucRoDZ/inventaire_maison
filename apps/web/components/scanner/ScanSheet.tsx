@@ -114,7 +114,7 @@ export function ScanSheet({
   };
 
   return (
-    <BottomSheet labelledBy={titleId} onClose={onClose}>
+    <BottomSheet labelledBy={titleId} onClose={onClose} className="max-h-[50dvh]!">
       <div className="flex items-center gap-3">
         {product.imageUrl ? (
           <img src={product.imageUrl} alt="" className="h-16 w-16 rounded-xl object-cover" />

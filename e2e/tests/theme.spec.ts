@@ -6,8 +6,6 @@ const VIEWPORTS = [
   { width: 360, height: 740 },
   { width: 390, height: 844 },
 ];
-const THEMES = ['light', 'dark'] as const;
-type Theme = (typeof THEMES)[number];
 
 /** Gives the screens products with a close and a past date, so that the badges are audited too. */
 async function seed(page: Page, tag: string, baseURL: string) {
@@ -66,7 +64,7 @@ async function heading(page: Page) {
 }
 
 for (const viewport of VIEWPORTS) {
-  test.describe(`thème à ${viewport.width}×${viewport.height}`, () => {
+  test.describe(`thème clair à ${viewport.width}×${viewport.height}`, () => {
     test.use({ viewport });
 
     test.beforeEach(async ({ page }, testInfo) => {
@@ -75,87 +73,48 @@ for (const viewport of VIEWPORTS) {
       await seed(page, tag, testInfo.project.use.baseURL!);
     });
 
-    for (const theme of THEMES) {
-      test(`parcours en ${theme} : axe, contraste compris`, async ({ page }) => {
-        await page.evaluate(
-          (value) => window.localStorage.setItem('inventaire.theme', value),
-          theme,
-        );
+    test('parcours : axe, contraste compris', async ({ page }) => {
+      const check = async (path: string, label: string, after?: () => Promise<void>) => {
+        await page.goto(path);
+        await heading(page);
+        await after?.();
+        await audit(page, label);
+      };
 
-        const check = async (path: string, label: string, after?: () => Promise<void>) => {
-          await page.goto(path);
-          await heading(page);
-          await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-          await after?.();
-          await audit(page, `${theme} ${label}`);
-        };
-
-        await check('/inventaire', 'Inventaire, vue Maison');
-        await check('/inventaire', 'Inventaire, vue Liste', async () => {
-          await page.getByRole('button', { name: 'Liste', exact: true }).click();
-          await page.waitForLoadState('networkidle');
-        });
-        const places = (await (await page.request.get('/api/locations')).json()) as {
-          id: number;
-        }[];
-        await check(`/inventaire/${places[0]!.id}`, 'Meuble ouvert', () => furnitureSettled(page));
-        await check('/scanner', 'Scanner');
-        await check('/courses', 'Courses');
-        await check('/plus/statistiques', 'Statistiques');
-        await check('/plus/compte', 'Compte');
+      await check('/inventaire', 'Inventaire, vue Maison');
+      await check('/inventaire', 'Inventaire, vue Liste', async () => {
+        await page.getByRole('button', { name: 'Liste', exact: true }).click();
+        await page.waitForLoadState('networkidle');
       });
-    }
-
-    test('le choix persiste et s’applique avant le premier rendu', async ({ page }) => {
-      await page.goto('/plus/compte');
-      await heading(page);
-      await expect(page.getByRole('radio', { name: 'Automatique' })).toBeChecked();
-      await page.getByRole('radio', { name: 'Sombre' }).check();
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-      await expect(page.locator('meta[name="theme-color"]').first()).toHaveAttribute(
-        'content',
-        /^#/,
-      );
-
-      // On the next load, data-theme is already there when the body appears.
-      await page.addInitScript(() => {
-        const watch = new MutationObserver(() => {
-          if (!document.body) return;
-          (window as unknown as { __firstTheme: string | undefined }).__firstTheme =
-            document.documentElement.dataset['theme'];
-          watch.disconnect();
-        });
-        watch.observe(document, { childList: true, subtree: true });
-      });
-      await page.reload();
-      await heading(page);
-      expect(
-        await page.evaluate(() => (window as unknown as { __firstTheme?: string }).__firstTheme),
-      ).toBe('dark');
-      await expect(page.getByRole('radio', { name: 'Sombre' })).toBeChecked();
-
-      await page.getByRole('radio', { name: 'Clair' }).check();
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    });
-
-    test('Automatique suit le téléphone', async ({ page }) => {
-      await page.emulateMedia({ colorScheme: 'dark' });
-      await page.goto('/plus/compte');
-      await heading(page);
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-      await page.emulateMedia({ colorScheme: 'light' });
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      const places = (await (await page.request.get('/api/locations')).json()) as {
+        id: number;
+      }[];
+      await check(`/inventaire/${places[0]!.id}`, 'Meuble ouvert', () => furnitureSettled(page));
+      await check('/scanner', 'Scanner');
+      await check('/courses', 'Courses');
+      await check('/plus/statistiques', 'Statistiques');
+      await check('/plus/compte', 'Compte');
     });
   });
 }
 
-test('thème : les deux palettes sont distinctes', async ({ page }) => {
+test('thème clair unique : ni le téléphone ni un ancien réglage ne le changent', async ({
+  page,
+}) => {
   await signIn(page);
-  const background = async (theme: Theme) => {
-    await page.evaluate((value) => window.localStorage.setItem('inventaire.theme', value), theme);
+  const background = async (scheme: 'light' | 'dark') => {
+    await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/plus/compte');
     await heading(page);
     return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   };
-  expect(await background('dark')).not.toBe(await background('light'));
+  const light = await background('light');
+
+  // A device that chose « Sombre » in Phase 4, with the phone in dark mode.
+  await page.evaluate(() => window.localStorage.setItem('inventaire.theme', 'dark'));
+  expect(await background('dark')).toBe(light);
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+  await expect(page.getByRole('radio', { name: 'Sombre' })).toHaveCount(0);
+  expect(await page.evaluate(() => window.localStorage.getItem('inventaire.theme'))).toBeNull();
+  await expect(page.locator('meta[name="theme-color"]')).toHaveCount(1);
 });

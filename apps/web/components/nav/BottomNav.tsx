@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  EllipsisVertical,
-  Package,
-  ScanBarcode,
-  ShoppingBasket,
-  type LucideIcon,
-} from 'lucide-react';
+import { EllipsisVertical, Package, ShoppingBasket, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
@@ -19,7 +13,6 @@ interface Tab {
 }
 
 export const TABS: readonly Tab[] = [
-  { href: '/scanner', label: 'Scanner', icon: ScanBarcode },
   { href: '/inventaire', label: 'Inventaire', icon: Package },
   { href: '/courses', label: 'Courses', icon: ShoppingBasket },
   { href: '/plus', label: 'Plus', icon: EllipsisVertical },

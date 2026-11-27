@@ -58,7 +58,7 @@ export function StockCard({ item, onChange, selection }: StockCardProps) {
           </button>
           <output
             aria-label="Quantité"
-            className="text-ink min-w-[2ch] text-center font-semibold tabular-nums"
+            className="text-ink min-w-8 text-center font-semibold tabular-nums"
           >
             {item.quantity}
           </output>

@@ -103,6 +103,9 @@ function renderFlow(
 }
 
 async function typeCode(code: string) {
+  if (!screen.queryByLabelText('Code-barres')) {
+    await userEvent.click(screen.getByRole('button', { name: 'Saisir un code' }));
+  }
   await userEvent.type(screen.getByLabelText('Code-barres'), `${code}{Enter}`);
 }
 
@@ -267,7 +270,7 @@ describe('ScanFlow', () => {
     await typeCode('3017620422004');
     expect(await screen.findByRole('alert')).toHaveTextContent(/incorrect/);
     expect(fetchScan).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /^(?!Saisir un code)/ })).toBeNull();
   });
 
   it('says « Pas de connexion » offline and does not call the API', async () => {

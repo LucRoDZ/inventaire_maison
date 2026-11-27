@@ -96,6 +96,7 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
 }) => {
   await signInOwnHousehold(page);
   const productId = await createKnownProduct(page);
+  await page.goto('/scanner');
 
   // The catalogue is downloaded when the app opens; the shell is cached by the service worker.
   await page.evaluate(async () => {
@@ -107,7 +108,8 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
 
   await context.setOffline(true);
-  await page.getByLabel('Code-barres').fill(BARCODE);
+  await page.getByRole('button', { name: 'Saisir un code' }).click();
+  await page.getByRole('textbox', { name: 'Code-barres' }).fill(BARCODE);
   await page.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByText('Hors ligne : le scan est gardé sur cet appareil')).toBeVisible();
   expect((await offlineState(page))?.ops).toBe(1);
@@ -125,13 +127,14 @@ test('hors ligne, un scan saisi à la main est gardé puis synchronisé au retou
 test('la déconnexion vide la file et le cache de l’appareil', async ({ page, context }) => {
   await signInOwnHousehold(page);
   await createKnownProduct(page).catch(() => undefined);
-  await page.reload();
+  await page.goto('/scanner');
   await expect(page.getByRole('heading', { name: 'Scanner' })).toBeVisible();
   await expect.poll(async () => (await offlineState(page))?.catalog).toBe(true);
 
   // An unknown code stays in the queue « à identifier », even back online.
   await context.setOffline(true);
-  await page.getByLabel('Code-barres').fill('3017620422003');
+  await page.getByRole('button', { name: 'Saisir un code' }).click();
+  await page.getByRole('textbox', { name: 'Code-barres' }).fill('3017620422003');
   await page.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByText('Hors ligne : le scan est gardé sur cet appareil')).toBeVisible();
   await context.setOffline(false);

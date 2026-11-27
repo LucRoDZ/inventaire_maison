@@ -23,7 +23,9 @@ type Review =
 const describeOp = (item: QueuedOp): string =>
   item.op.kind === 'add'
     ? `Ajout de ${item.op.quantity} unité(s), produit n° ${item.op.productId}`
-    : `Retrait de ${item.op.quantity} unité(s), produit n° ${item.op.productId}`;
+    : item.op.kind === 'shop'
+      ? `Ajout aux courses, produit n° ${item.op.productId}`
+      : `Retrait de ${item.op.quantity} unité(s), produit n° ${item.op.productId}`;
 
 /** The waiting operations: retry or abandon each one, and identify the codes scanned offline. */
 export function PendingSyncView() {

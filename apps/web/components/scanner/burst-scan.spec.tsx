@@ -73,8 +73,12 @@ function renderFlow(response: ScanResponse, extra: Record<string, unknown> = {})
   );
 }
 
-const typeCode = (code: string) =>
-  userEvent.type(screen.getByLabelText('Code-barres'), `${code}{Enter}`);
+const typeCode = async (code: string) => {
+  if (!screen.queryByLabelText('Code-barres')) {
+    await userEvent.click(screen.getByRole('button', { name: 'Saisir un code' }));
+  }
+  await userEvent.type(screen.getByLabelText('Code-barres'), `${code}{Enter}`);
+};
 
 describe('burst scan', () => {
   it('is off by default: a known product opens the form', async () => {
