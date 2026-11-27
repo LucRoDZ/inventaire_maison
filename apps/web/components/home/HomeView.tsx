@@ -149,7 +149,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
     return (
       <div className="flex flex-col gap-4">
         {live}
-        <section className="border-line rounded-card shadow-card flex flex-col items-start gap-3 border bg-white p-4">
+        <section className="border-line rounded-card bg-surface-raised flex flex-col items-start gap-3 border p-4">
           <EmptyFurnitureIllustration />
           <h2 className="text-card-title">Aucun meuble pour l’instant</h2>
           <p className="text-body">

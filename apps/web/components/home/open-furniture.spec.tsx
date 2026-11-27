@@ -121,7 +121,7 @@ describe('OpenFurniture', () => {
 
   it('says the tray is empty', () => {
     render(<OpenFurniture location={fridge()} />);
-    expect(screen.getByText('Rien de non rangé.')).toBeInTheDocument();
+    expect(screen.getByText('Rien de non rangé')).toBeInTheDocument();
   });
 
   it('hands the tapped tile to the panel', async () => {
