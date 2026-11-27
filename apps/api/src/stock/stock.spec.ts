@@ -141,6 +141,29 @@ describe('POST /api/stock/adjust', () => {
     expect(await lines()).toHaveLength(0);
   });
 
+  it('reports the product total and the shopping-list flag', async () => {
+    const first = await adjust({ ...base(), delta: 2 });
+    expect(first.body).toMatchObject({ productTotal: 2, onShoppingList: false });
+    await adjust({
+      ...base(),
+      locationId: (await db().select().from(locations).where(eq(locations.kind, 'pantry')))[0]!.id,
+      delta: 3,
+    });
+    const rest = await adjust({ ...base(), delta: -2, reason: 'scan_remove' });
+    expect(rest.body).toMatchObject({ item: null, productTotal: 3, onShoppingList: false });
+    await db().update(products).set({ minQuantity: 4 }).where(eq(products.id, productId));
+    const low = await adjust({ ...base(), delta: 1 });
+    expect(low.body).toMatchObject({ productTotal: 4, onShoppingList: false });
+    const under = await adjust({ ...base(), delta: -1, reason: 'scan_remove' });
+    expect(under.body).toMatchObject({ productTotal: 3, onShoppingList: true });
+  });
+
+  it('answers a total of 0 for the last unit', async () => {
+    await adjust({ ...base(), delta: 1 });
+    const res = await adjust({ ...base(), delta: -1, reason: 'scan_remove' });
+    expect(res.body).toMatchObject({ productTotal: 0, onShoppingList: false });
+  });
+
   it('refuses to go below zero with 409 and leaves the quantity untouched', async () => {
     expect((await adjust({ ...base(), delta: 2 })).status).toBe(200);
     const res = await adjust({ ...base(), delta: -4 });

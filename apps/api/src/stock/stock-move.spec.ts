@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/create-test-app';
@@ -239,6 +239,30 @@ describe('POST /api/stock/remove', () => {
     const rest = await lines();
     expect(rest).toHaveLength(1);
     expect(rest[0]?.locationId).toBe(fridgeId);
+  });
+
+  it('reports the product total and the shopping-list flag', async () => {
+    await addLine({ quantity: 1 });
+    await addLine({ quantity: 2, locationId: pantryId });
+    const other = await post('/api/stock/remove', { productId });
+    expect(other.body).toMatchObject({ productTotal: 2, onShoppingList: false });
+    await post('/api/stock/remove', { productId });
+    const last = await post('/api/stock/remove', { productId });
+    expect(last.body).toMatchObject({ productTotal: 0, onShoppingList: false });
+  });
+
+  it('flags the automatic line created at the minimum threshold, and a manual or checked one', async () => {
+    await db().update(products).set({ minQuantity: 2 }).where(eq(products.id, productId));
+    await addLine({ quantity: 2 });
+    expect((await post('/api/stock/remove', { productId })).body).toMatchObject({
+      productTotal: 1,
+      onShoppingList: true,
+    });
+    await db().execute(sql`UPDATE shopping_items SET checked = true, origin = 'manual'`);
+    expect((await post('/api/stock/remove', { productId })).body).toMatchObject({
+      productTotal: 0,
+      onShoppingList: true,
+    });
   });
 
   it('answers 404 "Pas en stock" without writing a movement', async () => {

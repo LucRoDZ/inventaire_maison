@@ -189,6 +189,57 @@ describe('POST /sync', () => {
     expect(keys.rows).toHaveLength(2);
   });
 
+  it('puts a product on the shopping list once: replay, existing line, merged and foreign products', async () => {
+    const lines = async (productId: number) =>
+      (await ownerPool().query('SELECT * FROM shopping_items WHERE product_id = $1', [productId]))
+        .rows;
+    const shop = op({ kind: 'shop', quantity: 2 });
+    expect(await results([shop])).toEqual([{ key: shop.key, status: 'applied' }]);
+    expect(await results([shop])).toEqual([
+      { key: shop.key, status: 'duplicate', first: 'applied' },
+    ]);
+    expect(await lines(milk)).toHaveLength(1);
+    // A new key on a product already listed: applied, no second line, quantity untouched.
+    expect(await results([op({ kind: 'shop' })])).toMatchObject([{ status: 'applied' }]);
+    expect(await lines(milk)).toHaveLength(1);
+    expect((await lines(milk))[0].quantity).toBe(2);
+    // A checked line counts too.
+    await ownerPool().query('UPDATE shopping_items SET checked = true WHERE product_id = $1', [
+      milk,
+    ]);
+    expect(await results([op({ kind: 'shop' })])).toMatchObject([{ status: 'applied' }]);
+    expect(await lines(milk)).toHaveLength(1);
+
+    const target = await newProduct('Cible');
+    const old = await newProduct('Ancien');
+    await ownerPool().query('UPDATE products SET merged_into_id = $1 WHERE id = $2', [target, old]);
+    expect(await results([op({ kind: 'shop', productId: old })])).toMatchObject([
+      { status: 'conflict', conflict: 'merged', mergedIntoId: target },
+    ]);
+    expect(await lines(old)).toHaveLength(0);
+  });
+
+  it('rejects a shop operation on a product of another household', async () => {
+    const other = await createHousehold(app, 'Autre foyer');
+    await createUser(app, { username: 'voisin', password: 'motdepasse1', householdId: other });
+    const neighbour = await login('voisin');
+    const { rows } = await ownerPool().query(
+      `INSERT INTO products (household_id, name, search_text, category_id)
+       VALUES ($1, 'Lait voisin', 'lait voisin', (SELECT id FROM categories WHERE household_id = $1 LIMIT 1))
+       RETURNING id`,
+      [other],
+    );
+    const theirs = rows[0].id as number;
+    expect(await results([op({ kind: 'shop', productId: theirs })])).toMatchObject([
+      { status: 'rejected' },
+    ]);
+    expect(await results([op({ kind: 'shop', productId: milk })], neighbour)).toMatchObject([
+      { status: 'rejected' },
+    ]);
+    const all = await ownerPool().query('SELECT 1 FROM shopping_items');
+    expect(all.rows).toHaveLength(0);
+  });
+
   it('requires a session', async () => {
     const res = await request(server()).post('/api/sync').set('Origin', ORIGIN).send({ ops: [] });
     expect(res.status).toBe(401);
