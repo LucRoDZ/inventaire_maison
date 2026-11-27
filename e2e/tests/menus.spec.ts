@@ -145,7 +145,7 @@ test('menu des meubles : renommer, icône, ordre, suppression avec transfert, fo
   await page.getByRole('button', { name: 'Options de Frigo cuisine' }).click();
   await page
     .getByRole('dialog', { name: 'Frigo cuisine' })
-    .getByRole('button', { name: 'Supprimer' })
+    .getByRole('button', { name: 'Supprimer le meuble' })
     .click();
   const confirm = page.getByRole('alertdialog', { name: 'Supprimer Frigo cuisine ?' });
   await expect(confirm.getByRole('button', { name: 'Annuler' })).toBeFocused();

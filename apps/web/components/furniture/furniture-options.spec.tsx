@@ -1,4 +1,4 @@
-import type { LocationDto } from '@inventaire/shared';
+import type { LocationDto, ShelfDto } from '@inventaire/shared';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -15,13 +15,31 @@ const place = (id: number, name: string, sortOrder: number, productCount = 0): L
   shelves: [],
   productCount,
 });
-const house = [place(1, 'Garde-manger', 0, 3), place(2, 'Frigo', 1, 2), place(3, 'Cave', 2)];
+const shelf = (id: number, locationId: number, name: string, sortOrder: number): ShelfDto => ({
+  id,
+  locationId,
+  name,
+  kind: 'plain',
+  sortOrder,
+});
+const house = [
+  place(1, 'Garde-manger', 0, 3),
+  {
+    ...place(2, 'Frigo', 1, 2),
+    kind: 'fridge' as const,
+    // Out of order on purpose: line 1 is the lowest sortOrder.
+    shelves: [shelf(22, 2, 'Bac à légumes', 1), shelf(21, 2, 'Étagère 1', 0)],
+  },
+  place(3, 'Cave', 2),
+];
 
 function setup(locationId = 2, over: Partial<Parameters<typeof FurnitureOptions>[0]['api']> = {}) {
   const api = {
     fetchLocations: vi.fn(async () => house),
     updateLocation: vi.fn(async () => house[0]!),
     deleteLocation: vi.fn(async () => undefined),
+    createShelf: vi.fn(async () => shelf(23, 2, 'Étagère 3', 2)),
+    deleteShelf: vi.fn(async () => undefined),
     ...over,
   };
   const onChanged = vi.fn();
@@ -55,7 +73,7 @@ describe('furniture editing helpers', () => {
 });
 
 describe('FurnitureOptions', () => {
-  it('is a 44 px button named « Options de {nom} » with its menu of five actions', async () => {
+  it('is a 44 px button named « Options de {nom} » with its menu of seven actions', async () => {
     const { button } = setup();
     expect(button).toHaveClass('tap-target');
     expect(button).toHaveAttribute('aria-expanded', 'false');
@@ -66,7 +84,16 @@ describe('FurnitureOptions', () => {
       within(menu)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['', 'Renommer', 'Changer l’icône', 'Monter', 'Descendre', 'Supprimer']);
+    ).toEqual([
+      '',
+      'Renommer',
+      'Changer l’icône',
+      'Monter',
+      'Descendre',
+      'Ajouter une étagère',
+      'Supprimer une étagère',
+      'Supprimer le meuble',
+    ]);
   });
 
   it('cannot move the first one up nor the last one down', async () => {
@@ -169,7 +196,7 @@ describe('FurnitureOptions', () => {
   it('delete: the same alert dialog, destination required when it holds stock', async () => {
     const { button, api, onChanged } = setup(2);
     const menu = await openMenu(button);
-    await userEvent.click(within(menu).getByRole('button', { name: 'Supprimer' }));
+    await userEvent.click(within(menu).getByRole('button', { name: 'Supprimer le meuble' }));
     const dialog = screen.getByRole('alertdialog', { name: 'Supprimer Frigo ?' });
     expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer Frigo' }));
@@ -189,11 +216,76 @@ describe('FurnitureOptions', () => {
   it('delete: Échap cancels and gives the focus back', async () => {
     const { button, api } = setup(3);
     const menu = await openMenu(button);
-    await userEvent.click(within(menu).getByRole('button', { name: 'Supprimer' }));
+    await userEvent.click(within(menu).getByRole('button', { name: 'Supprimer le meuble' }));
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(api.deleteLocation).not.toHaveBeenCalled();
     expect(button).toHaveFocus();
+  });
+
+  it('adds a shelf at the bottom, named after the kind, and says its line', async () => {
+    const { button, api, onChanged } = setup(2);
+    const menu = await openMenu(button);
+    await userEvent.click(within(menu).getByRole('button', { name: 'Ajouter une étagère' }));
+    expect(api.createShelf).toHaveBeenCalledWith({
+      locationId: 2,
+      name: 'Étagère 3',
+      kind: 'plain',
+    });
+    await waitFor(() =>
+      expect(onChanged).toHaveBeenCalledWith({
+        kind: 'shelves',
+        message: 'Étagère 3 ajoutée en bas de Frigo (ligne 3).',
+      }),
+    );
+    expect(button).toHaveFocus();
+  });
+
+  it('cannot add a ninth shelf nor delete a shelf of an empty piece of furniture', async () => {
+    const full = {
+      ...house[1]!,
+      shelves: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => shelf(n, 2, `É${n}`, n)),
+    };
+    const { button, api } = setup(2, { fetchLocations: vi.fn(async () => [house[0]!, full]) });
+    const menu = await openMenu(button);
+    const add = within(menu).getByRole('button', { name: 'Ajouter une étagère' });
+    expect(add).toHaveAttribute('aria-disabled', 'true');
+    expect(within(menu).getByText(/ce meuble est complet/)).toBeVisible();
+    await userEvent.click(add);
+    expect(api.createShelf).not.toHaveBeenCalled();
+  });
+
+  it('deletes the shelf chosen by its line number, after a confirmation', async () => {
+    const { button, api, onChanged } = setup(2);
+    const menu = await openMenu(button);
+    await userEvent.click(within(menu).getByRole('button', { name: 'Supprimer une étagère' }));
+    const picker = await screen.findByRole('dialog', { name: 'Supprimer une étagère' });
+    expect(
+      within(picker)
+        .getAllByRole('button', { name: /^Ligne/ })
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual(['Ligne 1 : Étagère 1', 'Ligne 2 : Bac à légumes']);
+    await userEvent.click(within(picker).getByRole('button', { name: 'Ligne 2 : Bac à légumes' }));
+    const confirm = await screen.findByRole('alertdialog', { name: 'Supprimer Bac à légumes ?' });
+    expect(confirm).toHaveTextContent('plateau « Non rangé »');
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Supprimer Bac à légumes' }));
+    expect(api.deleteShelf).toHaveBeenCalledWith(22);
+    await waitFor(() =>
+      expect(onChanged).toHaveBeenCalledWith({
+        kind: 'shelves',
+        message: 'Bac à légumes supprimée : ses produits sont sur le plateau « Non rangé ».',
+      }),
+    );
+  });
+
+  it('cancelling the confirmation goes back to the list of lines', async () => {
+    const { button, api } = setup(2);
+    const menu = await openMenu(button);
+    await userEvent.click(within(menu).getByRole('button', { name: 'Supprimer une étagère' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ligne 1 : Étagère 1' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Annuler' }));
+    expect(await screen.findByRole('dialog', { name: 'Supprimer une étagère' })).toBeVisible();
+    expect(api.deleteShelf).not.toHaveBeenCalled();
   });
 });

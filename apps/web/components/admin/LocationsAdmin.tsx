@@ -20,13 +20,13 @@ import {
   type ReactNode,
 } from 'react';
 import { ApiError } from '../../lib/api';
-import { furnitureNameError, reorder } from '../../lib/furniture-edit';
+import { furnitureNameError, nextShelf, reorder } from '../../lib/furniture-edit';
 import * as placesApi from '../../lib/places-api';
 import { CreateFurnitureSheet } from '../furniture/CreateFurnitureSheet';
 import { DeleteFurnitureDialog } from '../furniture/DeleteFurnitureDialog';
+import { DeleteShelfDialog } from '../furniture/DeleteShelfDialog';
 import { IconPickerSheet } from '../furniture/IconPickerSheet';
 import { NEW_FURNITURE_PARAM } from '../home/HomeView';
-import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 import { Callout } from '../ui/Callout';
 import { placeIcon } from '../ui/CategoryIcon';
@@ -52,57 +52,6 @@ const products = (n: number) => (n === 0 ? 'Vide' : `${n} ${n > 1 ? 'produits' :
 interface ShelfDraft {
   name: string;
   kind: ShelfKind;
-}
-
-/** Confirmation before a shelf goes: its stock returns to the « Non rangé » tray. */
-function DeleteShelfDialog({
-  shelf,
-  location,
-  onConfirm,
-  onClose,
-}: {
-  shelf: ShelfDto;
-  location: LocationDto;
-  onConfirm: () => Promise<void>;
-  onClose: () => void;
-}) {
-  const titleId = useId();
-  const textId = useId();
-  const cancel = useRef<HTMLButtonElement>(null);
-  const [busy, setBusy] = useState(false);
-  return (
-    <BottomSheet
-      role="alertdialog"
-      labelledBy={titleId}
-      describedBy={textId}
-      onClose={onClose}
-      initialFocus={cancel}
-      closeOnBackdrop={false}
-      layer="top"
-    >
-      <h2 id={titleId} className="text-card-title">
-        Supprimer {shelf.name} ?
-      </h2>
-      <p id={textId} className="text-body">
-        Ses produits restent dans {location.name}, sur le plateau « Non rangé ».
-      </p>
-      <div className="flex flex-col gap-2">
-        <Button
-          aria-disabled={busy}
-          onClick={() => {
-            if (busy) return;
-            setBusy(true);
-            void onConfirm().finally(() => setBusy(false));
-          }}
-        >
-          {busy ? 'Suppression…' : `Supprimer ${shelf.name}`}
-        </Button>
-        <Button ref={cancel} variant="secondary" onClick={onClose}>
-          Annuler
-        </Button>
-      </div>
-    </BottomSheet>
-  );
 }
 
 /** One compact line per shelf: its name and type (saved with the form), up, down, delete. */
@@ -287,16 +236,10 @@ function FurnitureForm({
   }
 
   async function addShelf() {
-    const taken = new Set(location.shelves.map((s) => s.name.toLowerCase()));
-    let n = location.shelves.length + 1;
-    while (taken.has(`étagère ${n}`)) n += 1;
+    const next = nextShelf(location);
     try {
-      const created = await api.createShelf({
-        locationId: location.id,
-        name: `Étagère ${n}`,
-        kind: 'plain',
-      });
-      notify({ kind: 'ok', text: `Étagère ${n} ajoutée : donnez-lui un nom si besoin.` });
+      const created = await api.createShelf({ locationId: location.id, ...next });
+      notify({ kind: 'ok', text: `${next.name} ajoutée : donnez-lui un nom si besoin.` });
       setFocusShelf(created.id);
       onChanged();
     } catch (caught) {
