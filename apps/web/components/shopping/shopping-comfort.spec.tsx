@@ -123,7 +123,8 @@ describe('Courses: share', () => {
     const share = vi.fn(async () => undefined);
     vi.stubGlobal('navigator', { ...navigator, share });
     setup([line(1, { label: 'Pommes', quantity: 3 }), line(2, { label: 'Pain', checked: true })]);
-    await userEvent.click(await screen.findByRole('button', { name: 'Partager la liste' }));
+    await userEvent.click(await screen.findByRole('button', { name: "Plus d'actions" }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Partager la liste' }));
     expect(share).toHaveBeenCalledWith({
       title: 'Liste de courses',
       text: 'Liste de courses\n- Pommes × 3',
@@ -135,7 +136,8 @@ describe('Courses: share', () => {
     const writeText = vi.fn(async () => undefined);
     vi.stubGlobal('navigator', { clipboard: { writeText } });
     setup([line(1, { label: 'Pommes' })]);
-    await userEvent.click(await screen.findByRole('button', { name: 'Partager la liste' }));
+    await userEvent.click(await screen.findByRole('button', { name: "Plus d'actions" }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Partager la liste' }));
     expect(writeText).toHaveBeenCalledWith('Liste de courses\n- Pommes × 1');
     expect(await screen.findByText('Liste copiée dans le presse-papiers.')).toBeInTheDocument();
   });
@@ -157,5 +159,58 @@ describe('Courses: states', () => {
     setup([], { fetchShopping } as never);
     await userEvent.click(await screen.findByRole('button', { name: 'Réessayer' }));
     expect(await screen.findByText('La liste est vide')).toBeInTheDocument();
+  });
+});
+
+describe('Courses: full page layout', () => {
+  const recent = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      productId: i + 1,
+      name: `Produit récent ${i + 1}`,
+      imageUrl: null,
+      count: 1,
+      lastConsumedAt: '2026-11-20T10:00:00.000Z',
+      locationName: null,
+      sizeLabel: null,
+      inStock: 0,
+    }));
+
+  it('shows one single row of chips in the fixed header', async () => {
+    setup([line(1)], { fetchRecent: vi.fn(async () => recent(8)) });
+    const first = await screen.findByRole('button', {
+      name: 'Ajouter Produit récent 1 à la liste',
+    });
+    const row = first.closest('ul')!;
+    expect(row).toHaveClass('flex-nowrap', 'overflow-x-auto');
+    expect(first.closest('li')).toHaveClass('shrink-0');
+    expect(first).toHaveClass('max-w-[12rem]');
+    expect(row.closest('header')).not.toBeNull();
+  });
+
+  it('keeps the footer outside of the scroll zone with 30 lines', async () => {
+    setup(Array.from({ length: 30 }, (_, i) => line(i + 1, { checked: i === 0 })));
+    const store = await screen.findByRole('button', { name: /Ranger les articles cochés/ });
+    expect(store.closest('footer')).not.toBeNull();
+    const zone = screen.getByRole('region', { name: 'Liste de courses' });
+    expect(zone.contains(store)).toBe(false);
+    expect(zone.contains(screen.getByText('Ligne 30'))).toBe(true);
+  });
+
+  it('hides « Ranger » without checked lines', async () => {
+    setup([line(1)]);
+    await screen.findByText('Ligne 1');
+    expect(screen.queryByRole('button', { name: /Ranger les articles cochés/ })).toBeNull();
+  });
+
+  it('opens the ⋯ menu, closes it with Escape and gives the focus back', async () => {
+    const user = userEvent.setup();
+    setup([line(1)]);
+    const more = await screen.findByRole('button', { name: "Plus d'actions" });
+    await user.click(more);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Partager la liste' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(more).toHaveFocus();
   });
 });

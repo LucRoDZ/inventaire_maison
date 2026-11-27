@@ -168,7 +168,8 @@ test.describe('phase 4, interface', () => {
     await page.getByRole('button', { name: /Annuler/ }).click();
     await expect(list.locator('[data-swipe-row]').filter({ hasText: 'Farine' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Partager la liste' }).click();
+    await page.getByRole('button', { name: "Plus d'actions" }).click();
+    await page.getByRole('menuitem', { name: 'Partager la liste' }).click();
     await expect(page.getByText('Liste copiée dans le presse-papiers.')).toBeVisible();
     const copied = await page.evaluate(
       () => (window as unknown as { __copied: string[] }).__copied,
