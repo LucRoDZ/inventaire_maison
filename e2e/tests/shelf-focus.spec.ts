@@ -97,4 +97,27 @@ test.describe('shelf focus, 360×740', () => {
     await expect(furniture).toBeVisible();
     expect(await furniture.evaluate((node) => node.scrollTop)).toBe(before);
   });
+
+  test('Maison: the Périmés counter lists the expired product with its red ring', async ({
+    page,
+  }, testInfo) => {
+    const app = await setup(page, testInfo);
+    const pantry = app.place('Garde-manger');
+    await app.seed('Crème périmée', { locationId: pantry.id, expiryDate: inDays(-3) });
+    await app.seed('Riz lointain', { locationId: pantry.id, expiryDate: inDays(90) });
+
+    await page.goto('/inventaire');
+    const counters = page.getByRole('region', { name: 'Résumé du stock' });
+    await counters.getByRole('button', { name: /Périmés/ }).click();
+    await expect(page).toHaveURL(/echeance=perime/);
+    const zone = page.getByRole('region', { name: 'Liste des produits' });
+    const row = zone.getByRole('article').filter({ hasText: 'Crème périmée' });
+    await expect(row).toBeVisible();
+    await expect(row).toHaveClass(/ring-alert/);
+    await expect(zone.getByText('Riz lointain')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Liste des meubles' })).toHaveCount(0);
+
+    await counters.getByRole('button', { name: /Périmés/ }).click();
+    await expect(page.getByRole('region', { name: 'Liste des meubles' })).toBeVisible();
+  });
 });
