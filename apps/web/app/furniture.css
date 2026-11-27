@@ -50,14 +50,12 @@
   position: relative;
   overflow: hidden;
   padding: 6px 5px 4px;
-  background: var(--lavender);
-  border: 5px solid var(--lavender-line);
-  border-radius: 13px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 16px;
   /* Ombre intérieure sans flou : une grande ombre floutée est recalculée à chaque image dès que
      quelque chose bouge dans le meuble (mesuré sur WebKit, tâche 1.5.10). */
-  box-shadow:
-    inset 0 0 0 1px var(--fx-inner),
-    var(--shadow-card);
+  box-shadow: none;
 }
 .fx-body > * {
   position: relative;
@@ -150,16 +148,16 @@
   inset: 0;
   overflow: hidden;
   background: var(--white);
-  border: 5px solid var(--lavender-line);
-  border-radius: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
 }
 /* La lamelle : la tranche de la porte ouverte. */
 .fx-door-back {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: var(--lavender);
-  border: 4px solid var(--lavender-line);
+  background: var(--surface-group);
+  border: 1px solid var(--line);
   border-radius: 8px;
   opacity: 0;
   animation: fx-back-on 1ms linear calc(var(--fx-door-ms) * var(--fx-flip)) both;
@@ -202,7 +200,7 @@
    (ordinateur, paysage), 120 px. Sur un téléphone en portrait (plus bas), le partage de l'espace
    disponible : min(120 px, (espace − plateau vide − écarts) / rangées). */
 .fx-shelves {
-  --fx-gap: 3px;
+  --fx-gap: 8px;
   --fx-row-h: 120px;
   gap: var(--fx-gap);
 }
@@ -223,6 +221,10 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  border-radius: 12px;
+}
+.fx-shelf:not(.fx-drawer) {
+  background: var(--surface-group);
 }
 
 /* Zone du haut : conteneur de taille, 100cqh est sa hauteur. La pile prend d'abord ses 12 px, la
@@ -300,9 +302,9 @@
 .fx-drawer {
   padding: 5px 6px 0;
   background: var(--white);
-  border: 1px solid var(--lavender-line);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 2px 0 var(--fx-shade); /* sans flou : le tiroir bouge à l'arrivée */
+  box-shadow: none; /* sans flou : le tiroir bouge à l'arrivée */
   animation: fx-drawer-in 300ms ease-out both;
   animation-delay: calc(var(--i, 0) * 60ms);
 }
