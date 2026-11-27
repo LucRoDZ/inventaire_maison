@@ -3,6 +3,7 @@ import { AuthProvider } from '../../components/auth/AuthProvider';
 import { AppBadge } from '../../components/pwa/AppBadge';
 import { OutOfStockPrompt } from '../../components/shopping/OutOfStockPrompt';
 import { InstallSheet } from '../../components/pwa/InstallSheet';
+import { ScannerStatusBar } from '../../components/scanner/ScannerStatusBar';
 
 /**
  * Full-screen screens (the scanner): same session check as `(app)`, but no bottom bar and nothing
@@ -17,6 +18,7 @@ export default function ScanLayout({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
+      <ScannerStatusBar />
       <InstallSheet />
       <OutOfStockPrompt />
       <AppBadge />
