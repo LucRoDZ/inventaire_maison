@@ -132,7 +132,7 @@ export class SyncService {
         await tx.insert(shoppingItems).values({
           householdId,
           productId: op.productId,
-          quantity: op.quantity,
+          quantity: Math.min(SHOPPING_QUANTITY_MAX, op.quantity),
           createdBy: userId,
         });
       }
