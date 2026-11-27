@@ -9,7 +9,7 @@ Branche `logo`. Sources validées par l'utilisateur dans `design/icon/` (SVG et 
 | Sources dans `design/icon/`, décisions | pilote | fait | (ce commit) |
 | Script, icônes, favicons, iOS, manifest, cache (tâches 1 à 8) | worker | fait | ea0c4da, 65c9274 |
 | Ligne « Installer l'application » dans Plus (tâche 9) | worker | fait | 01c9369 |
-| Suite complète, revue (corrigée), PR | pilote | en cours | |
+| Suite complète, revue (corrigée : 1dc2a85), PR #31 | pilote | fait | CI verte |
 
 ## Sorties
 
