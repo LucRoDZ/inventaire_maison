@@ -15,7 +15,7 @@ interface ProductTileProps {
 }
 
 /**
- * Square thumbnail (its side follows the height of its shelf, see furniture.css): the photo, or the category glyph on its lavender badge, with an amber quantity
+ * Square thumbnail (its side follows the height of its shelf, see furniture.css): the photo, or the category glyph on its lavender badge, with an indigo quantity
  * badge. A raised card with a thin outline, so that it reads on the lavender inside of a furniture.
  */
 export function ProductTile({
@@ -48,7 +48,7 @@ export function ProductTile({
       )}
       <span
         aria-hidden="true"
-        className="bg-amber text-on-amber text-help absolute top-1 right-1 min-w-5 rounded-full px-1 text-center font-semibold tabular-nums"
+        className="bg-indigo text-help text-white absolute top-1 right-1 min-w-5 rounded-full px-1 text-center font-semibold tabular-nums"
       >
         {tile.quantity}
       </span>

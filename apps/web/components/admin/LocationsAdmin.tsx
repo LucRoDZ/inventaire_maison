@@ -338,7 +338,7 @@ function FurnitureForm({
             aria-label={`Icône : ${iconLabel(icon)}. Changer l’icône`}
             aria-haspopup="dialog"
             onClick={() => setPicking(true)}
-            className="tap-target border-line bg-lavender text-indigo inline-flex shrink-0 items-center justify-center rounded-xl border"
+            className="tap-target text-ink inline-flex shrink-0 items-center justify-center transition-opacity duration-100 active:opacity-50"
           >
             <Icon size={22} aria-hidden="true" />
           </button>

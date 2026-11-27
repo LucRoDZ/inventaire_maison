@@ -13,7 +13,7 @@ function Target({ id, name }: { id: number; name: string }) {
     <li
       ref={setNodeRef}
       className={`text-card-title min-h-11 min-w-0 flex-1 truncate rounded-xl px-2 py-2.5 text-center ${
-        isOver ? 'bg-amber text-on-amber' : 'bg-white text-indigo'
+        isOver ? 'bg-indigo text-white' : 'bg-white text-indigo'
       }`}
     >
       {name}

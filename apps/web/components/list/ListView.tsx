@@ -334,7 +334,7 @@ export function ListView({
     debounced !== '' || categoryIds.length > 0 || locationId !== null || expiry !== null;
 
   return (
-    <div className="flex flex-col gap-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+    <div className="flex flex-col gap-4">
       {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
 
       {items === null ? (

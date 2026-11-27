@@ -1,7 +1,7 @@
 'use client';
 
 import type { CategoryDto } from '@inventaire/shared';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { FilterReminder, FiltersControl } from '../../../components/home/FiltersControl';
 import { SummaryCounters } from '../../../components/home/SummaryCounters';
@@ -31,9 +31,12 @@ function Inventaire() {
   // Local copy of the view: the swap is synchronous inside the view transition, the URL follows.
   const [view, setLocalView] = useState(urlView);
   useEffect(() => setLocalView(urlView), [urlView]);
+  // Target of the transition in flight: a second tap on the same view is ignored, and only the
+  // latest transition clears the direction it set.
+  const pending = useRef<{ view: InventoryView; id: number } | null>(null);
   const setView = useCallback(
     (next: InventoryView) => {
-      if (next === view) return;
+      if (next === (pending.current?.view ?? view)) return;
       const root = document.documentElement;
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       if (typeof document.startViewTransition !== 'function' || reduced) {
@@ -41,12 +44,20 @@ function Inventaire() {
         setUrlView(next);
         return;
       }
+      const id = (pending.current?.id ?? 0) + 1;
+      pending.current = { view: next, id };
       root.dataset.viewDir = next === 'list' ? 'forward' : 'back';
       const transition = document.startViewTransition(() => {
         flushSync(() => setLocalView(next));
       });
       setUrlView(next);
-      void transition.finished.finally(() => delete root.dataset.viewDir);
+      transition.finished
+        .catch(() => undefined)
+        .finally(() => {
+          if (pending.current?.id !== id) return;
+          pending.current = null;
+          delete root.dataset.viewDir;
+        });
     },
     [view, setUrlView],
   );

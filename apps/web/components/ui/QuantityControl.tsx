@@ -36,7 +36,7 @@ export function QuantityControl({
   onChange,
   onStep,
   min = 1,
-  max = 999,
+  max = Number.POSITIVE_INFINITY,
   label,
   decreaseLabel,
   increaseLabel,

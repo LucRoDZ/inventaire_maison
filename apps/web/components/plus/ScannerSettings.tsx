@@ -77,7 +77,7 @@ export function ScannerSettings() {
         >
           <span
             aria-hidden="true"
-            className={`flex h-7 w-12 items-center rounded-full p-1 transition-colors ${burst ? 'bg-amber justify-end' : 'bg-line justify-start'}`}
+            className={`flex h-7 w-12 items-center rounded-full p-1 transition-colors ${burst ? 'bg-indigo justify-end' : 'bg-line justify-start'}`}
           >
             <span className="h-5 w-5 rounded-full bg-white" />
           </span>

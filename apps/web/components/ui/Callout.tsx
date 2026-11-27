@@ -11,7 +11,7 @@ interface CalloutProps {
   className?: string;
 }
 
-/** Information box on an amber tint, with an indigo glyph on an amber badge. */
+/** Information box on a quiet lavender tint, with an indigo glyph (no badge). */
 export function Callout({
   children,
   title,
@@ -20,13 +20,10 @@ export function Callout({
   className = '',
 }: CalloutProps) {
   return (
-    <div
-      role={role}
-      className={`rounded-card bg-amber-tint flex items-start gap-3 p-4 ${className}`}
-    >
+    <div role={role} className={`rounded-card bg-lavender flex items-start gap-3 p-4 ${className}`}>
       <span
         aria-hidden="true"
-        className="bg-amber text-on-amber inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+        className="text-indigo inline-flex h-6 w-6 shrink-0 items-center justify-center"
       >
         <Icon size={18} />
       </span>
