@@ -207,3 +207,10 @@ export async function filterListByFurniture(page: Page, name: RegExp) {
   await sheet.getByRole('button', { name: 'Appliquer' }).click();
   await expect(sheet).toHaveCount(0);
 }
+
+/** Burst scan is on by default (Phase 6): flows that expect the add sheet turn it off first. */
+export async function burstOff(target: Pick<Page, 'addInitScript'>): Promise<void> {
+  await target.addInitScript(() =>
+    window.localStorage.setItem('inventaire.scanner-settings.v1', JSON.stringify({ burst: false })),
+  );
+}

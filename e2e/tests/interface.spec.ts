@@ -98,7 +98,8 @@ for (const size of PHONES) {
         // No chip, no tab, no dropdown of filters in the header.
         await expect(top.getByRole('combobox')).toHaveCount(0);
         await expect(top.getByRole('tab')).toHaveCount(0);
-        await expect(top.getByRole('button')).toHaveCount(3); // Filtres, Maison, Liste
+        // Filtres, Maison, Liste, and the three counters that filter (fixed since Phase 6).
+        await expect(top.getByRole('button')).toHaveCount(6);
         const box = (await top.boundingBox())!;
         if (size.width === 360) expect(box.height).toBeLessThanOrEqual(190);
         const filters = (await top.getByRole('button', { name: 'Filtres' }).boundingBox())!;
@@ -127,7 +128,8 @@ for (const size of PHONES) {
       await expect(page.getByRole('link', { name: /^Frigo/ })).toBeVisible();
       const houseZone = await scrollZoneAndCheck(page, 'Liste des meubles');
       const zoneBox = (await houseZone.boundingBox())!;
-      if (size.width === 360) expect(zoneBox.height / size.height).toBeGreaterThan(0.6);
+      // The counters row joined the header in Phase 6: the zone keeps more than half the screen.
+      if (size.width === 360) expect(zoneBox.height / size.height).toBeGreaterThan(0.55);
       const housePosition = await houseZone.evaluate((el) => el.scrollTop);
 
       await page.getByRole('button', { name: 'Liste', exact: true }).click();

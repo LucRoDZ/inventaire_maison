@@ -6,6 +6,7 @@ import {
   openScanner,
   waitForHydration,
   filterListByFurniture,
+  burstOff,
 } from './helpers';
 
 // Burst scan is on by default: these flows open the add sheet, so it is turned off here.
@@ -550,6 +551,7 @@ test('deux membres, même stock : l’historique nomme chacun, la catégorie mod
   // The member, in another session, sees it as known and adds one more.
   const baseURL = testInfo.project.use.baseURL;
   const other = await browser.newContext({ baseURL });
+  await burstOff(other);
   const memberPage = await other.newPage();
   await signIn(memberPage, member, 'mot-de-passe-membre');
   await openScanner(memberPage);
@@ -894,10 +896,10 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height });
     await signIn(page);
     await openScanner(page);
-    const names = ['Saisir un code', 'Sans code-barres', 'Créer un article'];
+    const names = ['Saisir un code', 'sans code-barres', 'Créer un article'];
     const boxes = [];
     for (const name of names) {
-      const button = page.getByRole('button', { name: new RegExp(name) });
+      const button = page.getByRole('button', { name: new RegExp(name, 'i') });
       await expect(button).toBeVisible();
       const box = (await button.boundingBox())!;
       expect(box.height).toBeGreaterThanOrEqual(44);

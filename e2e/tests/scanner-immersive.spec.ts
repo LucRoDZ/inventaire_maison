@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { openScanner, pushCode, signIn, startScanner } from './helpers';
+import { burstOff, openScanner, pushCode, signIn, startScanner } from './helpers';
 
 type CameraWindow = { __e2eCameraActive?: boolean; __e2eCameraError?: string };
 
@@ -135,6 +135,7 @@ test('la caméra se coupe quand l’onglet passe en arrière-plan', async ({ pag
 test('saisie manuelle d’un code connu : fiche en bas, compteur, « Annuler le dernier »', async ({
   page,
 }, testInfo) => {
+  await burstOff(page);
   await signIn(page);
   const { code, name } = await knownProduct(page, testInfo);
   await page.goto('/scanner');

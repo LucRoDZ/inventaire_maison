@@ -58,7 +58,7 @@ export function SummaryCounters({
 
   return (
     <section aria-label="Résumé du stock" className="grid grid-cols-4 items-stretch gap-1.5">
-      <div role="group" aria-label={`En stock : ${summary?.inStock ?? '–'}`} className={TILE}>
+      <div className={TILE}>
         <span className={NUMBER}>{summary?.inStock ?? '–'}</span>
         <span className={CAPTION}>En stock</span>
       </div>
@@ -70,14 +70,18 @@ export function SummaryCounters({
             key={key}
             type="button"
             aria-pressed={pressed}
-            aria-label={`${label} : ${count}`}
             onClick={() => onSelect(pressed ? null : key)}
             className={`${TILE} tap-target transition-colors duration-150 ${
               pressed ? 'border-indigo bg-lavender' : 'hover:bg-surface-group'
             }`}
           >
-            <span className={NUMBER}>{count}</span>
-            <span className={CAPTION}>{short}</span>
+            <span className={NUMBER}>{count}</span>{' '}
+            {/* No aria-label (it would hide the visible text from voice control): the full label
+                is read through a hidden prefix, the visible short label stays in the name. */}
+            <span className={CAPTION}>
+              {label !== short ? <span className="sr-only">{`${label}, `}</span> : null}
+              {short}
+            </span>
           </button>
         );
       })}

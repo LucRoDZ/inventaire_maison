@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { ensureAccountInOwnHousehold, openScanner, pushCode, signIn } from './helpers';
+import { burstOff, ensureAccountInOwnHousehold, openScanner, pushCode, signIn } from './helpers';
 
 const VIEWPORTS = [
   { width: 360, height: 740 },
@@ -231,6 +231,7 @@ for (const viewport of VIEWPORTS) {
     test('fiche d’ajout : date limite « Suggérée » selon la catégorie', async ({
       page,
     }, testInfo) => {
+      await burstOff(page);
       const app = await setup(page, testInfo, viewport.width);
       const name = 'Fromage blanc suggéré';
       const code = ean13(`3760${app.tag === 'w' ? '2' : '1'}1${viewport.width}000`);
