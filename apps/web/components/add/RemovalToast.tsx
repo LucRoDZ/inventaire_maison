@@ -4,6 +4,7 @@ import type { RemovalReason, StockAdjustInput, StockAdjustResponse } from '@inve
 import { useRef, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { adjustStock } from '../../lib/stock-api';
+import { inviteAfterRemoval, outOfStockStore } from '../../lib/zero-stock';
 import { UndoToast } from './UndoToast';
 
 /** What a removal touched: enough to put the units back, or to record them as thrown away. */
@@ -85,6 +86,8 @@ export function RemovalToast({
     if (acting.current) return;
     // Never released: the toast closes after the undo.
     acting.current = true;
+    // Whatever the outcome, the removal is no longer a reason to ask about the shopping list.
+    outOfStockStore.dismissFor(plan.productId);
     try {
       await putBack();
       onChanged?.();
@@ -99,7 +102,8 @@ export function RemovalToast({
     acting.current = true;
     try {
       await putBack('consumed');
-      await adjust({ ...key, delta: -plan.units, reason: 'wasted' });
+      const thrown = await adjust({ ...key, delta: -plan.units, reason: 'wasted' });
+      inviteAfterRemoval(thrown, { id: plan.productId, name: plan.name });
       setReason('wasted');
     } catch (error) {
       onError?.(failure(error));
