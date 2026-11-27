@@ -122,7 +122,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
       <div
         role="status"
         aria-label="Chargement"
-        className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
       >
         {Array.from({ length: 4 }, (_, index) => (
           <Skeleton key={index} className="rounded-card min-h-52 w-full" />
@@ -168,7 +168,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
   return (
     <div className="flex flex-col gap-4">
       {live}
-      <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {home.locations.map((location) => (
           <li key={location.id} className="relative flex">
             <FurnitureCard
@@ -190,7 +190,7 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
             <p
               id={ADD_TILE_ID}
               tabIndex={-1}
-              className="border-lavender-line rounded-card text-small flex min-h-52 w-full items-center justify-center border-2 border-dashed p-3 text-center"
+              className="border-line rounded-card text-small flex min-h-52 w-full items-center justify-center border border-dashed p-3 text-center"
             >
               {MAX_LOCATIONS_PER_HOUSEHOLD} meubles au plus : la maison est complète.
             </p>
@@ -199,11 +199,11 @@ export function HomeView({ load = fetchHome }: HomeViewProps) {
               id={ADD_TILE_ID}
               type="button"
               onClick={() => setCreating(true)}
-              className="tap-target border-lavender-line rounded-card text-indigo flex min-h-52 w-full flex-col items-center justify-center gap-2 border-2 border-dashed bg-white p-3 font-semibold transition-colors duration-150 ease-out hover:bg-lavender"
+              className="tap-target border-line rounded-card text-grey hover:text-ink flex min-h-52 w-full flex-col items-center justify-center gap-2 border border-dashed bg-transparent p-3 font-semibold transition-colors duration-150 ease-out"
             >
               <span
                 aria-hidden="true"
-                className="text-indigo inline-flex h-11 w-11 items-center justify-center"
+                className="inline-flex h-11 w-11 items-center justify-center"
               >
                 <Plus size={22} />
               </span>

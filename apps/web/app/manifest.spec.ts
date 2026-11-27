@@ -18,7 +18,7 @@ describe('manifest', () => {
       display: 'standalone',
       orientation: 'portrait',
       lang: 'fr',
-      theme_color: '#ffffff',
+      theme_color: '#f5f5f7',
       background_color: '#ffffff',
     });
   });

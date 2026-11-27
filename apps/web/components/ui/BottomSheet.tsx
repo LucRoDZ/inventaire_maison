@@ -137,8 +137,9 @@ export function BottomSheet({
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={keyDown}
-        className={`sheet-panel rounded-card mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 ${scrollable ? 'overflow-y-auto' : 'overflow-hidden'} rounded-b-none bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] outline-none ${className}`}
+        className={`sheet-panel mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 ${scrollable ? 'overflow-y-auto' : 'overflow-hidden'} rounded-t-3xl bg-white px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] outline-none ${className}`}
       >
+        <div aria-hidden="true" className="bg-line mx-auto h-[5px] w-9 shrink-0 rounded-full" />
         {children}
       </div>
     </div>

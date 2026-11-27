@@ -93,14 +93,14 @@ export function FiltersSheet({
       scrollable={false}
     >
       <div className="flex shrink-0 items-center justify-between gap-2">
-        <h2 id={titleId} className="text-card-title">
+        <h2 id={titleId} className="text-subtitle">
           Filtres
         </h2>
         <button
           type="button"
           onClick={onClose}
           aria-label="Fermer"
-          className="tap-target text-indigo -mr-2 inline-flex items-center justify-center rounded-full"
+          className="tap-target text-indigo -mr-2 inline-flex items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
         >
           <X size={22} aria-hidden="true" />
         </button>
@@ -227,14 +227,14 @@ export function FiltersControl({
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="tap-target text-indigo relative inline-flex shrink-0 items-center justify-center rounded-full"
+        className="tap-target text-indigo relative inline-flex shrink-0 items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
       >
         <SlidersHorizontal size={22} aria-hidden="true" />
         {count > 0 ? (
           <span
             data-testid="filters-badge"
             aria-hidden="true"
-            className="bg-amber text-on-amber text-help absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white px-1 font-semibold"
+            className="bg-indigo text-help absolute top-0.5 right-0.5 text-white inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white px-1 font-semibold"
           >
             {count}
           </span>

@@ -9,11 +9,11 @@ afterEach(() =>
 );
 
 describe('AddFab', () => {
-  it('is a centred amber pill named « Ajouter un produit »', () => {
+  it('is a centred indigo pill named « Ajouter un produit »', () => {
     render(<AddFab />);
     const button = screen.getByRole('button', { name: 'Ajouter un produit' });
     expect(button).toHaveTextContent('Ajouter');
-    expect(button).toHaveClass('left-1/2', '-translate-x-1/2', 'h-12', 'bg-amber', 'text-on-amber');
+    expect(button).toHaveClass('left-1/2', '-translate-x-1/2', 'h-12', 'bg-indigo', 'text-white');
     expect(button).not.toHaveClass('right-4');
   });
 

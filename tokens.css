@@ -8,19 +8,19 @@
   color-scheme: light; /* Contrôles natifs toujours clairs, même si le téléphone est en sombre. */
 
   /* Couleurs de marque */
-  --indigo: #1800ad; /* Marque : en-têtes, boutons principaux, titres, icônes. Texte blanc dessus. */
-  --indigo-mid: #4a3dd0; /* Liens et états survolés. Rare. */
-  --lavender: #eae7fb; /* Pastille derrière une icône indigo, fonds discrets. */
-  --lavender-line: #c9c2f0; /* Détails discrets, séparateurs de décor. Pas pour du texte. */
-  --amber: #ffcc65; /* Unique accent : badges, état actif, bouton d'action secondaire. */
+  --indigo: #3f51a8; /* Marque, bleu ardoise : élément actif ou principal, liens, bouton principal. Blanc dessus 7,1:1. */
+  --indigo-mid: #34428c; /* Appui, liens. 9,1:1 sur blanc. */
+  --lavender: #e8ebf7; /* Fonds discrets (survol, sélection). Indigo 6,0:1 dessus. */
+  --lavender-line: #c5cce8; /* Détails discrets, séparateurs de décor. Pas pour du texte. */
+  --amber: #ffcc65; /* Péremption proche seulement (« Bientôt ») : jamais pour la navigation ni les boutons. */
   --amber-tint: #fff6e5; /* Fond d'un encadré d'information, avec icône ambre. */
   --white: #ffffff; /* Fond de l'application et des cartes. */
   --ink: #1a1a1a; /* Texte très sombre. */
   --grey: #595959; /* Texte courant sur blanc (contraste AA). */
-  --line: #e6e4ec; /* Filet fin autour des cartes, discret. */
-  --surface: #faf9f7; /* Fond de page : neutre très clair, légèrement chaud. Gris 6,7:1, indigo 12:1 dessus. */
+  --line: #e5e5ea; /* Filet fin : cartes, séparateurs. Neutre. */
+  --surface: #f5f5f7; /* Fond de page : gris très clair, neutre. Gris 6,4:1, indigo 6,5:1 dessus. */
   --surface-raised: #ffffff; /* Cartes et feuilles : blanc, au-dessus du fond. */
-  --surface-group: #efedf3; /* Indigo à 5 % sur le fond : regroupe des éléments. Gris 6,0:1 dessus. */
+  --surface-group: #ececf0; /* Regroupe des éléments, neutre. Gris 6,0:1 dessus. */
   --ok: #2c8a4a; /* Statut positif, toujours accompagné d'un mot. */
   --ok-tint: #eaf5ee; /* Fond d'un bloc de statut positif. */
   --alert: #c0392b; /* Statut négatif ou risque, toujours accompagné d'un mot. 5,4:1 sur blanc. */
@@ -31,8 +31,8 @@
   /* Ombre et formes */
   /* Élévation : trois niveaux, ombres douces teintées indigo. */
   --shadow-none: none; /* Cartes de liste : bordure d'1 px seulement. */
-  --shadow-raised: 0 1px 3px rgba(24, 0, 173, 0.08), 0 2px 6px rgba(24, 0, 173, 0.06); /* Élément posé. */
-  --shadow-sheet: 0 8px 24px rgba(24, 0, 173, 0.16); /* Feuille, modale. */
+  --shadow-raised: 0 1px 3px rgba(63, 81, 168, 0.1), 0 2px 6px rgba(63, 81, 168, 0.08); /* Élément posé. */
+  --shadow-sheet: 0 8px 24px rgba(63, 81, 168, 0.16); /* Feuille, modale. */
   --shadow-card: var(--shadow-none); /* Cartes : filet seul, l'ombre est réservée à ce qui flotte (bouton Ajouter, menus, feuilles). */
   --radius-card: 16px; /* Cartes, encadrés, feuilles modales. */
   --radius-round: 50%; /* Pastilles d'icônes. */
@@ -44,27 +44,33 @@
   --space-3: 24px;
   --space-4: 40px;
 
-  /* Typographie */
-  --font-sans: Carlito, Calibri, Arial, sans-serif;
-  --text-title: 600 28px/34px var(--font-sans); /* Titre d'écran, indigo. */
-  --text-subtitle: 600 22px/28px var(--font-sans); /* Titre d'un sous-écran (avec retour), indigo. */
-  --text-card-title: 600 18px/24px var(--font-sans); /* Titre de carte, indigo. */
-  --text-body: 400 16px/24px var(--font-sans); /* Texte courant, grey. */
-  --text-small: 400 14px/20px var(--font-sans); /* Texte de carte, légendes, métadonnées, grey. */
-  --text-help: 400 12px/16px var(--font-sans); /* Aide, pied de carte, grey. */
-  --text-label: 600 14px/20px var(--font-sans); /* Étiquette de champ ou de section, en casse normale, ink. */
+  /* Typographie : police du système (SF sur iPhone, Roboto sur Android). */
+  --font-sans: system-ui, -apple-system, 'SF Pro Text', Roboto, 'Segoe UI', sans-serif;
+  --text-title: 700 34px/41px var(--font-sans); /* Titre d'écran, ink. */
+  --text-subtitle: 600 22px/28px var(--font-sans); /* Titre d'un sous-écran ou d'une feuille, ink. */
+  --text-card-title: 600 17px/22px var(--font-sans); /* Titre de carte, ink. */
+  --text-body: 400 17px/22px var(--font-sans); /* Texte courant. */
+  --text-small: 400 15px/20px var(--font-sans); /* Texte secondaire, métadonnées, grey. */
+  --text-help: 400 13px/18px var(--font-sans); /* Aide, légendes, grey. */
+  --text-label: 600 15px/20px var(--font-sans); /* Étiquette de champ ou de section, en casse normale, ink. */
   --tracking-label: 0; /* Pas d'interlettrage : les capitales espacées sont retirées (décision U1). */
+  --text-number: 600 20px/24px var(--font-sans); /* Chiffre d'un compteur. */
   --text-stat: 600 40px/44px var(--font-sans); /* Gros chiffre (quantité, total). */
 
   /* Cibles tactiles */
   --tap-min: 44px; /* Taille minimale d'une zone cliquable sur mobile. */
+
+  /* Refonte HIG */
+  --fill-quiet: #e9e9ee; /* Piste du contrôle segmenté, puces. Jamais derrière − / +. Gris 5,8:1, ink 14:1 dessus. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1); /* Départ rapide, arrivée lente, sans rebond. */
+  --dur-slide: 340ms; /* Glissement de la pastille et du contenu Maison / Liste. */
 
   /* Phase 4 : scanner, glissement, chargement, illustrations */
   --scanner-veil: rgba(10, 6, 40, 0.62); /* Voile autour du cadre de visée, sur la caméra. */
   --scanner-frame: #ffffff; /* Coins du cadre de visée et coche de lecture. */
   --scanner-ink: #ffffff; /* Texte et icônes posés sur la caméra. */
   --scanner-backdrop: #1a1a1a; /* Fond du scanner plein écran : seule zone sombre, c'est un viseur. */
-  --scanner-on-frame: #1800ad; /* Texte posé sur un aplat blanc du scanner. */
+  --scanner-on-frame: #3f51a8; /* Texte posé sur un aplat blanc du scanner. */
   --alert-tint: #fbeceb; /* Fond d'un bloc de statut négatif (glissement « Jeté »). */
   --swipe-consumed-bg: var(--ok-tint); /* Fond révélé en glissant vers « Consommé ». */
   --swipe-consumed-ink: var(--ok);
@@ -74,18 +80,19 @@
   --illustration-surface: var(--lavender); /* Aplats des illustrations d'état vide. */
   --illustration-line: var(--indigo); /* Traits des illustrations. */
   --illustration-accent: var(--amber); /* Seule touche d'accent d'une illustration. */
-  --theme-color: #ffffff; /* Barre d'état et écran de lancement. */
-  --on-amber: #1800ad; /* Texte et icône posés sur un aplat ambre. */
+  --theme-color: #f5f5f7; /* Barre d’état : le gris du fond de page (= --surface). */
+  --on-amber: var(--ink); /* Texte et icône posés sur un aplat ambre. */
 }
 
 /* Règles d'usage :
    - Thème clair uniquement (décision Phase 5) : aucune variante sombre, quel que soit le réglage du téléphone.
-   - Un seul accent (ambre) : pas de couleur par catégorie.
+   - Un seul accent (indigo) : élément actif ou principal, liens, bouton principal. Pas de couleur par catégorie.
+   - L'ambre ne marque que la péremption proche.
    - L'ambre sur fond blanc a un contraste faible : jamais pour du texte courant,
      seulement pour un fond (badge, bouton) avec texte indigo ou ink dessus.
-   - Aucun emoji : icônes Lucide, glyphe indigo sur pastille lavande.
-   - Graisses 400 et 600 seulement ; étiquettes en casse normale, jamais en capitales.
-   - Bouton principal indigo partout. L'ambre marque seulement l'élément actif ou principal.
+   - Aucun emoji : icônes Lucide, sans pastille ni fond.
+   - Graisses 400 et 600, 700 pour le seul titre d'écran ; étiquettes en casse normale, jamais en capitales.
+   - Titres en ink, pas en indigo. Bouton principal indigo partout.
    - Ne recopie jamais une couleur en dur dans un composant : utilise ces variables. */
 
 body {

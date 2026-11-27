@@ -68,7 +68,8 @@ describe('Button', () => {
 
   it.each([
     ['primary', 'bg-indigo', 'text-white'],
-    ['outline', 'bg-white', 'text-indigo'],
+    ['outline', 'bg-fill-quiet', 'text-ink'],
+    ['destructive', 'text-alert', 'bg-transparent'],
     ['secondary', 'text-indigo-mid', 'bg-transparent'],
   ] as const)('applies the %s variant', (variant, ...classes) => {
     render(<Button variant={variant}>Action</Button>);

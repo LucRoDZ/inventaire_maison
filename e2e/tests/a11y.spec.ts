@@ -195,16 +195,17 @@ test.describe('audit à 360 px', () => {
     });
   }
 
-  test('police Carlito chargée', async ({ page }) => {
+  test('police du système, sans police téléchargée', async ({ page }) => {
     await open(page, SCREENS[0]!);
-    const loaded = await page.evaluate(async () => {
+    const font = await page.evaluate(async () => {
       await document.fonts.ready;
-      return (
-        document.fonts.check('16px Carlito') &&
-        [...document.fonts].some((f) => f.family.includes('Carlito') && f.status === 'loaded')
-      );
+      return {
+        family: getComputedStyle(document.body).fontFamily,
+        downloaded: [...document.fonts].filter((f) => f.status === 'loaded').length,
+      };
     });
-    expect(loaded).toBe(true);
+    expect(font.family).toMatch(/^system-ui/);
+    expect(font.downloaded).toBe(0);
   });
 
   test('animations coupées avec prefers-reduced-motion', async ({ page }) => {

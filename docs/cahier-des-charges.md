@@ -141,7 +141,7 @@ L'application s'installe depuis le navigateur sur l'écran d'accueil, s'ouvre en
 | `start_url`, `scope` | `/` |
 | `display`, `orientation` | `standalone`, `portrait` |
 | `lang` | `fr` |
-| `theme_color`, `background_color` | `#1800ad`, `#ffffff` |
+| `theme_color`, `background_color` | `#ffffff`, `#ffffff` (barre d’état blanche) |
 | `icons` | 192 px, 512 px et 512 px `maskable` (fond indigo, motif blanc avec un point ambre), plus une `apple-touch-icon` de 180 px |
 
 **Service worker**
@@ -219,7 +219,7 @@ L'application reprend le design system Indigo Ambre : indigo profond, un seul ac
 
 | Token | Code | Usage dans l'application |
 | --- | --- | --- |
-| `indigo` | `#1800ad` | Couleur de marque : boutons principaux, titres, icônes, onglet actif, traits des meubles. Texte blanc dessus |
+| `indigo` | `#3f51a8` | Couleur de marque, bleu ardoise (refonte HIG, `docs/hig.md`) : bouton principal, élément actif, liens. Titres en `ink`. Texte blanc dessus |
 | `indigo-mid` | `#4a3dd0` | Liens, états pressés ou survolés, étiquettes de section sur fond blanc |
 | `lavender` | `#eae7fb` | Pastille ronde derrière une icône, intérieur des meubles, puces de filtre |
 | `lavender-line` | `#c9c2f0` | États vides, contours pointillés, détails discrets |
@@ -234,17 +234,19 @@ L'application reprend le design system Indigo Ambre : indigo profond, un seul ac
 
 Contrastes calculés : blanc sur indigo 12,8 pour 1 ; indigo sur ambre 8,6 pour 1 ; gris sur blanc 7,0 pour 1 ; ambre sur blanc 1,5 pour 1, donc jamais de texte ambre sur fond blanc.
 
-**Typographie** : Carlito (libre, métriquement compatible avec Calibri), auto-hébergée en WOFF2 en 400 et 700, avec Calibri puis Arial en repli. Échelle web :
+**Typographie** : police du système (`system-ui` : SF sur iPhone, Roboto sur Android), sans police auto-hébergée. Échelle web :
 
 | Rôle | Style | Couleur |
 | --- | --- | --- |
-| Titre d'écran | 700, 28 px / 34 px | `indigo` |
-| Étiquette de section | 700, 12 px / 16 px, majuscules, interlettrage 0,12 em | `indigo-mid` sur blanc, `amber` sur indigo |
-| Titre de carte | 700, 18 px / 24 px | `indigo` |
-| Texte courant | 400, 16 px / 24 px | `grey` |
-| Texte de carte | 400, 14 px / 20 px | `grey` |
-| Compteur (carte de chiffre) | 700, 40 px / 44 px | `amber` sur fond `indigo` |
-| Aide, pied de carte | 400, 12 px / 16 px | `grey` |
+| Titre d'écran | 700, 34 px / 41 px | `ink` |
+| Sous-titre (sous-écran, feuille) | 600, 22 px / 28 px | `ink` |
+| Titre de carte | 600, 17 px / 22 px | `ink` |
+| Texte courant | 400, 17 px / 22 px | `ink` |
+| Texte secondaire | 400, 15 px / 20 px | `grey` |
+| Aide, légende | 400, 13 px / 18 px | `grey` |
+| Chiffre de compteur | 600, 20 px / 24 px | `ink` |
+
+Pas de capitales espacées : les étiquettes sont en casse normale (600, 15 px / 20 px).
 
 **Formes et composants**
 

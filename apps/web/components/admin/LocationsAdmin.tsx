@@ -39,7 +39,7 @@ type Notify = (notice: Notice) => void;
 const field = 'tap-target border-line rounded-xl border bg-white px-3 text-base text-ink w-full';
 const KIND_LABELS: Record<ShelfKind, string> = { rack: 'Rangée', plain: 'Étagère simple' };
 const iconButton =
-  'tap-target text-indigo-mid inline-flex shrink-0 items-center justify-center rounded-full aria-disabled:opacity-40';
+  'tap-target text-indigo-mid inline-flex shrink-0 items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100 aria-disabled:opacity-40';
 
 function messageOf(error: unknown): string {
   if (error instanceof ApiError && error.status !== 0) return error.message;
@@ -338,7 +338,7 @@ function FurnitureForm({
             aria-label={`Icône : ${iconLabel(icon)}. Changer l’icône`}
             aria-haspopup="dialog"
             onClick={() => setPicking(true)}
-            className="tap-target border-line bg-lavender text-indigo inline-flex shrink-0 items-center justify-center rounded-xl border"
+            className="tap-target text-ink inline-flex shrink-0 items-center justify-center transition-opacity duration-100 active:opacity-50"
           >
             <Icon size={22} aria-hidden="true" />
           </button>

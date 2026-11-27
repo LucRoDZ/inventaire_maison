@@ -189,8 +189,9 @@ export function AddSheet({
         aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.key === 'Escape' && onClose()}
-        className="rounded-card bg-white mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-b-none p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        className="mx-auto flex max-h-[90dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-t-3xl bg-white px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
+        <div aria-hidden="true" className="bg-line mx-auto h-[5px] w-9 shrink-0 rounded-full" />
         <div className="flex items-center gap-3">
           {product.imageUrl ? (
             <FadeImage src={product.imageUrl} className="h-14 w-14 rounded-xl object-cover" />
@@ -198,7 +199,7 @@ export function AddSheet({
             <IconBadge icon={Glyph} />
           )}
           <div className="min-w-0">
-            <h2 id={titleId} className="text-card-title">
+            <h2 id={titleId} className="text-subtitle">
               {product.name}
             </h2>
             <p className="text-small">

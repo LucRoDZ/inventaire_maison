@@ -147,7 +147,7 @@ export function Screen({
             <Link
               href={back.href}
               aria-label={`Retour : ${back.label}`}
-              className="tap-target text-indigo -ml-3 inline-flex shrink-0 items-center justify-center rounded-full"
+              className="tap-target text-ink -ml-3 inline-flex shrink-0 items-center justify-center active:opacity-50"
             >
               <ChevronLeft size={24} aria-hidden="true" />
             </Link>

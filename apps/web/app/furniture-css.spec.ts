@@ -40,7 +40,7 @@ describe('furniture.css', () => {
   });
 
   it('would catch each of them', () => {
-    expect(violations('a { color: #1800ad; }')).toEqual(['hexadecimal colour']);
+    expect(violations('a { color: #3f51a8; }')).toEqual(['hexadecimal colour']);
     expect(violations('a { color: #fff; }')).toEqual(['hexadecimal colour']);
     expect(violations('a { color: rgb(0 0 0); }')).toEqual(['rgb() or rgba()']);
     expect(violations('a { box-shadow: 0 0 2px rgba(0, 0, 0, 0.1); }')).toEqual([

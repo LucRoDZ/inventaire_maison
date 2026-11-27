@@ -103,7 +103,7 @@ function Prompt({
               type="button"
               disabled={busy}
               onClick={() => void add()}
-              className="tap-target bg-amber text-indigo rounded-xl px-4 font-semibold disabled:opacity-50"
+              className="tap-target bg-indigo text-white rounded-xl px-4 font-semibold disabled:opacity-50"
             >
               Ajouter
             </button>

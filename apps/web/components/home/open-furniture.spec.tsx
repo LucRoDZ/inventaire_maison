@@ -68,7 +68,7 @@ describe('OpenFurniture', () => {
     expect(boards).toEqual(['plain', 'rack', 'plain']);
   });
 
-  it('shows a photo tile with its amber quantity, and a glyph when there is no photo', () => {
+  it('shows a photo tile with its indigo quantity, and a glyph when there is no photo', () => {
     const location = fridge({
       shelves: [
         shelf(22, 'Étagère 2', 'plain', [
@@ -81,7 +81,7 @@ describe('OpenFurniture', () => {
     const section = screen.getByRole('region', { name: 'Étagère 2' });
     const milk = within(section).getByRole('button', { name: 'Lait, quantité 3' });
     expect(milk.querySelector('img')).toHaveAttribute('src', '/api/images/lait.webp');
-    expect(within(milk).getByText('3')).toHaveClass('bg-amber');
+    expect(within(milk).getByText('3')).toHaveClass('bg-indigo');
     const water = within(section).getByRole('button', { name: 'Eau, quantité 6' });
     expect(water.querySelector('img')).toBeNull();
     expect(water.querySelector('svg')).not.toBeNull();

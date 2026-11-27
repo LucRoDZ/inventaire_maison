@@ -13,17 +13,7 @@ import type {
   StockAdjustInput,
   StockAdjustResponse,
 } from '@inventaire/shared';
-import {
-  Check,
-  ChevronRight,
-  History,
-  MoreHorizontal,
-  Minus,
-  Plus,
-  Share2,
-  Trash2,
-  Undo2,
-} from 'lucide-react';
+import { Check, ChevronRight, History, MoreHorizontal, Share2, Trash2, Undo2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiError } from '../../lib/api';
@@ -45,6 +35,7 @@ import { ProductForm } from '../product/ProductForm';
 import { Button } from '../ui/Button';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { EmptyShoppingIllustration } from '../ui/Illustrations';
+import { QuantityControl } from '../ui/QuantityControl';
 import { FullPageList } from '../ui/FullPageList';
 import { SwipeRow } from '../ui/SwipeRow';
 import { shareText, shoppingShareText } from '../../lib/share';
@@ -345,7 +336,7 @@ export function ShoppingList({ api: seam = {} }: { api?: Partial<ShoppingApi> })
       {recent.length > 0 ? (
         <Link
           href="/recemment-consommes"
-          className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised rounded-card flex items-center gap-3 border px-4 font-semibold transition-colors duration-150"
+          className="tap-target border-line text-indigo hover:bg-lavender bg-surface-raised flex items-center gap-3 rounded-[14px] border px-4 font-semibold transition-colors duration-150"
         >
           <History size={18} aria-hidden="true" className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">Récemment consommés</span>
@@ -526,7 +517,7 @@ function ActionsMenu({ canClear, onClear, onShare }: ActionsMenuProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="tap-target text-indigo hover:bg-lavender inline-flex size-11 items-center justify-center rounded-full transition-colors duration-150"
+        className="tap-target text-indigo inline-flex size-11 items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
       >
         <MoreHorizontal size={20} aria-hidden="true" />
       </button>
@@ -576,8 +567,6 @@ interface ShoppingLineProps {
 
 function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: ShoppingLineProps) {
   const name = itemName(item);
-  const round =
-    'tap-target text-indigo hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150 disabled:opacity-50';
   return (
     <li>
       <SwipeRow
@@ -591,47 +580,46 @@ function ShoppingLine({ item, onToggle, onCheck, onQuantity, onRemove }: Shoppin
       >
         <div className="bg-surface-raised flex items-center gap-2 py-1 pr-2 pl-1">
           <label className="tap-target flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-2">
-            <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={onToggle}
-              className="accent-indigo h-5 w-5 shrink-0"
-            />
+            <span className="relative flex h-6 w-6 shrink-0">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={onToggle}
+                className="peer absolute inset-0 m-0 h-6 w-6 cursor-pointer opacity-0"
+              />
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none flex h-6 w-6 items-center justify-center rounded-full border-[1.5px] text-white transition-colors duration-150 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo ${item.checked ? 'bg-indigo border-indigo' : 'border-grey bg-transparent'}`}
+              >
+                {item.checked ? <Check size={15} strokeWidth={3} /> : null}
+              </span>
+            </span>
             <span className="min-w-0">
               <span
-                className={`block truncate font-semibold ${item.checked ? 'text-grey line-through' : 'text-ink'}`}
+                className={`text-body block truncate font-semibold ${item.checked ? 'text-grey line-through' : 'text-ink'}`}
               >
                 {name}
               </span>
-              <span className="text-help block tabular-nums">
+              <span className="text-small text-grey block tabular-nums">
                 {shoppingQuantityText(item)}
                 {item.product === null ? ' · ligne libre' : ''}
               </span>
             </span>
           </label>
-          <div role="group" aria-label={`Quantité de ${name}`} className="flex items-center">
-            <button
-              type="button"
-              aria-label={`Diminuer la quantité de ${name}`}
-              disabled={item.quantity <= 1}
-              onClick={() => onQuantity(item.quantity - 1)}
-              className={round}
-            >
-              <Minus size={18} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              aria-label={`Augmenter la quantité de ${name}`}
-              onClick={() => onQuantity(item.quantity + 1)}
-              className={round}
-            >
-              <Plus size={18} aria-hidden="true" />
-            </button>
+          <QuantityControl
+            hideValue
+            value={item.quantity}
+            label={`Quantité de ${name}`}
+            decreaseLabel={`Diminuer la quantité de ${name}`}
+            increaseLabel={`Augmenter la quantité de ${name}`}
+            onChange={onQuantity}
+          />
+          <div className="flex items-center">
             <button
               type="button"
               aria-label={`Supprimer ${name}`}
               onClick={onRemove}
-              className="tap-target text-grey hover:bg-lavender inline-flex items-center justify-center rounded-full transition-colors duration-150"
+              className="tap-target text-grey inline-flex items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
             >
               <Trash2 size={18} aria-hidden="true" />
             </button>
