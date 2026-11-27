@@ -150,8 +150,29 @@ export class ShoppingService {
           unit,
           createdBy: userId,
         })
+        // An open line inserted meanwhile (automatic line of another change): no 500.
+        .onConflictDoNothing()
         .returning();
-      return this.getIn(tx, householdId, row!.id);
+      if (!row) {
+        if (input.ifAbsent) throw new ConflictException('Déjà dans vos courses');
+        const [raced] = await tx
+          .select()
+          .from(shoppingItems)
+          .where(
+            and(
+              eq(shoppingItems.householdId, householdId),
+              eq(shoppingItems.productId, product.id),
+              eq(shoppingItems.checked, false),
+            ),
+          );
+        if (!raced) throw new ConflictException('Déjà dans vos courses');
+        await tx
+          .update(shoppingItems)
+          .set({ quantity: Math.min(SHOPPING_QUANTITY_MAX, raced.quantity + quantity) })
+          .where(and(eq(shoppingItems.id, raced.id), eq(shoppingItems.householdId, householdId)));
+        return this.getIn(tx, householdId, raced.id);
+      }
+      return this.getIn(tx, householdId, row.id);
     });
   }
 

@@ -129,12 +129,16 @@ export class SyncService {
     if (op.kind === 'shop') {
       const { onShoppingList } = await productStatus(tx, householdId, op.productId);
       if (!onShoppingList) {
-        await tx.insert(shoppingItems).values({
-          householdId,
-          productId: op.productId,
-          quantity: Math.min(SHOPPING_QUANTITY_MAX, op.quantity),
-          createdBy: userId,
-        });
+        await tx
+          .insert(shoppingItems)
+          .values({
+            householdId,
+            productId: op.productId,
+            quantity: Math.min(SHOPPING_QUANTITY_MAX, op.quantity),
+            createdBy: userId,
+          })
+          // Another device sent the same product at the same time: its line is enough.
+          .onConflictDoNothing();
       }
       return;
     }
