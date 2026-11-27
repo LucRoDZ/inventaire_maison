@@ -23,9 +23,17 @@ const COUNTERS: { key: ExpiryFilter; label: string; short: string }[] = [
 ];
 
 const TILE =
-  'rounded-card border-line bg-surface-raised flex h-14 min-w-0 flex-col items-center justify-center border px-1 text-center';
-const NUMBER = 'text-body font-semibold tabular-nums leading-5';
-const CAPTION = 'text-help block max-w-full truncate';
+  'rounded-card border-line bg-surface-raised flex min-h-16 min-w-0 flex-col items-center justify-center border px-0.5 py-2 text-center';
+const NUMBER = 'text-number';
+const CAPTION = 'text-help text-grey block max-w-full';
+
+function tone(key: ExpiryFilter, count: number | string): string {
+  if (typeof count === 'number' && count > 0) {
+    if (key === 'expired') return 'text-alert';
+    if (key === 'soon') return 'text-expiry-soon';
+  }
+  return 'text-ink';
+}
 
 /**
  * The four counters in the fixed header of the inventory, on one row: in stock, to eat today,
@@ -59,7 +67,7 @@ export function SummaryCounters({
   return (
     <section aria-label="Résumé du stock" className="grid grid-cols-4 items-stretch gap-1.5">
       <div className={TILE}>
-        <span className={NUMBER}>{summary?.inStock ?? '–'}</span>
+        <span className={`${NUMBER} text-ink`}>{summary?.inStock ?? '–'}</span>
         <span className={CAPTION}>En stock</span>
       </div>
       {COUNTERS.map(({ key, label, short }) => {
@@ -72,10 +80,10 @@ export function SummaryCounters({
             aria-pressed={pressed}
             onClick={() => onSelect(pressed ? null : key)}
             className={`${TILE} tap-target transition-colors duration-150 ${
-              pressed ? 'border-indigo bg-lavender' : 'hover:bg-surface-group'
+              pressed ? 'ring-indigo ring-[1.5px] ring-inset' : ''
             }`}
           >
-            <span className={NUMBER}>{count}</span>{' '}
+            <span className={`${NUMBER} ${tone(key, count)}`}>{count}</span>{' '}
             {/* No aria-label (it would hide the visible text from voice control): the full label
                 is read through a hidden prefix, the visible short label stays in the name. */}
             <span className={CAPTION}>

@@ -32,11 +32,12 @@ describe('BottomNav', () => {
     expect(screen.getByRole('link', { name: 'Courses' })).not.toHaveAttribute('aria-current');
   });
 
-  it('highlights the active tab in amber', () => {
+  it('highlights the active tab in indigo', () => {
     pathname = '/plus';
     render(<BottomNav />);
     const active = screen.getByRole('link', { name: 'Plus' });
-    expect(active.querySelector('span')).toHaveClass('bg-amber');
+    expect(active).toHaveClass('text-indigo');
+    expect(active).not.toHaveClass('text-grey');
   });
 
   it('is a labelled navigation landmark', () => {

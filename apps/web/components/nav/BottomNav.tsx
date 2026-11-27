@@ -35,7 +35,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="border-line shrink-0 border-t bg-white pb-[env(safe-area-inset-bottom)]"
+      className="border-line shrink-0 border-t bg-surface-raised pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="mx-auto flex max-w-xl lg:max-w-3xl">
         {TABS.map(({ href, label, icon: Icon }) => {
@@ -45,12 +45,10 @@ export function BottomNav() {
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className="tap-target text-indigo flex flex-col items-center justify-center gap-0.5 py-2"
+                className={`tap-target flex flex-col items-center justify-center gap-0.5 py-2 ${active ? 'text-indigo' : 'text-grey'}`}
               >
-                <span
-                  className={`relative flex h-8 w-14 items-center justify-center rounded-full ${active ? 'bg-amber text-on-amber' : 'bg-transparent'}`}
-                >
-                  <Icon size={22} aria-hidden="true" />
+                <span className="relative flex h-8 w-14 items-center justify-center">
+                  <Icon size={22} strokeWidth={active ? 2.25 : 2} aria-hidden="true" />
                 </span>
                 <span className={`text-help ${active ? 'font-semibold' : ''}`}>{label}</span>
               </Link>
