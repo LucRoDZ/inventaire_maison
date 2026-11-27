@@ -100,7 +100,7 @@ export function FiltersSheet({
           type="button"
           onClick={onClose}
           aria-label="Fermer"
-          className="tap-target text-indigo -mr-2 inline-flex items-center justify-center rounded-full"
+          className="tap-target text-indigo -mr-2 inline-flex items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
         >
           <X size={22} aria-hidden="true" />
         </button>
@@ -227,7 +227,7 @@ export function FiltersControl({
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="tap-target text-indigo relative inline-flex shrink-0 items-center justify-center rounded-full"
+        className="tap-target text-indigo relative inline-flex shrink-0 items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
       >
         <SlidersHorizontal size={22} aria-hidden="true" />
         {count > 0 ? (

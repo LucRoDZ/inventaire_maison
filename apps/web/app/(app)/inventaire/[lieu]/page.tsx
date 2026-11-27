@@ -144,7 +144,7 @@ function Meuble() {
         <Link
           href={`/inventaire${filtersToQuery(filters)}`}
           aria-label="Maison"
-          className="tap-target text-indigo -ml-2 inline-flex shrink-0 items-center justify-center rounded-full"
+          className="tap-target text-indigo -ml-2 inline-flex shrink-0 items-center justify-center transition-[opacity,transform] duration-100 active:opacity-50 active:scale-[0.92] motion-reduce:active:scale-100"
         >
           <ChevronLeft size={26} aria-hidden="true" />
         </Link>
