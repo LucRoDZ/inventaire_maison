@@ -10,7 +10,15 @@ import type {
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState, type CSSProperties } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { FurnitureOptions } from '../../../../components/furniture/FurnitureOptions';
 import { DndProvider } from '../../../../components/home/dnd/DndProvider';
 import { OpenFurniture } from '../../../../components/home/OpenFurniture';
@@ -19,6 +27,7 @@ import { ErrorMessage } from '../../../../components/ui/ErrorMessage';
 import { Callout } from '../../../../components/ui/Callout';
 import { applyMove, findTile, type Destination } from '../../../../lib/drop';
 import { ApiError } from '../../../../lib/api';
+import { furnitureScrollOf, rememberFurnitureScroll } from '../../../../lib/shelf-focus';
 import { fetchHome } from '../../../../lib/home-api';
 import { FilterReminder, FiltersControl } from '../../../../components/home/FiltersControl';
 import {
@@ -125,6 +134,13 @@ function Meuble() {
   };
 
   const location = home?.locations.find((l) => String(l.id) === lieu);
+  // Back from a shelf focus page: the furniture scrolls to where it was.
+  const zone = useRef<HTMLDivElement>(null);
+  const locationId = location?.id;
+  useLayoutEffect(() => {
+    if (locationId === undefined || !zone.current) return;
+    zone.current.scrollTop = furnitureScrollOf(locationId);
+  }, [locationId]);
   // The sheet follows the line through reloads; it closes when the line is gone.
   const current =
     location && selected
@@ -183,6 +199,11 @@ function Meuble() {
       {/* Portrait phone: the furniture fits, nothing scrolls. Elsewhere (landscape, computer) it
           scrolls here, never the page. */}
       <div
+        ref={zone}
+        onScroll={(event) => {
+          if (locationId !== undefined)
+            rememberFurnitureScroll(locationId, event.currentTarget.scrollTop);
+        }}
         role="region"
         aria-label={location ? `Étagères de ${location.name}` : 'Meuble'}
         tabIndex={0}
@@ -204,6 +225,7 @@ function Meuble() {
             <OpenFurniture
               location={location}
               onSelect={setSelected}
+              focusQuery={filtersToQuery(filters)}
               isDimmed={isFiltering(filters) ? (tile) => !tileMatches(tile, filters) : undefined}
             />
           </DndProvider>

@@ -43,7 +43,7 @@ const fridge = (over: Partial<HomeLocationDto> = {}): HomeLocationDto => ({
   name: 'Frigo',
   kind: 'fridge',
   icon: 'refrigerator',
-  counts: { products: 1, units: 3, expiringSoon: 0 },
+  counts: { products: 1, units: 3, expired: 0, soon: 0 },
   shelves: [
     shelf(21, 'Étagère 1', 'plain'),
     shelf(22, 'Étagère 2', 'rack', [tile(1, 'Lait', 3, '/api/images/lait.webp')]),
@@ -428,5 +428,62 @@ describe('OpenFurniture', () => {
   it('builds the scanner link', () => {
     expect(scanHref(2)).toBe('/scanner?lieu=2');
     expect(scanHref(2, 21)).toBe('/scanner?lieu=2&etagere=21');
+  });
+
+  describe('expiry rings', () => {
+    const withExpiry = (id: number, name: string, expiry: HomeTileDto['expiry']) => ({
+      ...tile(id, name, 2),
+      expiry,
+    });
+    const ringOf = (name: RegExp) =>
+      screen.getByRole('button', { name }).querySelector('[data-expiry]');
+
+    it('rings an expired tile in red and names it', () => {
+      render(
+        <OpenFurniture
+          location={fridge({
+            shelves: [
+              shelf(21, 'Étagère 1', 'plain', [
+                withExpiry(1, 'Lait', { status: 'expired' }),
+                withExpiry(2, 'Eau', { status: 'soon', days: 0 }),
+                withExpiry(3, 'Riz', { status: 'soon', days: 3 }),
+                tile(4, 'Thé', 1),
+              ]),
+            ],
+          })}
+        />,
+      );
+      expect(ringOf(/^Lait, quantité 2, périmé$/)).toHaveClass('ring-alert');
+      expect(ringOf(/^Eau, quantité 2, périme aujourd’hui$/)).toHaveClass('ring-expiry-soon-ring');
+      expect(ringOf(/^Riz, quantité 2, périme dans 3 jours$/)).toHaveClass('ring-expiry-soon-ring');
+      expect(ringOf(/^Thé, quantité 1$/)).toBeNull();
+    });
+  });
+
+  describe('focus triggers', () => {
+    it('links each shelf and the tray to their focus page, tiles still open the sheet', async () => {
+      const onSelect = vi.fn();
+      render(
+        <OpenFurniture
+          location={fridge({ unshelved: [tile(5, 'Beurre', 2)] })}
+          onSelect={onSelect}
+          focusQuery="?q=lait"
+        />,
+      );
+      expect(screen.getByRole('link', { name: 'Ouvrir l’étagère 2' })).toHaveAttribute(
+        'href',
+        '/inventaire/2/etagere/22?q=lait',
+      );
+      expect(screen.getByRole('link', { name: 'Ouvrir Bac à légumes' })).toHaveAttribute(
+        'href',
+        '/inventaire/2/etagere/23?q=lait',
+      );
+      expect(screen.getByRole('link', { name: 'Ouvrir Non rangé' })).toHaveAttribute(
+        'href',
+        '/inventaire/2/etagere/non-range?q=lait',
+      );
+      await userEvent.click(screen.getByRole('button', { name: /^Lait/ }));
+      expect(onSelect).toHaveBeenCalledTimes(1);
+    });
   });
 });

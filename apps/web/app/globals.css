@@ -22,6 +22,7 @@
   --color-surface-group: var(--surface-group);
   --color-expiry-soon: var(--expiry-soon);
   --color-expiry-soon-tint: var(--expiry-soon-tint);
+  --color-expiry-soon-ring: var(--expiry-soon-ring);
   --color-out-of-stock: var(--out-of-stock);
   --color-ok: var(--ok);
   --color-ok-tint: var(--ok-tint);
@@ -273,5 +274,25 @@ html[data-view-dir='back']::view-transition-new(inventory-pane) {
   html[data-view-dir]::view-transition-old(inventory-pane),
   html[data-view-dir]::view-transition-new(inventory-pane) {
     animation-name: none;
+  }
+}
+
+/* Étagère en plein écran : zoom doux entre l'étagère du meuble et sa page (View Transitions).
+   data-focus-dir (open / close) est posé sur <html> par lib/shelf-focus.ts ; l'étagère est nommée
+   en ligne le temps du zoom, la zone de la page ici. Pas de couleur. */
+html[data-focus-dir] [data-focus-zone] {
+  view-transition-name: shelf-focus;
+}
+html[data-focus-dir]::view-transition-old(root),
+html[data-focus-dir]::view-transition-new(root),
+html[data-focus-dir]::view-transition-group(shelf-focus) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease-out-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-focus-dir]::view-transition-group(*),
+  html[data-focus-dir]::view-transition-old(*),
+  html[data-focus-dir]::view-transition-new(*) {
+    animation: none;
   }
 }

@@ -126,7 +126,7 @@ describe('reference scenario: two households, one barcode', () => {
     expect(seen).not.toMatch(/tartiner|nutella/i);
     const home = await as(two).get('/api/home');
     for (const location of home.body.locations) {
-      expect(location.counts).toEqual({ products: 0, units: 0, expiringSoon: 0 });
+      expect(location.counts).toEqual({ products: 0, units: 0, expired: 0, soon: 0 });
     }
   });
 

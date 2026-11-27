@@ -38,6 +38,8 @@ interface ProductSheetProps {
   /** Something changed on the server: reload the furniture. `message` is a confirmation to show. */
   onChanged: (message?: string) => void;
   onClose: () => void;
+  /** Where « Voir dans le meuble » leads (the focus page of the shelf, or the furniture). */
+  viewHref?: string;
   /** Test seams. */
   api?: {
     adjust?: (input: StockAdjustInput) => Promise<StockAdjustResponse>;
@@ -57,6 +59,7 @@ export function ProductSheet({
   locations,
   onChanged,
   onClose,
+  viewHref,
   api = {},
 }: ProductSheetProps) {
   const titleId = useId();
@@ -154,6 +157,14 @@ export function ProductSheet({
           <Button variant="primary" onClick={() => setMoving(true)}>
             Déplacer vers…
           </Button>
+          {viewHref ? (
+            <Link
+              href={viewHref}
+              className="tap-target text-indigo-mid inline-flex items-center justify-center font-semibold"
+            >
+              Voir dans le meuble
+            </Link>
+          ) : null}
           <Link
             href={`/produits/${tile.productId}`}
             className="tap-target text-indigo-mid inline-flex items-center justify-center font-semibold"

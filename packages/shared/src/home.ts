@@ -31,8 +31,10 @@ export interface HomeLocationDto {
     /** Distinct products in stock. */
     products: number;
     units: number;
-    /** Lines expired or expiring within `EXPIRY_SOON_DAYS` days. */
-    expiringSoon: number;
+    /** Lines whose date has passed (`expiry.status === 'expired'`). */
+    expired: number;
+    /** Lines expiring within the household threshold, today included (`expiry.status === 'soon'`). */
+    soon: number;
   };
   shelves: HomeShelfDto[];
   /** The "Non rangé" tray. */

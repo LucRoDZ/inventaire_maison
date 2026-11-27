@@ -38,7 +38,7 @@ const location = (
   name: `L${id}`,
   kind: 'fridge',
   icon: 'x',
-  counts: { products: 0, units: 0, expiringSoon: 0 },
+  counts: { products: 0, units: 0, expired: 0, soon: 0 },
   shelves: shelves.map((s) => ({ id: s.id, name: `S${s.id}`, kind: 'plain', tiles: s.tiles })),
   unshelved,
 });
@@ -99,7 +99,7 @@ describe('drop logic', () => {
     const shelves = after.locations[0]!.shelves;
     expect(shelves[1]!.tiles.map((t) => t.stockItemId)).toEqual([101]);
     expect(shelves[0]!.tiles.map((t) => t.stockItemId)).toEqual([100, 102]);
-    expect(after.locations[0]!.counts).toEqual({ products: 2, units: 6, expiringSoon: 1 });
+    expect(after.locations[0]!.counts).toEqual({ products: 2, units: 6, expired: 0, soon: 1 });
     expect(before.locations[0]!.shelves[1]!.tiles).toHaveLength(2); // the input is untouched
   });
 
@@ -122,7 +122,7 @@ describe('drop logic', () => {
     const after = applyMove(home(), 101, { toLocationId: 2, toShelfId: null });
     expect(after.locations[1]!.unshelved.map((t) => t.stockItemId)).toEqual([103, 101]);
     expect(after.locations[0]!.counts.units).toBe(3);
-    expect(after.locations[1]!.counts).toEqual({ products: 2, units: 7, expiringSoon: 0 });
+    expect(after.locations[1]!.counts).toEqual({ products: 2, units: 7, expired: 0, soon: 0 });
   });
 
   it('returns the very same object for a drop on the origin or an unknown line', () => {

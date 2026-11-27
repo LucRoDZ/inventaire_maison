@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { FilterReminder, FiltersControl } from '../../../components/home/FiltersControl';
 import { SummaryCounters } from '../../../components/home/SummaryCounters';
+import { AtRiskList } from '../../../components/home/AtRiskList';
 import { HomeView } from '../../../components/home/HomeView';
 import { SearchField } from '../../../components/home/SearchField';
 import { ListView, type ListSummary } from '../../../components/list/ListView';
@@ -74,6 +75,8 @@ function Inventaire() {
       .catch(() => undefined);
   }, []);
 
+  // Maison with an expiry counter on: the products at risk, not the furniture.
+  const atRisk = view === 'home' && filters.expiry !== null;
   const reminder = filterSummary(filters, view, categories ?? [], summary?.locations ?? []);
 
   return (
@@ -111,14 +114,20 @@ function Inventaire() {
           />
         </>
       }
-      zoneLabel={view === 'list' ? 'Liste des produits' : 'Liste des meubles'}
-      memoryKey={`inventaire-${view}`}
+      zoneLabel={view === 'list' || atRisk ? 'Liste des produits' : 'Liste des meubles'}
+      memoryKey={`inventaire-${view}${atRisk ? '-risque' : ''}`}
       floatingAction
     >
       {view === 'list' ? (
         <ListView
           filters={filters}
           onSummary={setSummary}
+          onStockChanged={() => setStockVersion((v) => v + 1)}
+        />
+      ) : atRisk ? (
+        <AtRiskList
+          filters={filters}
+          onClear={() => setFilters({ ...urlFilters, expiry: null })}
           onStockChanged={() => setStockVersion((v) => v + 1)}
         />
       ) : (

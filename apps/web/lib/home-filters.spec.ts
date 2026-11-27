@@ -31,7 +31,7 @@ const place = (tiles: HomeTileDto[], unshelved: HomeTileDto[] = []): HomeLocatio
   name: 'Frigo',
   kind: 'fridge',
   icon: 'x',
-  counts: { products: 0, units: 0, expiringSoon: 0 },
+  counts: { products: 0, units: 0, expired: 0, soon: 0 },
   shelves: [{ id: 1, name: 'S', kind: 'plain', tiles }],
   unshelved,
 });

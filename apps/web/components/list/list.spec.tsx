@@ -290,6 +290,16 @@ describe('ListView', () => {
     ]);
     expect(await screen.findByText('J-3')).toBeInTheDocument();
     expect(screen.getByText('Périmé')).toBeInTheDocument();
+    const cards = screen.getAllByRole('article');
+    const byStatus = (status: string) => cards.find((c) => c.dataset.expiry === status);
+    expect(byStatus('soon')).toHaveClass('ring-expiry-soon-ring');
+    expect(byStatus('expired')).toHaveClass('ring-alert');
+  });
+
+  it('draws no ring on a line without a near date', async () => {
+    renderList([line(1, 'Lait', 2, 1)]);
+    await screen.findByText('Lait');
+    expect(screen.getByRole('article').className).not.toContain('ring-');
   });
 
   it('shows the empty state with a way to the scanner', async () => {

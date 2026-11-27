@@ -1,4 +1,4 @@
-import type { HomeTileDto } from '@inventaire/shared';
+import type { ExpiryStatus, HomeTileDto } from '@inventaire/shared';
 import type { ButtonHTMLAttributes, Ref } from 'react';
 import { categoryIcon } from '../ui/CategoryIcon';
 import { FadeImage } from '../ui/FadeImage';
@@ -12,6 +12,14 @@ interface ProductTileProps {
   /** Set by the drag-and-drop wrapper: the button itself is the draggable element. */
   dragRef?: Ref<HTMLButtonElement>;
   dragProps?: ButtonHTMLAttributes<HTMLButtonElement>;
+}
+
+/** Spoken suffix of the accessible name: nothing when the line has no near date. */
+export function expirySuffix(expiry: ExpiryStatus | null): string {
+  if (!expiry) return '';
+  if (expiry.status === 'expired') return ', périmé';
+  if (expiry.days === 0) return ', périme aujourd’hui';
+  return expiry.days === 1 ? ', périme demain' : `, périme dans ${expiry.days} jours`;
 }
 
 /**
@@ -32,7 +40,7 @@ export function ProductTile({
       type="button"
       {...dragProps}
       onClick={() => onSelect?.(tile)}
-      aria-label={`${tile.name}, quantité ${tile.quantity}`}
+      aria-label={`${tile.name}, quantité ${tile.quantity}${expirySuffix(tile.expiry)}`}
       className={`border-lavender-line fx-tile relative shrink-0 overflow-hidden rounded-xl border bg-surface-raised transition-opacity ${
         dimmed ? 'opacity-30' : ''
       }`}
@@ -46,10 +54,20 @@ export function ProductTile({
           </span>
         </span>
       )}
+      {tile.expiry ? (
+        <span
+          aria-hidden="true"
+          data-expiry={tile.expiry.status}
+          className={`pointer-events-none absolute inset-0 rounded-[inherit] ring-2 ring-inset ${
+            tile.expiry.status === 'expired' ? 'ring-alert' : 'ring-expiry-soon-ring'
+          }`}
+        />
+      ) : null}
       <span
         aria-hidden="true"
         className="bg-indigo text-help text-white absolute top-1 right-1 min-w-5 rounded-full px-1 text-center font-semibold tabular-nums"
       >
+        {tile.expiry?.status === 'expired' ? '! ' : ''}
         {tile.quantity}
       </span>
     </button>
