@@ -16,7 +16,7 @@ test('le manifeste et les icônes sont servis sans session', async ({ request })
     expect(response.status(), icon.src).toBe(200);
     expect(response.headers()['content-type']).toContain('image/png');
   }
-  for (const path of ['/icons/v3/apple-touch-icon.png', '/favicon.ico', '/icons/v3/icon.svg']) {
+  for (const path of ['/icons/v4/apple-touch-icon.png', '/favicon.ico', '/icons/v4/icon.svg']) {
     expect((await request.get(path)).status(), path).toBe(200);
   }
 });

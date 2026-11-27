@@ -13,7 +13,7 @@ Branche `logo`. Sources validées par l'utilisateur dans `design/icon/` (SVG et 
 
 ## Sorties
 
-| Fichier (sous `apps/web/public/icons/v3/`) | Source | Usage |
+| Fichier (sous `apps/web/public/icons/v4/`) | Source | Usage |
 | --- | --- | --- |
 | `icon-192.png`, `icon-512.png` | `principale` | manifest, `purpose: any` |
 | `icon-192-maskable.png`, `icon-512-maskable.png` | `principale` | manifest, `purpose: maskable` |
@@ -22,14 +22,14 @@ Branche `logo`. Sources validées par l'utilisateur dans `design/icon/` (SVG et 
 | `icon.svg` | `principale` (copie) | favicon vectoriel |
 | `favicon-16.png`, `favicon-32.png` | `simplifiee` | favicons PNG |
 | `apps/web/public/favicon.ico` (16, 32, 48) | `simplifiee` 16 et 32, `principale` 48 | navigateurs |
-| `apps/web/public/splash/v3/splash-WxH.png` | `principale` centrée sur le fond blanc de l'app | écrans de lancement iOS |
+| `apps/web/public/splash/v4/splash-WxH.png` | `principale` centrée sur le fond blanc de l'app | écrans de lancement iOS |
 
 ## Décisions prises
 
 - L1 : `design/icon/` n'existait pas ; le pilote l'a créé depuis le zip fourni par l'utilisateur (les 4 SVG et les 4 PNG 1024 tels quels).
 - L2 : favicons 16 et 32 px : `simplifiee`. Rendus côte à côte, `principale` devient une tache à 16 px (étagères et bocaux fondus) ; `simplifiee` garde le bocal et le cadre lisibles. À partir de 48 px, `principale`.
 - L3 : `monochrome.svg` est identique à `principale.svg` (fond lavande compris). Une icône `monochrome` n'utilise que l'alpha : le script retire le rectangle de fond au rendu et rend transparentes les découpes lavande (reflet, étiquette, bandes) ; seule la silhouette indigo reste opaque (le fichier source reste intact).
-- L4 : nouveaux noms versionnés (`/icons/v3/`, `/splash/v3/`) : les systèmes et le précache Serwist ne peuvent pas garder une ancienne icône sous la même adresse ; les anciens fichiers et `apps/web/assets/icon.svg` sont supprimés. Mise à jour silencieuse (le service worker en place s'en charge, aucun encadré).
+- L4 : nouveaux noms versionnés (`/icons/v4/`, `/splash/v4/`) : les systèmes et le précache Serwist ne peuvent pas garder une ancienne icône sous la même adresse ; les anciens fichiers et `apps/web/assets/icon.svg` sont supprimés. Mise à jour silencieuse (le service worker en place s'en charge, aucun encadré).
 - L5 : icônes `any` et `apple-touch-icon` carrées, sans coins arrondis ajoutés : le système applique son masque.
 - L6 : l'interface n'affichait aucun logo (connexion, en-têtes et états vides sont textuels) : rien à remplacer, rien ajouté.
 - L7 : fond des écrans de lancement : blanc, comme `background_color` du manifest (inchangé), logo centré à 28 % de la largeur comme avant.
@@ -39,3 +39,4 @@ Branche `logo`. Sources validées par l'utilisateur dans `design/icon/` (SVG et 
 - L11 : `sharp` déclaré aussi à la racine (dépendance de dev), puisque `npm run icons` tourne depuis la racine.
 - L12 : au tout premier rendu d'une app installée, la ligne « Installer » peut apparaître un instant avant « Application installée » (le mode autonome n'est connu qu'après le montage, pour éviter un écart de rendu serveur) : accepté.
 - L13 : à la demande de l'utilisateur, l'icône de l'écran d'accueil (maskable et `apple-touch-icon`) est `principale` (dessin indigo sur lavande) et non plus `fond_indigo` ; `fond_indigo` reste dans `design/icon/` sans être utilisé.
+- L14 (27/11/2026) : nouveau logo fourni par l'utilisateur (`design/icon/reference-contour.png`), redessiné en SVG : dessin au trait indigo `#1800AD`, remplissages lavande `#EAE7FB`, fond blanc cassé `#F8F7FC` (fond du maskable et de l'`apple-touch-icon`). `principale` = `monochrome` ; `simplifiee` (favicons 16 et 32) en aplats, agrandie. Icônes et écrans de démarrage passés en `v4` pour forcer leur rechargement.

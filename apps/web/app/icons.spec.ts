@@ -16,7 +16,7 @@ async function pixels(p: string) {
 }
 
 describe.each([192, 512])('maskable icon %i', (size) => {
-  const name = `icons/v3/icon-${size}-maskable.png`;
+  const name = `icons/v4/icon-${size}-maskable.png`;
 
   it('keeps the indigo motif inside the safe zone', async () => {
     const { data, width, height } = await pixels(name);
@@ -36,7 +36,7 @@ describe.each([192, 512])('maskable icon %i', (size) => {
     expect(max).toBeLessThanOrEqual(0.4 * size);
   });
 
-  it('has lavender corners', async () => {
+  it('has off-white corners', async () => {
     const { data, width, height } = await pixels(name);
     for (const [x, y] of [
       [0, 0],
@@ -45,7 +45,7 @@ describe.each([192, 512])('maskable icon %i', (size) => {
       [width - 1, height - 1],
     ] as const) {
       const i = (y * width + x) * 4;
-      expect([data[i], data[i + 1], data[i + 2], data[i + 3]]).toEqual([234, 231, 251, 255]);
+      expect([data[i], data[i + 1], data[i + 2], data[i + 3]]).toEqual([248, 247, 252, 255]);
     }
   });
 });
@@ -64,31 +64,31 @@ describe('icon files', () => {
       expect(existsSync(file(src)), src).toBe(true);
     }
     for (const { width, height } of startupImages) {
-      expect(existsSync(file(`splash/v3/splash-${width}x${height}.png`))).toBe(true);
+      expect(existsSync(file(`splash/v4/splash-${width}x${height}.png`))).toBe(true);
     }
   });
 
   it('has an opaque 180 px apple-touch-icon', async () => {
-    const { data, width, height } = await pixels('icons/v3/apple-touch-icon.png');
+    const { data, width, height } = await pixels('icons/v4/apple-touch-icon.png');
     expect([width, height]).toEqual([180, 180]);
     for (let i = 3; i < data.length; i += 4) expect(data[i]).toBe(255);
   });
 
   it('has transparent cut-outs in the monochrome icon (alpha is all a themed icon keeps)', async () => {
-    const { data, width } = await pixels('icons/v3/icon-monochrome-512.png');
-    // Centres of lavender cut-outs of the source (1024 px): reflection, label, bands.
+    const { data, width } = await pixels('icons/v4/icon-monochrome-512.png');
+    // Centres of lavender fills of the source (1024 px): jug, jar, big box, tall jar.
     for (const [x, y] of [
-      [402, 310],
-      [359, 714],
-      [725, 361],
-      [707, 713],
+      [373, 367],
+      [516, 392],
+      [351, 735],
+      [674, 727],
     ] as const) {
       expect(data[((y >> 1) * width + (x >> 1)) * 4 + 3], `${x},${y}`).toBeLessThan(16);
     }
   });
 
   it('has a transparent monochrome icon with an opaque silhouette', async () => {
-    const { data, width, height } = await pixels('icons/v3/icon-monochrome-512.png');
+    const { data, width, height } = await pixels('icons/v4/icon-monochrome-512.png');
     for (const [x, y] of [
       [0, 0],
       [width - 1, 0],
