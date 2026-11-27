@@ -80,7 +80,7 @@ describe('GET /api/home', () => {
       'cellar',
     ]);
     for (const place of res.body.locations) {
-      expect(place.counts).toEqual({ products: 0, units: 0, expiringSoon: 0 });
+      expect(place.counts).toEqual({ products: 0, units: 0, expired: 0, soon: 0 });
       expect(place.unshelved).toEqual([]);
       expect(place.shelves.length).toBeGreaterThan(0);
       for (const shelf of place.shelves) expect(shelf.tiles).toEqual([]);
@@ -102,7 +102,7 @@ describe('GET /api/home', () => {
     });
     expect(fridge.shelves[0].tiles).toEqual([]);
     expect(fridge.unshelved).toEqual([]);
-    expect(fridge.counts).toEqual({ products: 1, units: 3, expiringSoon: 0 });
+    expect(fridge.counts).toEqual({ products: 1, units: 3, expired: 0, soon: 0 });
   });
 
   it('shows an unshelved product in the tray', async () => {
@@ -113,13 +113,13 @@ describe('GET /api/home', () => {
     for (const shelf of fridge.shelves) expect(shelf.tiles).toEqual([]);
   });
 
-  it('counts lines expired or expiring within three days', async () => {
+  it('counts expired and soon lines apart: an expired line is never « soon »', async () => {
     await adjust({ delta: 1, expiryDate: '2026-05-31' });
     await adjust({ delta: 1, expiryDate: '2026-06-04' });
     await adjust({ delta: 1, expiryDate: '2026-06-05' });
     await adjust({ delta: 1 });
     const fridge = (await get()).body.locations.find((l: { id: number }) => l.id === fridgeId);
-    expect(fridge.counts).toEqual({ products: 1, units: 4, expiringSoon: 2 });
+    expect(fridge.counts).toEqual({ products: 1, units: 4, expired: 1, soon: 1 });
     const statuses = fridge.unshelved.map((t: { expiry: unknown }) => t.expiry);
     expect(statuses).toContainEqual({ status: 'expired' });
     expect(statuses).toContainEqual({ status: 'soon', days: 3 });

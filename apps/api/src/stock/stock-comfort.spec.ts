@@ -105,10 +105,17 @@ describe('expiry filter and summary, with the household threshold', () => {
     expect(far!.expiry).toEqual({ status: 'soon', days: 4 });
     // The home counters use the same lines.
     const home = await get('/api/home');
-    const soonCount = (
-      home.body.locations as { id: number; counts: { expiringSoon: number } }[]
-    ).find((l) => l.id === fridge)!.counts.expiringSoon;
-    expect(soonCount).toBe(5);
+    const counts = (
+      home.body.locations as { id: number; counts: { expired: number; soon: number } }[]
+    ).find((l) => l.id === fridge)!.counts;
+    const summary = (await get('/api/stock/summary')).body as {
+      expired: number;
+      today: number;
+      soon: number;
+    };
+    expect(counts.expired + counts.soon).toBe(5);
+    expect(counts.expired).toBe(summary.expired);
+    expect(counts.soon).toBe(summary.today + summary.soon);
 
     await db().update(settings).set({ expiryAlertDays: 0 });
     expect(namesOf(await get('/api/stock?expiry=soon'))).toEqual([]);

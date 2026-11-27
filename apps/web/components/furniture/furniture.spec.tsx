@@ -190,7 +190,7 @@ const place = (id: number, name: string, kind: HomeLocationDto['kind']): HomeLoc
   name,
   kind,
   icon: 'x',
-  counts: { products: 0, units: 0, expiringSoon: 0 },
+  counts: { products: 0, units: 0, expired: 0, soon: 0 },
   shelves: [],
   unshelved: [],
 });

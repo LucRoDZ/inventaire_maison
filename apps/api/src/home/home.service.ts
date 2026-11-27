@@ -65,7 +65,8 @@ export class HomeService {
           counts: {
             products: new Set(lines.map((l) => l.product.id)).size,
             units: lines.reduce((sum, l) => sum + l.quantity, 0),
-            expiringSoon: lines.filter((l) => l.expiry !== null).length,
+            expired: lines.filter((l) => l.expiry?.status === 'expired').length,
+            soon: lines.filter((l) => l.expiry?.status === 'soon').length,
           },
           shelves: shelfRows
             .filter((shelf) => shelf.locationId === place.id)

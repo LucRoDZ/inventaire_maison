@@ -41,7 +41,7 @@ const stocked = (
   name,
   kind,
   icon: 'x',
-  counts: { products: 1, units: 1, expiringSoon: 0 },
+  counts: { products: 1, units: 1, expired: 0, soon: 0 },
   shelves: [],
   unshelved: [
     {

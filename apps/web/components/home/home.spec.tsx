@@ -16,13 +16,13 @@ const place = (
   name: string,
   kind: HomeLocationDto['kind'],
   products: number,
-  expiringSoon = 0,
+  soon = 0,
 ): HomeLocationDto => ({
   id,
   name,
   kind,
   icon: 'x',
-  counts: { products, units: products * 2, expiringSoon },
+  counts: { products, units: products * 2, expired: 0, soon },
   shelves: [],
   unshelved: [],
 });

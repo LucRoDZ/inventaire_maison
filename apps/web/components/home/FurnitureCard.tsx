@@ -63,7 +63,8 @@ interface FurnitureCardProps {
  */
 export function FurnitureCard({ location, highlighted = false, query = '' }: FurnitureCardProps) {
   const Drawing = DRAWINGS[location.kind];
-  const { products, expiringSoon } = location.counts;
+  const { products } = location.counts;
+  const expiringSoon = location.counts.expired + location.counts.soon;
   // `:active` is not applied to a touch by every browser (Safari on iOS): the pressed state is
   // also kept here, from the pointer.
   const [pressed, setPressed] = useState(false);

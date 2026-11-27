@@ -61,7 +61,8 @@ function recount(location: HomeLocationDto): HomeLocationDto {
     counts: {
       products: new Set(tiles.map((t) => t.productId)).size,
       units: tiles.reduce((sum, t) => sum + t.quantity, 0),
-      expiringSoon: tiles.filter((t) => t.expiry !== null).length,
+      expired: tiles.filter((t) => t.expiry?.status === 'expired').length,
+      soon: tiles.filter((t) => t.expiry?.status === 'soon').length,
     },
   };
 }

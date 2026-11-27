@@ -43,7 +43,7 @@ const fridge = (over: Partial<HomeLocationDto> = {}): HomeLocationDto => ({
   name: 'Frigo',
   kind: 'fridge',
   icon: 'refrigerator',
-  counts: { products: 1, units: 3, expiringSoon: 0 },
+  counts: { products: 1, units: 3, expired: 0, soon: 0 },
   shelves: [
     shelf(21, 'Étagère 1', 'plain'),
     shelf(22, 'Étagère 2', 'rack', [tile(1, 'Lait', 3, '/api/images/lait.webp')]),
