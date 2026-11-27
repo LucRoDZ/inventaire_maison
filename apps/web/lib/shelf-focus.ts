@@ -29,8 +29,8 @@ const canAnimate = (): boolean =>
 /**
  * Soft zoom between a shelf and its focus page (View Transitions, instant when unsupported or
  * with reduced motion). `data-focus-dir` stays on <html> until the latest transition ends.
- * `navigate` starts the navigation; the transition waits for the URL to change (at most ~150 ms,
- * then it is skipped), then two frames.
+ * `navigate` starts the navigation; the transition waits for the URL to change (at most 300 ms,
+ * then it is skipped).
  */
 function transition(dir: 'open' | 'close', navigate: () => void): void {
   if (!canAnimate()) {
@@ -40,26 +40,27 @@ function transition(dir: 'open' | 'close', navigate: () => void): void {
   const root = document.documentElement;
   const id = ++latest;
   root.dataset.focusDir = dir;
-  // The screen is frozen while the transition waits: if the page is not there within about
-  // 150 ms (first visit, slow network), the zoom is dropped and the navigation goes on unanimated.
+  // While the update callback runs, the browser pauses rendering, and `requestAnimationFrame` with
+  // it: the wait uses timers. The URL changes once Next has committed the new page; if it has not
+  // within 300 ms (first visit, slow network), the zoom is dropped and the navigation goes on.
   let late = false;
   const started = document.startViewTransition(
     () =>
       new Promise<void>((resolve) => {
         const before = window.location.href;
         navigate();
-        let frames = 0;
-        const tick = () => {
+        const startedAt = Date.now();
+        const poll = () => {
           if (window.location.href !== before) {
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-          } else if (++frames > 9) {
+            setTimeout(resolve, 0);
+          } else if (Date.now() - startedAt > 300) {
             late = true;
             resolve();
           } else {
-            requestAnimationFrame(tick);
+            setTimeout(poll, 16);
           }
         };
-        tick();
+        poll();
       }),
   );
   void started.updateCallbackDone.then(() => {

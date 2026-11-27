@@ -28,7 +28,7 @@ import { Callout } from '../../../../components/ui/Callout';
 import { applyMove, findTile, type Destination } from '../../../../lib/drop';
 import { ApiError } from '../../../../lib/api';
 import { furnitureScrollOf, rememberFurnitureScroll } from '../../../../lib/shelf-focus';
-import { fetchHome } from '../../../../lib/home-api';
+import { cachedHome, fetchHome } from '../../../../lib/home-api';
 import { FilterReminder, FiltersControl } from '../../../../components/home/FiltersControl';
 import {
   clearPanelFilters,
@@ -57,7 +57,8 @@ function placeOf(location: HomeLocationDto, tile: HomeTileDto) {
 function Meuble() {
   const { lieu } = useParams<{ lieu: string }>();
   const router = useRouter();
-  const [home, setHome] = useState<HomeResponse | null>(null);
+  // Back from a shelf, or from the Maison view: the house read a moment ago is drawn at once.
+  const [home, setHome] = useState<HomeResponse | null>(cachedHome);
   const [locations, setLocations] = useState<LocationDto[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
