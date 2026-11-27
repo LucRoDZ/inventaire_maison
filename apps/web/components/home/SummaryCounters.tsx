@@ -36,8 +36,8 @@ function tone(key: ExpiryFilter, count: number | string): string {
 }
 
 /**
- * The four counters in the fixed header of the inventory, on one row: in stock, to eat today,
- * soon, expired. The last three are buttons that set the expiry filter of the URL.
+ * The three counters in the fixed header of the inventory, on one row: to eat today, soon,
+ * expired. Each is a button that sets the expiry filter of the URL.
  */
 export function SummaryCounters({
   active,
@@ -65,11 +65,7 @@ export function SummaryCounters({
   }, [version]);
 
   return (
-    <section aria-label="Résumé du stock" className="grid grid-cols-4 items-stretch gap-1.5">
-      <div className={TILE}>
-        <span className={`${NUMBER} text-ink`}>{summary?.inStock ?? '–'}</span>
-        <span className={CAPTION}>En stock</span>
-      </div>
+    <section aria-label="Résumé du stock" className="grid grid-cols-3 items-stretch gap-1.5">
       {COUNTERS.map(({ key, label, short }) => {
         const pressed = active === key;
         const count = summary ? summary[key] : '–';

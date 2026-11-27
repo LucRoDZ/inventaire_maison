@@ -7,21 +7,21 @@ import { SummaryCounters } from './SummaryCounters';
 const summary: StockSummaryDto = { inStock: 24, today: 2, soon: 5, expired: 1, expiryAlertDays: 3 };
 
 describe('SummaryCounters', () => {
-  it('shows the four counters, three of them as buttons', async () => {
+  it('shows the three expiry counters as buttons, and no « En stock » tile', async () => {
     render(<SummaryCounters active={null} onSelect={vi.fn()} load={async () => summary} />);
-    expect(await screen.findByText('24')).toBeInTheDocument();
-    expect(screen.getByText('En stock')).toBeInTheDocument();
+    expect(await screen.findByText('5')).toBeInTheDocument();
+    expect(screen.queryByText('En stock')).toBeNull();
+    expect(screen.queryByText('24')).toBeNull();
     expect(screen.getByRole('button', { name: /À consommer aujourd’hui/ })).toHaveTextContent('2');
     expect(screen.getByRole('button', { name: /Bientôt/ })).toHaveTextContent('5');
     expect(screen.getByRole('button', { name: /Périmés/ })).toHaveTextContent('1');
   });
 
-  it('is one row of four with full accessible names', async () => {
+  it('is one row of three with full accessible names', async () => {
     render(<SummaryCounters active={null} onSelect={vi.fn()} load={async () => summary} />);
-    await screen.findByText('24');
+    await screen.findByText('5');
     const row = screen.getByRole('region', { name: 'Résumé du stock' });
-    expect(row.className).toContain('grid-cols-4');
-    expect(screen.getByText('En stock')).toBeInTheDocument();
+    expect(row.className).toContain('grid-cols-3');
     expect(
       screen.getByRole('button', { name: /^2 ?À consommer aujourd’hui, ?Aujourd’hui$/ }),
     ).toBeInTheDocument();
